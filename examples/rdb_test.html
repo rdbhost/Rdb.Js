@@ -1,0 +1,84 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" />
+    <title>RdbHost: SQL Query Form</title>
+    <link rel="stylesheet" href="css/sqlform.css" type="text/css" />
+    <script language="javascript" type="text/javascript"
+						src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.js"></script>
+    <!-- script language="javascript" type="text/javascript" src="/js/jquery.cookie.js"></script -->
+    <script language="javascript" type="text/javascript" src="../js/rdb.js"></script>
+		<script language="javascript" type="text/javascript">
+		function success(json) {
+			var stat = json.status[0];
+			var ct = json.row_count[0];
+			alert('stat: '+stat+' ct: '+ct);
+		};
+		function dumppre(json){
+			$('#dump').html('<pre>'+json+'<\/pre>');
+		};
+		$(document).ready(function () {
+			var rdb = new SQLEngine("s0000000002",
+													"qTPJ2yT8VME4QfJDmhgCZXkjzXqrMkmIPwmOEaUqV1Kxdty12Q",
+													'rdbhost');
+			$('#xmlentry').submit(function () {
+				var q = $('#q').val();
+				var arg0 = $('#arg000').val();
+				var res = rdb.query({	'callback': dumppre, // success,
+															'q': q,
+															'args': [arg0],
+															'plainTextJson': true	})
+				return false;
+			});
+		})
+		</script>
+  </head>
+  <body>
+    <div class="main">
+      <div class="titlebar"><a href="/" class="smtitle">RdbHost</a></div>
+      <div class="supertextarea">
+				<div class="textareatop"><a href="/mbr">profile</a></div>
+				<div class="textarea">
+					<form method="post" action="/db1" name="xmlentry" id="xmlentry"
+								enctype="multipart/form-data">	    
+						<p class="help">Enter SQL query here.  Use %s for parameter substitution.</p>
+						<span >q:</span>
+						<textarea name="q" id="q" rows="8" cols="80" style="vertical-align:text-top"> </textarea><br/>
+						
+						<p class="help">Enter SQL parameters here.  Provide one for each %s above.</p>
+						arg000: <input type="text" style="display:inline" name="arg000" id="arg000" size="30" /><br />
+						arg001: <input type="text" style="display:inline" name="arg001" id="arg001" size="30" /><br />
+						arg002: <input type="text" style="display:inline" name="arg002" id="arg002" size="30" /><br />
+						arg003: <input type="text" style="display:inline" name="arg003" id="arg003" size="30" /><br />
+			
+						<input type="hidden" name="format" value="json" />
+						<br/>
+						<input type="submit" name="Do it!" value="Do it!" /><br/>
+					</form>
+				</div>
+				<div id="dump"></div>
+				<div class="textareabottom"> </div>
+      </div>
+      <div class="footer">
+				<a href="contents.html">Contents</a>
+				<a href="qna.html">QnA</a>
+				<a href="http://rdbhost.blogspot.com">Blog</a>
+				<a href="tos.html">Terms of Service</a>
+				<a href="about.html">About</a>
+				<br/>
+				<a href="http://rdbhost.uservoice.com">Uservoice</a>
+				<a href="mailto:dkeeney@rdbhost.com">dkeeney@rdbhost.com</a>
+      </div>
+    </div>
+    <script type="text/javascript">
+      var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+      document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+    </script>
+    <script type="text/javascript">
+      try{
+      var pageTracker = _gat._getTracker("UA-9284496-1");
+      pageTracker._trackPageview();
+      } catch(err) {}
+    </script>
+  </body>
+</html>
