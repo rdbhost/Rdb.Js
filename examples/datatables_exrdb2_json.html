@@ -13,32 +13,41 @@
 		<script type="text/javascript" language="javascript" src="datatables/js/jquery.dataTables.js"></script>
     <script language="javascript" type="text/javascript" src="../js/rdb.js"></script>
 		<script language="javascript" type="text/javascript">
-		$(document).ready(function () {
-			var rdb = new SQLEngine("r0000000002","-",'rdbhost');
-			var q = 'SELECT * FROM css_data';
-			function getData(sSource, aoData, fnCallback) {
-				function cBack(json) {
-					var newJson = {'aaData': json.records.rows};
-					fnCallback(newJson);
+	  $(document).ready(function () {
+      var rdb = new SQLEngine("r0000000002","-",'rdbhost');
+      var q = 'SELECT * FROM css_data';
+			function nameColumns(hdr) {
+				var cols = [];
+				for (var i=0; i<hdr.length; i++) {
+					cols[i] = { "sTitle" : hdr[i][1] };
 				}
-				var res = rdb.query({	'callback': cBack,
-														  'errback': alert,
-															'q': q	 })
+				return cols;
 			}
-			$('#dynamic').html( '<table cellpadding="0" cellspacing="0" border="0" '+
-												  'class="display" id="example"><\/table>' );
-			$('#example').dataTable( {
-				"sAjaxSource": "/space/holder",
-				"aoColumns": [
-					{ "sTitle": "Engine" },
-					{ "sTitle": "Browser" },
-					{ "sTitle": "Platform" },
-					{ "sTitle": "Version", "sClass": "center" },
-					{ "sTitle": "Grade" }
-				],
-				"fnServerData": getData,
-			} );	
-		})
+      function getData(sSource, aoData, fnCallback) {
+        function cBack(json) {
+          var newJson = {'aaData': json.records.rows};
+          fnCallback(newJson);
+        }
+        var res = rdb.query({  'callback': cBack,
+                              'errback': alert,
+                              'q': q   })
+      }
+      $('#dynamic').html( '<table cellpadding="0" cellspacing="0" border="0" '+
+                          'class="display" id="example"><\/table>' );
+      $('#example').dataTable( {
+        "sAjaxSource": "/space/holder",
+        "aoColumns": [
+          { "sTitle": "Engine" },
+          { "sTitle": "Browser" },
+          { "sTitle": "Platform" },
+          { "sTitle": "Version", "sClass": "center" },
+          { "sTitle": "Grade" }
+        ],
+        "fnServerData": getData,
+        "bPaginate": false,
+        "bLengthChange": false
+      } );  
+    })
 		</script>
 	</head>
 	<body id="dt_example">
@@ -55,26 +64,34 @@
 			<div class="spacer"></div>
 			
 			<h1>Initialisation code</h1>
-	    <pre>function success(json) {
-      $('#example').dataTable( {
-        "aaData": json.records.rows,
-        "aoColumns": [
-          { "sTitle": "Engine" },
-          { "sTitle": "Browser" },
-          { "sTitle": "Platform" },
-          { "sTitle": "Version", "sClass": "center" },
-          { "sTitle": "Grade", "sClass": "center" }
-        ]
-      } );  
+	    <pre>$(document).ready(function () {
+  var rdb = new SQLEngine("r0000000002","-",'rdbhost');
+  var q = 'SELECT * FROM css_data';
+  function getData(sSource, aoData, fnCallback) {
+    function cBack(json) {
+      var newJson = {'aaData': json.records.rows};
+      fnCallback(newJson);
     }
-    $(document).ready(function () {
-      var rdb = new SQLEngine("r0000000002","-",'rdbhost');
-      $('#dynamic').html( '&gt;table cellpadding="0" cellspacing="0" border="0" '+
-                          'class="display" id="example"><\/table>' );
-      var q = 'SELECT * FROM css_data';
-      var res = rdb.query({  'callback': success,
-                             'q': q	 })
-    })
+    var res = rdb.query({ 'callback': cBack,
+                          'errback': alert,
+                          'q': q   })
+  }
+  $('#dynamic').html( '&lt;table cellpadding="0" cellspacing="0" border="0" '+
+                      'class="display" id="example">&lt;'\/table>' );
+  $('#example').dataTable( {
+    "sAjaxSource": "/space/holder",
+    "aoColumns": [
+      { "sTitle": "Engine" },
+      { "sTitle": "Browser" },
+      { "sTitle": "Platform" },
+      { "sTitle": "Version", "sClass": "center" },
+      { "sTitle": "Grade" }
+    ],
+    "fnServerData": getData,
+    "bPaginate": false,
+    "bLengthChange": false
+  } );  
+})
 </pre>
 			
 			<p>Please refer to the <a href="http://www.datatables.net/"><i>DataTables</i> documentation</a> for full information about its API properties and methods.</p>

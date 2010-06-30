@@ -23,7 +23,7 @@
 					{ "sTitle": "Version", "sClass": "center" },
 					{ "sTitle": "Grade" }
 				],
-				"bPaginate": true,
+				"bPaginate": false,
 				"bLengthChange": false
 			} );	
 		}
@@ -52,25 +52,27 @@
 			
 			<h1>Initialisation code</h1>
 	    <pre>function success(json) {
-      $('#example').dataTable( {
-        "aaData": json.records.rows,
-        "aoColumns": [
-          { "sTitle": "Engine" },
-          { "sTitle": "Browser" },
-          { "sTitle": "Platform" },
-          { "sTitle": "Version", "sClass": "center" },
-          { "sTitle": "Grade", "sClass": "center" }
-        ]
-      } );  
-    }
-    $(document).ready(function () {
-      var rdb = new SQLEngine("r0000000002","-",'rdbhost');
-      $('#dynamic').html( '&gt;table cellpadding="0" cellspacing="0" border="0" '+
-                          'class="display" id="example"><\/table>' );
-      var q = 'SELECT * FROM css_data';
-      var res = rdb.query({  'callback': success,
-                             'q': q	 })
-    })
+  $('#example').dataTable( {
+    "aaData": json.records.rows,
+    "aoColumns": [
+      { "sTitle": "Engine" },
+      { "sTitle": "Browser" },
+      { "sTitle": "Platform" },
+      { "sTitle": "Version", "sClass": "center" },
+      { "sTitle": "Grade", "sClass": "center" }
+    ],
+				"bPaginate": false,
+				"bLengthChange": false
+  } );  
+}
+$(document).ready(function () {
+  var rdb = new SQLEngine("r0000000002","-",'rdbhost');
+  $('#dynamic').html( '&gt;table cellpadding="0" cellspacing="0" border="0" '+
+                      'class="display" id="example"><\/table>' );
+  var q = 'SELECT * FROM css_data';
+  var res = rdb.query({  'callback': success,
+                         'q': q	 })
+})
 </pre>
 			
 			<p>Please refer to the <a href="http://www.datatables.net/"><i>DataTables</i> documentation</a> for full information about its API properties and methods.</p>
