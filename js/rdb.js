@@ -65,13 +65,13 @@ function SQLEngine(uName,authcode,subdomain)
 			}
 		}
 		// local callbacks to do cleanup prior to 'real' callback
-		function qErrback(err) {
+		function qErrback(err,msg) {
 			// if frame loaded by 'back button', skip over it
 			if (!iframe_requested)
 				parent.history.back();
 			iframe_requested = false;
 			$hiddenform.remove();
-			errback(err);
+			errback(err,msg);
 		}
 		function qCallback(json) {
 			// if frame loaded by 'back button', skip over it
@@ -117,13 +117,14 @@ function SQLEngine(uName,authcode,subdomain)
 	
 	
 	this.queryRows = function(parms)
-	/* parms is just like query, but callback gets row array,
+	/* parms is just like query, but callback gets row array, and header dict
 	   not whole data structure
 	*/
 	{
 		function cb(json) {
 			var rows = json.records.rows || [];
-			callback(rows);
+			var header = json.records.header || [];
+			callback(rows,header);
 		}
 		var callback = parms['callback'];
 		parms['callback'] = cb;
@@ -244,6 +245,10 @@ function SQLEngine(uName,authcode,subdomain)
 	};
 
 	this.login = function(email,passwd)
+	/*
+	   logs in with email and password.  If on www.rdbhost.com and user logged
+	   in to rdbhost account, email/password are optional.
+	*/
 	{
 		var stat;
         var jsloginUrl = this.getLoginUrl();
@@ -266,9 +271,6 @@ function SQLEngine(uName,authcode,subdomain)
 						stat = false;
                 	}
                 	else if (d['status'][0] == 'complete') {
-                		//this.sqlEngine.userName = d['roles']['s'][0];
-                		//this.sqlEngine.password = d['roles']['s'][1];
-                        //$('#currentUserName').html(this.sqlEngine.userName);
 						stat = d['roles'];
                 	}
                 	else {
