@@ -1,4 +1,4 @@
-// mon 22:25
+// sun 12:05
 
 // to add hidden field to form
 function add_hidden_field($form,nm,val) {
@@ -20,17 +20,15 @@ function SQLEngine(uName,authcode,subdomain)
 	this.subdomain = subdomain || 'rdbhost';
 	this.formnamectr = 0;
 	
-	this.getQueryUrl = function() {
+	this.getQueryUrl = function(altPath) {
 		var proto = window.location.protocol;
 		var hparts = window.location.hostname.split('.').slice(-2);
 		hparts.unshift(this.subdomain);
-		return proto+'//'+hparts.join('.')+'/db/'+this.userName;
+		if (!altPath) altPath = '/db/'+this.userName;
+		return proto+'//'+hparts.join('.')+altPath;
 	}
 	this.getLoginUrl = function() {
-		var proto = window.location.protocol;
-		var hparts = window.location.hostname.split('.').slice(-2);
-		hparts.unshift(this.subdomain);
-		return proto+'//'+hparts.join('.')+'/mbr/login';
+		return this.getQueryUrl('/mbr/login');
 	}
 	this.getCommonDomain = function() {
 		var hparts = window.location.hostname.split('.').slice(-2);
@@ -49,7 +47,7 @@ function SQLEngine(uName,authcode,subdomain)
 	             returning the JSON plaintext
 	*/
 	{
-		var callback = parms['callback']
+		var callback = parms['callback'];
 		var errback = parms['errback'];
 		var query = parms['q'];
 		var kw = parms['kw'];
@@ -108,7 +106,10 @@ function SQLEngine(uName,authcode,subdomain)
 		$hiddenform.unbind('submit');
 		$hiddenform.submit(function () {
 			iframe_requested = true;
-			var res = $this.queryByForm(formId,qCallback,qErrback,plainText);
+			var res = $this.queryByForm({ 'formId' : formId,
+										  'callback' : qCallback,
+										  'errback' : qErrback,
+										  'plainTextJson' : plainText });
 			return res;
 		});
 		// submit the hidden form
@@ -132,13 +133,20 @@ function SQLEngine(uName,authcode,subdomain)
 	};
 	
 	
-	this.queryByForm = function(formId,callback,errback,plainTextJson)
-	/* formId : id of form with query params
-	    callback is function to call with json if success
-	    errback (optional) is function to call with error
-	    plainTextJson indicates to return Json as text, not parsed (default false)
+	this.queryByForm = function(parms)
+	/* parms is object containing various options
+  	    formId : the id of the form with the data
+	    callback : function to call with data from successfull query
+	    errback : function to call with error object from query failure
+	    plainTextJson : true if JSON parsing to be skipped, in lieu of
+	             returning the JSON plaintext
 	*/
 	{
+		var callback = parms['callback'];
+		var errback = parms['errback'];
+		var formId = parms['formId'];
+		var plainTextJson = parms['plainTextJson'];
+		
 		var $this = this;
 		var targettag = 'upload_target'+formId;
 		// get form, return if not found
@@ -159,8 +167,10 @@ function SQLEngine(uName,authcode,subdomain)
 		function results_loaded(callback,errback) {
 			//
 			var $fr = $(frames[targettag].document);
+/*			alert('frame domain: '+frames[targettag].document.domain);
 			try {
 				frames[targettag].document.domain = $this.getCommonDomain();
+				alert('frame domain: '+frames[targettag].document.domain);
 			}
 			catch (err) {
 				if ( /not set property 'dom/i.test(err.toString()) ) {
@@ -173,13 +183,13 @@ function SQLEngine(uName,authcode,subdomain)
 					return;
 				}
 			}
-			if ($fr.length === 0) alert('target "~" iframe document not found'
+*/			if ($fr.length === 0) alert('target "~" iframe document not found'
 									     .replace('~',targettag));
 			var cont = $.trim($fr.find('body script').html());
 			var json_result, stat;
 			if ( cont ) {
-				cont = cont.replace(/^\s*<pr[^>]+>/i,''); // remove opening pre
-				cont = cont.replace(/<[/]pr[^>]+\s*>$/i,''); // remove end pre
+				//cont = cont.replace(/^\s*<pr[^>]+>/i,''); // remove opening pre
+				//cont = cont.replace(/<[/]pr[^>]+\s*>$/i,''); // remove end pre
 				if (cont.substr(0,1)==='{') {
 					if ( plainTextJson ) {
 						callback(cont);
@@ -288,73 +298,99 @@ function SQLEngine(uName,authcode,subdomain)
 		return stat;
 	};
 
-	this.queryAjax = function(callback,errback,query,args,argtypes)
+
+	this.loginByForm = function(formId,callback,errback,plainTextJson)
+	/* formId : id of form with login params
+	    callback is function to call with json if success
+	    errback (optional) is function to call with error
+	    plainTextJson indicates to return Json as text, not parsed (default false)
+	*/
 	{
-		var result;
-		var json_result;
-		var result;
-		if ( typeof(errback) !== 'function' ) {
-			argypes = args;
-			args = query;
-			query = errback;
-			errback = alert;
-		}
-
-		var dbUrl =  this.getQueryUrl(); //"/db/" + this.userName;
-
-		var params = {	q: query,
-						authcode: this.authcode,
-						format:this.format,
-						u: this.userName	};
-		// if params are provided, convert to named form 'arg000', 'arg001'...
-		if (args != undefined) {
-			for ( var i=0; i<args.length; i++ ) {
-				num = '000'+i;
-				nm = 'arg'+num.substr(num.length-3);
-				val = args[i];
-				params[nm] = val;
+		var $this = this;
+		var targettag = 'upload_target'+formId;
+		// get form, return if not found
+		var $form = $('#'+formId);
+		if ($form.length<1) {
+			alert('form '+formId+' not found');
+			return false;
+		};
+		// define default errback
+		if (errback === undefined) {
+			errback = function () {
+				var arg2 = Array.apply(null,arguments);
+				alert(arg2.join(', '));
 			}
 		}
-		$.ajax({
-			type: "POST",
-			url: dbUrl,
-			data: params,
-			async: true,
-			dataType: "json",
-			success: function(json_result,stat,XHR) {
-				var result;
-				if (json_result === null || json_result === ''
-					                    || json_result === undefined) {
-					result = {status:['error','Incomplete result'],
-							  error:['error','Recieved an empty response or timeout occured.']};
-					errback(result.status[1]);
-				}
-				else {
-					if (json_result.status[0] == 'error') {
-						errback(json_result.status[1]);
-						return;
+		// function to handle json when loaded		
+		function results_loaded(callback,errback) {
+			//
+			var $fr = $(frames[targettag].document);
+			if ($fr.length === 0) alert('target "~" iframe document not found'
+									     .replace('~',targettag));
+			var cont = $.trim($fr.find('body script').html());
+			var json_result, stat;
+			if ( cont ) {
+				if (cont.substr(0,1)==='{') {
+					if ( plainTextJson ) {
+						callback(cont);
 					}
 					else {
-						result = new Array();
-						if (json_result.row_count[0] != 0) {
-							for (var i in json_result.records.rows) {
-								result.push(json_result.records.rows[i]);
-							}
+						try {
+							json_result = JSON.parse(cont);
 						}
-						callback(result)
+						catch(err) {
+							errback('json err: '+err.toString());
+							return;
+						}
+						if (json_result.status[0] === 'error') {
+							errback(json_result.status[1],json_result.error[1]);
+						}
+						else {
+							callback(json_result);
+						};
 					}
 				}
-			},
-			error : function(XHR,stat,err) {
-				if ( errback ) {
-					errback(stat);
-				}
 				else {
-					alert('error: '+stat);
+					errback('not json '+cont.substr(0,3));
 				}
 			}
-		});
-	}
+			else {
+				errback('no content');
+			}
+		}
+		// function to cleanup after data recieved
+		function cleanup_submit(formtag) {
+			var $form = $('#'+formtag);
+			$form.find('.to-remove-later').remove();
+			$form.attr('target',target);  // restore saved target,action
+			$form.attr('action',action);
+			$('#'+targettag).remove();
+		};
+		// init vars
+		var dbUrl =  this.getLoginUrl(); 
+		//dbUrl = "http://rdbhost.paginaswww.com/helloalert.html";
+		var target = $form.attr('target'); // save vals
+		var action = $form.attr('action');
+		// set format, action, and target
+		add_hidden_field($form,'format','jsond');
+		$form.attr('target',targettag);
+		$form.attr('action',dbUrl);
+		// add hidden iframe to end of body
+		var iframeTxt = '<iframe id="~tt~" name="~tt~" src="" style="display:none;" ></iframe>';
+		if ( $('#'+targettag).length === 0 ) {
+			iframeTxt = iframeTxt.replace(/~tt~/g,targettag);
+			$('body').append($(iframeTxt));
+			// bind action functions to hidden iframe
+			$('#'+targettag).load(function() {
+				results_loaded(callback,errback);
+				cleanup_submit(formId);
+			});
+		}
+		var winDomain = window.document.domain;
+		window.document.domain = this.getCommonDomain();
+		//alert('new windocdom: '+window.document.domain);
+		return true;
+	};
 	
 } // end of SQLEngine class
 
