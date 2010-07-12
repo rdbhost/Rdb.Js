@@ -1,0 +1,130 @@
+<html>
+<head>
+  <title>Test page for Rdbhost API</title>
+	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.js"></script>
+	<script type="text/javascript" src="../rdb/js/rdb.js"></script>
+  <script type="text/javascript">
+    function success (data) {
+      var stat = data.status[0];
+      if (stat === 'error')
+        alert('stat '+stat);
+      alert('rec ct: '+data.records.rows.length);
+    }
+    function successPT (data) {
+      alert(data);
+    }
+		function fail(err) {
+			alert('fail: '+err.toString());
+		}
+    var u = 's0000000002',
+        pw = 'qTPJ2yT8VME4QfJDmhgCZXkjzXqrMkmIPwmOEaUqV1Kxdty12Q';
+    var rdbh = new SQLEngine(u,pw);
+    $(document).ready(function () {
+      $('button#form-submit').click(function () {
+        var qres = rdbh.queryByForm(	{ 'formId' : 'apiform',
+																			  'callback' : success,
+														            'errback' : fail,
+																				'plainTextJson' : false });
+				return true; //qres;
+      });
+      $('button#form1-submit').click(function () {
+        var $form, q, arg0, arg1, args, argts;
+        $form = $('#apiform1');
+        q = $form.find('#q-not').val();
+        arg0 = $form.find('#arg000-not').val();
+        arg1 = $form.find('#arg001-not').val();
+        args = [arg0,arg1];
+        argts = ['NUMBER','NUMBER'];
+        rdbh.query({ 'q' : q,
+									   'args' : args,
+										 'argtypes' : argts,
+										 'callback' : successPT,
+										 'errback' : alert,
+										 'plainTextJson' : true });
+				return false;
+      });
+      $('button#edit-panel-save-btn').click(function () {
+        var $form, q, arg0, arg1, args, argts;
+        $form = $('#edit-record-panel-form');
+        if ( $form.find('#q').length == 0 ) {
+          q = $('<input name="q" id="q" value="SELECT 1" />');
+          $form.append(q);
+        }
+        rdbh.queryByForm( { 'formId' : 'edit-record-panel-form',
+												    'callback' : successPT,
+														'errback' : fail,
+														'plainTextJson' : true  });
+				return true;
+      });
+    });
+  </script>
+</head>
+<body>
+  <form action='ABCact' target="ABCtar" method="post" id="apiform" enctype="multipart/form-data" >
+  Form<br />
+  <textarea name="q" id="q" cols="45" rows="4"> </textarea><br />
+  <input type="text" name="arg000" id="arg000" />
+  <input type="file" name="arg001" id="arg001" />
+  <button type="submit" name="DoIt" id="form-submit">DoIt</button>
+  </form>
+  <hr />
+
+  <form action='DEF' target="DEFtar" method="post" id="apiform1" enctype="multipart/form-data" >
+  Hidden Form<br />
+  <textarea name="q-not" id="q-not" cols="45" rows="4"> </textarea><br />
+  <input type="text" name="arg000-not" id="arg000-not" />
+  <input type="text" name="arg001-not" id="arg001-not" />
+  </form>
+  <button type="submit" name="DoIt" id="form1-submit">DoIt</button>  
+  <hr />
+  
+  <div class="content-panel" id="edit-record-panel">
+    <form action='' method='post' id='edit-record-panel-form' enctype="multipart/form-data" >
+      <table cellspacing="0" cellpadding="2" border="0" id="edit-rec-table" summary="edit rec">
+        <tr>
+          <th id="colname"></th>
+          <td>
+            <input id="colval_file" type="file" style="display:none" />
+            <input id="colval_text" type="text" style="display:inline" />
+            <button type="button">file</button>
+            <input type="hidden" id="colchanged" value="" />
+            <input id="coltype" type="hidden" />
+          </td>
+        </tr>
+        <tr>
+          <th id="colname0">Zero</th>
+          <td>
+            <input id="colval_file0" type="file" style="display:none" />
+            <input id="colval_text0" type="text" style="display:inline" name="arg000" />
+            <button type="button">file</button>
+            <input type="hidden" id="colchanged0" value="" />
+            <input id="coltype0" type="hidden" />
+          </td>
+        </tr>
+        <tr>
+          <th id="colname1">One</th>
+          <td>
+            <input id="colval_file1" type="file" style="display:none" />
+            <input id="colval_text1" type="text" style="display:inline" name="arg001" />
+            <button type="button">file</button>
+            <input type="hidden" id="colchanged1" value="" />
+            <input id="coltype1" type="hidden" />
+          </td>
+        </tr>
+      </table>
+	    <button type="submit" id='edit-panel-save-btn'>Save</button>
+    </form>
+
+		<form action='GHI' target="GHItar" method="post" id="apiform3" enctype="multipart/form-data" >
+			Login Form<br />
+			<input type="text" name="email" id="email" />
+			<input type="text" name="password" id="password" />
+			<button type="submit" name="Log-me-in" id="form3-submit">DoIt</button>  
+		</form>
+		<hr />
+
+  </div>
+  <hr />
+  
+</body>
+</html>

@@ -299,13 +299,24 @@ function SQLEngine(uName,authcode,subdomain)
 	};
 
 
-	this.loginByForm = function(formId,callback,errback,plainTextJson)
-	/* formId : id of form with login params
-	    callback is function to call with json if success
-	    errback (optional) is function to call with error
-	    plainTextJson indicates to return Json as text, not parsed (default false)
+/* loginByForm on hold pending decision on how to accomodate https/http
+   consistency requirement.
+*/
+
+	this.loginByForm = function(parms)
+	/* parms is object containing various options
+  	    formId : the id of the form with the data
+	    callback : function to call with data from successfull query
+	    errback : function to call with error object from query failure
+	    plainTextJson : true if JSON parsing to be skipped, in lieu of
+	             returning the JSON plaintext
 	*/
 	{
+		var callback = parms['callback'];
+		var errback = parms['errback'];
+		var formId = parms['formId'];
+		var plainTextJson = parms['plainTextJson'];
+		
 		var $this = this;
 		var targettag = 'upload_target'+formId;
 		// get form, return if not found
@@ -368,7 +379,6 @@ function SQLEngine(uName,authcode,subdomain)
 		};
 		// init vars
 		var dbUrl =  this.getLoginUrl(); 
-		//dbUrl = "http://rdbhost.paginaswww.com/helloalert.html";
 		var target = $form.attr('target'); // save vals
 		var action = $form.attr('action');
 		// set format, action, and target
