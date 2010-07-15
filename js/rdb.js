@@ -5,7 +5,7 @@ function add_hidden_field($form,nm,val) {
 	var fld = $('<input type="hidden" class="to-remove-later" />');
 	fld.attr('name',nm).val(val);
 	$form.append(fld);
-};
+}
 
 
 // SQL Engine that uses form for input, and hidden iframe for response
@@ -24,16 +24,16 @@ function SQLEngine(uName,authcode,subdomain)
 		var proto = window.location.protocol;
 		var hparts = window.location.hostname.split('.').slice(-2);
 		hparts.unshift(this.subdomain);
-		if (!altPath) altPath = '/db/'+this.userName;
+		if (!altPath) { altPath = '/db/'+this.userName; }
 		return proto+'//'+hparts.join('.')+altPath;
-	}
+	};
 	this.getLoginUrl = function() {
 		return this.getQueryUrl('/mbr/login');
-	}
+	};
 	this.getCommonDomain = function() {
 		var hparts = window.location.hostname.split('.').slice(-2);
 		return hparts.join('.');
-	}
+	};
 
 	this.query = function(parms) //callback,errback,query,args,argtypes)
 	/* parms is object containing various options
@@ -47,43 +47,45 @@ function SQLEngine(uName,authcode,subdomain)
 	             returning the JSON plaintext
 	*/
 	{
-		var callback = parms['callback'];
-		var errback = parms['errback'];
-		var query = parms['q'];
-		var kw = parms['kw'];
-		var args = parms['args'] || [];
-		var argtypes = parms['argtypes'] || [];
-		var plainText = parms['plainTextJson'];
+		var callback = parms.callback;
+		var errback = parms.errback;
+		var query = parms.q;
+		var kw = parms.kw;
+		var args = parms.args || [];
+		var argtypes = parms.argtypes || [];
+		var plainText = parms.plainTextJson;
 		
+		var iframe_requested = false;
+		var $this = this;
+		var formId = 'rdb_hidden_form_rdb_hidden_form_rdb'+(++$this.formnamectr);
+		var $hiddenform = $('#'+formId);
 		// define default errback
 		if (errback === undefined) {
 			errback = function () {
 				var arg2 = Array.apply(null,arguments);
 				alert(arg2.join(', '));
-			}
+			};
 		}
 		// local callbacks to do cleanup prior to 'real' callback
 		function qErrback(err,msg) {
 			// if frame loaded by 'back button', skip over it
-			if (!iframe_requested)
+			if (!iframe_requested) {
 				parent.history.back();
+			}
 			iframe_requested = false;
 			$hiddenform.remove();
 			errback(err,msg);
 		}
 		function qCallback(json) {
 			// if frame loaded by 'back button', skip over it
-			if (!iframe_requested)
+			if (!iframe_requested) {
 				parent.history.back();
+			}
 			iframe_requested = false;
 			$hiddenform.remove();
 			callback(json);
 		}
-		var $this = this;
 		// create hidden form if necessary
-		var formId = 'rdb_hidden_form_rdb_hidden_form_rdb'+(++$this.formnamectr);
-		var $hiddenform = $('#'+formId);
-		var iframe_requested = false;
 		if ( $hiddenform.length < 1 ) {
 			var $newform = $(('<form method="post" name="~~id~~" id="~~id~~"'+
 							  ' enctype="multipart/form-data" style="display:none">'+
@@ -95,7 +97,7 @@ function SQLEngine(uName,authcode,subdomain)
 		add_hidden_field($hiddenform,'q',query);
 		add_hidden_field($hiddenform,'kw',kw);
 		// if params are provided, convert to named form 'arg000', 'arg001'...
-		if (args != undefined) {
+		if (args !== undefined) {
 			for ( var i=0; i<args.length; i++ ) {
 				var num = '000'+i;
 				var nm = 'arg'+num.substr(num.length-3);
@@ -127,9 +129,9 @@ function SQLEngine(uName,authcode,subdomain)
 			var header = json.records.header || [];
 			callback(rows,header);
 		}
-		var callback = parms['callback'];
-		parms['callback'] = cb;
-		this.query(parms)
+		var callback = parms.callback;
+		parms.callback = cb;
+		this.query(parms);
 	};
 	
 	
@@ -142,25 +144,26 @@ function SQLEngine(uName,authcode,subdomain)
 	             returning the JSON plaintext
 	*/
 	{
-		var callback = parms['callback'];
-		var errback = parms['errback'];
-		var formId = parms['formId'];
-		var plainTextJson = parms['plainTextJson'];
+		var callback = parms.callback;
+		var errback = parms.errback;
+		var formId = parms.formId;
+		var plainTextJson = parms.plainTextJson;
 		
 		var $this = this;
 		var targettag = 'upload_target'+formId;
+		var target, action;
 		// get form, return if not found
 		var $form = $('#'+formId);
 		if ($form.length<1) {
 			alert('form '+formId+' not found');
 			return false;
-		};
+		}
 		// define default errback
 		if (errback === undefined) {
 			errback = function () {
 				var arg2 = Array.apply(null,arguments);
 				alert(arg2.join(', '));
-			}
+			};
 		}
 
 		// function to handle json when loaded		
@@ -183,8 +186,9 @@ function SQLEngine(uName,authcode,subdomain)
 					return;
 				}
 			}
-*/			if ($fr.length === 0) alert('target "~" iframe document not found'
-									     .replace('~',targettag));
+*/			if ($fr.length === 0) {
+				alert('target "~" iframe document not found'.replace('~',targettag));
+			}
 			var cont = $.trim($fr.find('body script').html());
 			var json_result, stat;
 			if ( cont ) {
@@ -207,7 +211,7 @@ function SQLEngine(uName,authcode,subdomain)
 						}
 						else {
 							callback(json_result);
-						};
+						}
 					}
 				}
 				else {
@@ -225,12 +229,12 @@ function SQLEngine(uName,authcode,subdomain)
 			$form.attr('target',target);  // restore saved target,action
 			$form.attr('action',action);
 			$('#'+targettag).remove();
-		};
+		}
 		// init vars
 		var dbUrl =  this.getQueryUrl(); 
 		//dbUrl = "http://rdbhost.paginaswww.com/helloalert.html";
-		var target = $form.attr('target'); // save vals
-		var action = $form.attr('action');
+		target = $form.attr('target'); // save vals
+		action = $form.attr('action');
 		// put password into form
 		add_hidden_field($form,'authcode', this.authcode);
 		// set format, action, and target
@@ -272,26 +276,26 @@ function SQLEngine(uName,authcode,subdomain)
                 dataType: "json",
                 success: function(d)
                 {
-                	if (d == null || d == '' || d == undefined) {
+                	if (d === null || d === '' || d === undefined) {
                 		alert('login failed: timeout');
 						stat = false;
                 	}
-                	else if (d['status'][0] == 'error') {
-                		alert('login db failed: '+d['status'][1]);
+                	else if (d.status[0] === 'error') {
+                		alert('login db failed: '+d.status[1]);
 						stat = false;
                 	}
-                	else if (d['status'][0] == 'complete') {
-						stat = d['roles'];
+                	else if (d.status[0] === 'complete') {
+						stat = d.roles;
                 	}
                 	else {
-                		alert('wonkers! status: '+d['status'][0]);
+                		alert('wonkers! status: '+d.status[0]);
 						stat = false;
                 	}
                 },
                 error: function(xhr,errtype,exc)
                 {
                 	// set page location elsewhere
-                	alert('login connect failed: '+errtype)
+                	alert('login connect failed: '+errtype);
 					stat = false;
                 }
 		});
@@ -312,10 +316,10 @@ function SQLEngine(uName,authcode,subdomain)
 	             returning the JSON plaintext
 	*/
 	{
-		var callback = parms['callback'];
-		var errback = parms['errback'];
-		var formId = parms['formId'];
-		var plainTextJson = parms['plainTextJson'];
+		var callback = parms.callback;
+		var errback = parms.errback;
+		var formId = parms.formId;
+		var plainTextJson = parms.plainTextJson;
 		
 		var $this = this;
 		var targettag = 'upload_target'+formId;
@@ -324,20 +328,21 @@ function SQLEngine(uName,authcode,subdomain)
 		if ($form.length<1) {
 			alert('form '+formId+' not found');
 			return false;
-		};
+		}
 		// define default errback
 		if (errback === undefined) {
 			errback = function () {
 				var arg2 = Array.apply(null,arguments);
 				alert(arg2.join(', '));
-			}
+			};
 		}
 		// function to handle json when loaded		
 		function results_loaded(callback,errback) {
 			//
 			var $fr = $(frames[targettag].document);
-			if ($fr.length === 0) alert('target "~" iframe document not found'
-									     .replace('~',targettag));
+			if ($fr.length === 0) {
+				alert('target "~" iframe document not found'.replace('~',targettag));
+			}
 			var cont = $.trim($fr.find('body script').html());
 			var json_result, stat;
 			if ( cont ) {
@@ -358,7 +363,7 @@ function SQLEngine(uName,authcode,subdomain)
 						}
 						else {
 							callback(json_result);
-						};
+						}
 					}
 				}
 				else {
@@ -376,7 +381,7 @@ function SQLEngine(uName,authcode,subdomain)
 			$form.attr('target',target);  // restore saved target,action
 			$form.attr('action',action);
 			$('#'+targettag).remove();
-		};
+		}
 		// init vars
 		var dbUrl =  this.getLoginUrl(); 
 		var target = $form.attr('target'); // save vals
