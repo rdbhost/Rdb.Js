@@ -37,14 +37,14 @@ function SQLEngine(uName,authcode,subdomain)
 
 	this.query = function(parms) //callback,errback,query,args,argtypes)
 	/* parms is object containing various options
-	    callback : function to call with data from successfull query
-	    errback : function to call with error object from query failure
-  	    q : the query string itself
-	    args : array of arguments (optional), must correspond with %s tokens
-	          in query
-	    argtypes : array of python DB API types, one per argument
-	    plainTextJson : true if JSON parsing to be skipped, in lieu of
-	             returning the JSON plaintext
+		callback : function to call with data from successfull query
+		errback : function to call with error object from query failure
+		q : the query string itself
+		args : array of arguments (optional), must correspond with %s tokens
+			  in query
+		argtypes : array of python DB API types, one per argument
+		plainTextJson : true if JSON parsing to be skipped, in lieu of
+				 returning the JSON plaintext
 	*/
 	{
 		var callback = parms.callback;
@@ -57,7 +57,7 @@ function SQLEngine(uName,authcode,subdomain)
 		
 		var iframe_requested = false;
 		var $this = this;
-		var formId = 'rdb_hidden_form_rdb_hidden_form_rdb'+(++$this.formnamectr);
+		var formId = 'rdb_hidden_form_rdb_hidden_form_rdb'+($this.formnamectr+=1);
 		var $hiddenform = $('#'+formId);
 		// define default errback
 		if (errback === undefined) {
@@ -98,7 +98,7 @@ function SQLEngine(uName,authcode,subdomain)
 		add_hidden_field($hiddenform,'kw',kw);
 		// if params are provided, convert to named form 'arg000', 'arg001'...
 		if (args !== undefined) {
-			for ( var i=0; i<args.length; i++ ) {
+			for ( var i=0; i<args.length; i+=1 ) {
 				var num = '000'+i;
 				var nm = 'arg'+num.substr(num.length-3);
 				add_hidden_field($hiddenform,nm,args[i]);
@@ -120,16 +120,25 @@ function SQLEngine(uName,authcode,subdomain)
 	
 	
 	this.queryRows = function(parms)
-	/* parms is just like query, but callback gets row array, and header dict
-	   not whole data structure
+	/* parms is just like query, but callback gets row array and header array,
+	   not whole data structure.
+	   an additional param is 'incomplete', a function that is called
+		 (with rows and header) when data set is truncated by 100 record limit
 	*/
 	{
+		var callback = parms.callback;
+		var incomplete_callback = parms.incomplete || callback;
 		function cb(json) {
 			var rows = json.records.rows || [];
+			var status = json.status[0];
 			var header = json.records.header || [];
-			callback(rows,header);
+			if (status === 'complete') {
+				callback(rows,header);				
+			}
+			else if (status === 'incomplete') {
+				incomplete_callback(rows,header);
+			}
 		}
-		var callback = parms.callback;
 		parms.callback = cb;
 		this.query(parms);
 	};
@@ -137,11 +146,11 @@ function SQLEngine(uName,authcode,subdomain)
 	
 	this.queryByForm = function(parms)
 	/* parms is object containing various options
-  	    formId : the id of the form with the data
-	    callback : function to call with data from successfull query
-	    errback : function to call with error object from query failure
-	    plainTextJson : true if JSON parsing to be skipped, in lieu of
-	             returning the JSON plaintext
+		formId : the id of the form with the data
+		callback : function to call with data from successfull query
+		errback : function to call with error object from query failure
+		plainTextJson : true if JSON parsing to be skipped, in lieu of
+				 returning the JSON plaintext
 	*/
 	{
 		var callback = parms.callback;
@@ -170,23 +179,7 @@ function SQLEngine(uName,authcode,subdomain)
 		function results_loaded(callback,errback) {
 			//
 			var $fr = $(frames[targettag].document);
-/*			alert('frame domain: '+frames[targettag].document.domain);
-			try {
-				frames[targettag].document.domain = $this.getCommonDomain();
-				alert('frame domain: '+frames[targettag].document.domain);
-			}
-			catch (err) {
-				if ( /not set property 'dom/i.test(err.toString()) ) {
-					errback('iframe error: check that format is "jsond" '+
-							'and subdomain is set or "rdbhost"');
-					return;
-				}
-				else {
-					errback('iframe error: '+err.toString());
-					return;
-				}
-			}
-*/			if ($fr.length === 0) {
+			if ($fr.length === 0) {
 				alert('target "~" iframe document not found'.replace('~',targettag));
 			}
 			var cont = $.trim($fr.find('body script').html());
@@ -265,39 +258,39 @@ function SQLEngine(uName,authcode,subdomain)
 	*/
 	{
 		var stat;
-        var jsloginUrl = this.getLoginUrl();
+		var jsloginUrl = this.getLoginUrl();
 		alert('jsLogin url: '+jsloginUrl);
 
 		$.ajax({type: "POST",
 				url: jsloginUrl,
 				async: false,
-                data: {'password' : passwd,
-				       'email' : email },
-                dataType: "json",
-                success: function(d)
-                {
-                	if (d === null || d === '' || d === undefined) {
-                		alert('login failed: timeout');
+				data: {'password' : passwd,
+					   'email' : email },
+				dataType: "json",
+				success: function(d)
+				{
+					if (d === null || d === '' || d === undefined) {
+						alert('login failed: timeout');
 						stat = false;
-                	}
-                	else if (d.status[0] === 'error') {
-                		alert('login db failed: '+d.status[1]);
+					}
+					else if (d.status[0] === 'error') {
+						alert('login db failed: '+d.status[1]);
 						stat = false;
-                	}
-                	else if (d.status[0] === 'complete') {
+					}
+					else if (d.status[0] === 'complete') {
 						stat = d.roles;
-                	}
-                	else {
-                		alert('wonkers! status: '+d.status[0]);
+					}
+					else {
+						alert('wonkers! status: '+d.status[0]);
 						stat = false;
-                	}
-                },
-                error: function(xhr,errtype,exc)
-                {
-                	// set page location elsewhere
-                	alert('login connect failed: '+errtype);
+					}
+				},
+				error: function(xhr,errtype,exc)
+				{
+					// set page location elsewhere
+					alert('login connect failed: '+errtype);
 					stat = false;
-                }
+				}
 		});
 		return stat;
 	};
@@ -309,11 +302,11 @@ function SQLEngine(uName,authcode,subdomain)
 
 	this.loginByForm = function(parms)
 	/* parms is object containing various options
-  	    formId : the id of the form with the data
-	    callback : function to call with data from successfull query
-	    errback : function to call with error object from query failure
-	    plainTextJson : true if JSON parsing to be skipped, in lieu of
-	             returning the JSON plaintext
+		formId : the id of the form with the data
+		callback : function to call with data from successfull query
+		errback : function to call with error object from query failure
+		plainTextJson : true if JSON parsing to be skipped, in lieu of
+				 returning the JSON plaintext
 	*/
 	{
 		var callback = parms.callback;
@@ -322,13 +315,15 @@ function SQLEngine(uName,authcode,subdomain)
 		var plainTextJson = parms.plainTextJson;
 		
 		var $this = this;
-		var targettag = 'upload_target'+formId;
 		// get form, return if not found
 		var $form = $('#'+formId);
 		if ($form.length<1) {
 			alert('form '+formId+' not found');
 			return false;
 		}
+		var target = $form.attr('target'); // save vals
+		var action = $form.attr('action');
+		var targettag = 'upload_target'+formId;
 		// define default errback
 		if (errback === undefined) {
 			errback = function () {
@@ -384,8 +379,6 @@ function SQLEngine(uName,authcode,subdomain)
 		}
 		// init vars
 		var dbUrl =  this.getLoginUrl(); 
-		var target = $form.attr('target'); // save vals
-		var action = $form.attr('action');
 		// set format, action, and target
 		add_hidden_field($form,'format','jsond');
 		$form.attr('target',targettag);
