@@ -13,10 +13,16 @@
     <script language="javascript" type="text/javascript" src="../js/rdb.js"></script>
 		<script type="text/javascript" charset="utf-8">
 			$(document).ready(function() {
+				// create rdbhost sql engine object
 				var rdb = new SQLEngine("r0000000002","-",'rdbhost');
+				// getData is a callback for dataTables to fetch additional
+				//   data dynamically as user pages up/down
 				var q = 'SELECT count(*) FROM css_data; '+
 				        'SELECT * FROM css_data OFFSET ~~os~~ LIMIT ~~li~~';
 				function getData(sSource, aoData, fnCallback) {
+					// callback (with a callback) to format server data
+					//   to suit dataTables, and calls the dataTables callback
+					//  fnCallback with the reformed data
 					function cBack(json) {
 						var rows = json.result_sets[1].records.rows
 						var ct = json.result_sets[0].records.rows[0][0]
@@ -24,36 +30,52 @@
 												   'iTotalDisplayRecords' : ct };
 						fnCallback(newJson);
 					}
+					// extract row boundaries from input aoData
 					var iDisplayStart, iDisplayLength;
 					for (var i=0; i<aoData.length; i++) {
-						if (aoData[i].name === 'iDisplayStart')
+						if (aoData[i].name === 'iDisplayStart') {
 							iDisplayStart = aoData[i].value;
-						else if (aoData[i].name === 'iDisplayLength')
+						}
+						else if (aoData[i].name === 'iDisplayLength') {
 							iDisplayLength = aoData[i].value;							
+						}
 					}
-					//alert('offset: '+iDisplayStart);
-					//alert('limit: '+iDisplayLength);
-					var q0 = q.replace('~~os~~',iDisplayStart)
+					// embed row limits in query
+					var q0 = q.replace('~~os~~',iDisplayStart) 
 					          .replace('~~li~~',iDisplayLength);
-					var res = rdb.query({	'callback': cBack,
-																'errback': alert,
-																'q': q0	 })
+					// query server, and pass data to cBack
+					rdb.query({	'callback': cBack,
+											'errback': alert,
+											'q': q0	 })
 				}
+				// put empty table into page
 				$('#dynamic').html( '<table cellpadding="0" cellspacing="0" border="0" '+
 														'class="display" id="example"><\/table>' );
-				$('#example').dataTable( {
-					"bProcessing": true,
-					"bServerSide": true,
-					"sAjaxSource": "/place/holder",
-					"aoColumns": [
-						{ "sTitle": "Engine" },
-						{ "sTitle": "Browser" },
-						{ "sTitle": "Platform" },
-						{ "sTitle": "Version", "sClass": "center" },
-						{ "sTitle": "Grade" }
-					],
-					"fnServerData": getData
-				} );
+				// createTable callback invoked with 1-record dataset, to
+				//   setup dataTables 
+				function createTable(json) {
+					// create aoColumns data structure from header for datatable 
+					var hdrs = json.records.header;
+					var aoCol = [];
+					for (var i=0; i<hdrs.length; i+=1) {
+						aoCol.push({'sTitle' : hdrs[i][1]});
+					}
+					// call dataTable with the aoColumns structure and other s
+					// 'sAjaxSource' is not used, but dataTable seems to expect it
+					$('#example').dataTable( {
+						"bProcessing": true,
+						"bServerSide": true,
+						"sAjaxSource": "/place/holder",
+						"aoColumns": aoCol,
+						"fnServerData": getData
+					} );
+				}
+				// get one record and table header from table
+				//  pass rec and hdr to createTable callback
+				var qstart = 'SELECT * FROM css_data LIMIT 1';
+				rdb.query({	'callback': createTable,
+										'errback': alert,
+										'q': qstart	 })
 			} );
 		</script>
 	</head>
@@ -101,15 +123,73 @@
 </table>
 			</div>
 			<div class="spacer"></div>
-			
-			
 			<h1>Initialisation code</h1>
 			<pre>$(document).ready(function() {
-	$('#example').dataTable( {
-		"bProcessing": true,
-		"sAjaxSource": '../examples_support/json_source.txt'
-	} );
-} );</pre>
+  // create rdbhost sql engine object
+  var rdb = new SQLEngine("r0000000002","-",'rdbhost');
+  // getData is a callback for dataTables to fetch additional
+  //   data dynamically as user pages up/down
+  var q = 'SELECT count(*) FROM css_data; '+
+          'SELECT * FROM css_data OFFSET ~~os~~ LIMIT ~~li~~';
+  function getData(sSource, aoData, fnCallback) {
+    // callback (with a callback) to format server data
+    //   to suit dataTables, and calls the dataTables callback
+    //  fnCallback with the reformed data
+    function cBack(json) {
+      var rows = json.result_sets[1].records.rows
+      var ct = json.result_sets[0].records.rows[0][0]
+      var newJson = {'aaData' : rows,
+                     'iTotalDisplayRecords' : ct };
+      fnCallback(newJson);
+    }
+    // extract row boundaries from input aoData
+    var iDisplayStart, iDisplayLength;
+    for (var i=0; i&lt;aoData.length; i++) {
+      if (aoData[i].name === 'iDisplayStart') {
+        iDisplayStart = aoData[i].value;
+      }
+      else if (aoData[i].name === 'iDisplayLength') {
+        iDisplayLength = aoData[i].value;              
+      }
+    }
+    // embed row limits in query
+    var q0 = q.replace('~~os~~',iDisplayStart) {
+              .replace('~~li~~',iDisplayLength);
+    }
+    // query server, and pass data to cBack
+    rdb.query({  'callback': cBack,
+                'errback': alert,
+                'q': q0   })
+  }
+  // put empty table into page
+  $('#dynamic').html( '&lt;table cellpadding="0" cellspacing="0" border="0" '+
+                      'class="display" id="example">&lt;\/table>' );
+  // createTable callback invoked with 1-record dataset, to
+  //   setup dataTables 
+  function createTable(json) {
+    // create aoColumns data structure from header for datatable 
+    var hdrs = json.records.header;
+    var aoCol = [];
+    for (var i=0; i&lt;hdrs.length; i+=1) {
+      aoCol.push({'sTitle' : hdrs[i][1]});
+    }
+    // call dataTable with the aoColumns structure and other s
+    // 'sAjaxSource' is not used, but dataTable seems to expect it
+    $('#example').dataTable( {
+      "bProcessing": true,
+      "bServerSide": true,
+      "sAjaxSource": "/place/holder",
+      "aoColumns": aoCol,
+      "fnServerData": getData
+    } );
+  }
+  // get one record and table header from table
+  //  pass rec and hdr to createTable callback
+  var qstart = 'SELECT * FROM css_data LIMIT 1';
+  rdb.query({  'callback': createTable,
+              'errback': alert,
+              'q': qstart   })
+  } );</pre>
 			
 			
 			<h1>Other examples</h1>
@@ -134,8 +214,7 @@
 				<li><a href="../advanced_init/events_post_init.html">Events (post initialisation)</a></li>
 				<li><a href="../advanced_init/column_render.html">Column rendering</a></li>
 				<li><a href="../advanced_init/html_sort.html">Sorting without HTML tags</a></li>
-				<li><a href="../advanced_init/dom_multiple_elements.html">Multiple table controls (sDom)</a></li>
-				<li><a href="../advanced_init/dom_toolbar.html">Custom toolbar (element) around table</a></li>
+				<li><a href="../advanced_init/dom_multiple_elements.html">Multiple table controls (sDom)</a></li>				<li><a href="../advanced_init/dom_toolbar.html">Custom toolbar (element) around table</a></li>
 				<li><a href="../advanced_init/sorting_control.html">Set sorting controls</a></li>
 				<li><a href="../advanced_init/complex_header.html">Column grouping through col/row spans</a></li>
 				<li><a href="../advanced_init/row_grouping.html">Row grouping</a></li>

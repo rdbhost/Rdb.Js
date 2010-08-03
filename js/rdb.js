@@ -14,7 +14,7 @@ function add_hidden_field($form,nm,val) {
 function SQLEngine(uName,authcode,subdomain)
 {
 	// store engine config info
-	this.format = 'json';
+	this.format = 'jsond';
 	this.userName = uName;
 	this.authcode = authcode;
 	this.subdomain = subdomain || 'rdbhost';
@@ -45,6 +45,7 @@ function SQLEngine(uName,authcode,subdomain)
 		argtypes : array of python DB API types, one per argument
 		plainTextJson : true if JSON parsing to be skipped, in lieu of
 				 returning the JSON plaintext
+		format : 'jsond' or 'jsond-easy'
 	*/
 	{
 		var callback = parms.callback;
@@ -54,6 +55,7 @@ function SQLEngine(uName,authcode,subdomain)
 		var args = parms.args || [];
 		var argtypes = parms.argtypes || [];
 		var plainText = parms.plainTextJson;
+		var format = parms.format || this.format;
 		
 		var iframe_requested = false;
 		var $this = this;
@@ -111,6 +113,7 @@ function SQLEngine(uName,authcode,subdomain)
 			var res = $this.queryByForm({ 'formId' : formId,
 										  'callback' : qCallback,
 										  'errback' : qErrback,
+										  'format' : format,
 										  'plainTextJson' : plainText });
 			return res;
 		});
@@ -120,8 +123,8 @@ function SQLEngine(uName,authcode,subdomain)
 	
 	
 	this.queryRows = function(parms)
-	/* parms is just like query, but callback gets row array and header array,
-	   not whole data structure.
+	/* parms is just like for query method, but callback gets row array and
+	   header array, not whole data structure.
 	   an additional param is 'incomplete', a function that is called
 		 (with rows and header) when data set is truncated by 100 record limit
 	*/
@@ -157,6 +160,7 @@ function SQLEngine(uName,authcode,subdomain)
 		var errback = parms.errback;
 		var formId = parms.formId;
 		var plainTextJson = parms.plainTextJson;
+		var format = parms.format || this.format;
 		
 		var $this = this;
 		var targettag = 'upload_target'+formId;
@@ -231,7 +235,7 @@ function SQLEngine(uName,authcode,subdomain)
 		// put password into form
 		add_hidden_field($form,'authcode', this.authcode);
 		// set format, action, and target
-		add_hidden_field($form,'format','jsond');
+		add_hidden_field($form,'format',this.format);
 		$form.attr('target',targettag);
 		$form.attr('action',dbUrl);
 		// add hidden iframe to end of body
@@ -380,7 +384,7 @@ function SQLEngine(uName,authcode,subdomain)
 		// init vars
 		var dbUrl =  this.getLoginUrl(); 
 		// set format, action, and target
-		add_hidden_field($form,'format','jsond');
+		add_hidden_field($form,'format',this.format);
 		$form.attr('target',targettag);
 		$form.attr('action',dbUrl);
 		// add hidden iframe to end of body
