@@ -28,7 +28,7 @@ function SQLEngine(uName,authcode,subdomain)
 		return proto+'//'+hparts.join('.')+altPath;
 	};
 	this.getLoginUrl = function() {
-		return this.getQueryUrl('/mbr/login');
+		return this.getQueryUrl('/mbr/jslogin');
 	};
 	this.getCommonDomain = function() {
 		var hparts = window.location.hostname.split('.').slice(-2);
@@ -58,8 +58,8 @@ function SQLEngine(uName,authcode,subdomain)
 		var format = parms.format || this.format;
 		
 		var iframe_requested = false;
-		var $this = this;
-		var formId = 'rdb_hidden_form_rdb_hidden_form_rdb'+($this.formnamectr+=1);
+		var that = this;
+		var formId = 'rdb_hidden_form_rdb_hidden_form_rdb'+(that.formnamectr+=1);
 		var $hiddenform = $('#'+formId);
 		// define default errback
 		if (errback === undefined) {
@@ -110,7 +110,7 @@ function SQLEngine(uName,authcode,subdomain)
 		$hiddenform.unbind('submit');
 		$hiddenform.submit(function () {
 			iframe_requested = true;
-			var res = $this.queryByForm({ 'formId' : formId,
+			var res = that.queryByForm({ 'formId' : formId,
 										  'callback' : qCallback,
 										  'errback' : qErrback,
 										  'format' : format,
@@ -162,7 +162,7 @@ function SQLEngine(uName,authcode,subdomain)
 		var plainTextJson = parms.plainTextJson;
 		var format = parms.format || this.format;
 		
-		var $this = this;
+		var that = this;
 		var targettag = 'upload_target'+formId;
 		var target, action;
 		// get form, return if not found
@@ -318,7 +318,7 @@ function SQLEngine(uName,authcode,subdomain)
 		var formId = parms.formId;
 		var plainTextJson = parms.plainTextJson;
 		
-		var $this = this;
+		var that = this;
 		// get form, return if not found
 		var $form = $('#'+formId);
 		if ($form.length<1) {
