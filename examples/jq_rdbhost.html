@@ -1,0 +1,64 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+	<title>RdbHost Plugin example</title>
+    <script language="javascript" type="text/javascript"
+				src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.js"></script>
+    <script language="javascript" type="text/javascript"
+				src="../js/jquery.rdbhost.js"></script>
+		<script>
+    $(document).ready(function () {
+		    $.rdbHostConfig({ 'userName' : "r0000000002",
+												  'authcode' : "-",
+													'subdomain' : 'rdbhost' })
+        var q = 'SELECT * FROM capitols';
+				$('.targets').populate({q : q});
+				function repopulate() {
+					$('.targets').populate({q : q});
+				};
+				$('#demo-form').submit(function () {
+					$.postFormData(this,
+												 { 'userName' : 'p0000000002',
+												   'authcode' : '-',
+													 'callback' : repopulate });
+				});
+    })
+    </script>
+</head>
+<body>
+  jQuery.Rdbhost Demo
+	<div class="targets"><pre id="target"></pre></div>
+	<table id="targettab" class="targets">
+		<tr>
+			<th>City</th>
+			<th>Country</th>
+		</tr>
+		<tr>
+			<td class="city">ABC</td>
+			<td class="country" style="color:red;">DEF</td>
+		</tr>
+	</table>
+	<div style="border-style:double; width:400px">
+		<form action='' method='post' id='demo-form' enctype="multipart/form-data" >
+			<table>
+				<tr>
+					<td>City</td><td><input type="text" size="30" id="arg000" name="arg000" /></td>
+				</tr>
+				<tr>
+					<td>Country</td><td><input type="text" size="30" id="arg001" name="arg001" /></td>
+				</tr>
+				<tr>
+					<td>Pop</td><td><input type="text" size="30" id="arg002" name="arg002" /></td>
+				</tr>
+				<tr>
+					<td colspan="2">
+						<input type="submit" value="go" />
+						<input type="hidden" name="kw" id="kw" value="postcapitol" />
+					</td>
+				</tr>
+			</table>
+		</form>
+	</div>
+</body>
+</html>

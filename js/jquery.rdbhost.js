@@ -1,12 +1,61 @@
-// sun 12:05
-
-// to add hidden field to form
-function add_hidden_field($form,nm,val) {
-	var fld = $('<input type="hidden" class="to-remove-later" />');
-	fld.attr('name',nm).val(val);
-	$form.append(fld);
-}
-
+/*
+ 
+    jquery.rdbhost.js
+    
+    A jquery plugin to access PostgreSQL databases on Rdbhost.com
+  
+    requires a (free) account at www.rdbhost.com to be useful.
+    
+    this module includes a class 'SQLEngine' for the database connection, and
+      that class can be used by itself, aside from the plugins.  jQuery 1.4+
+      is required, even when using the connection class without the plugin.
+      
+       
+    the module adds four functions and two methods to the jQuery namespace.
+    
+    The four functions are $.rdbHostConfig, $.withResults, $.eachRecord, and
+      $.postFormData.  The two methods are $.fn.populate, and $.fn.datadump.
+      
+    $.rdbHostConfig takes an options object, and makes those options default for
+      all subsequent functions and methods.
+      
+    $.withResults sends a query to the server, receives the data, and calls
+      a callback with the received data.
+      
+    $.eachRecord is like $.withResults, in that it gets data from the server,
+      but it extracts the rows from the data structure, and calls an eachrec
+      callback for each record.  Each record is a javascript object, with a
+      named attribute for each field.
+      
+    $.postFormData takes a form as input, submits that form to the server,
+      receives the data returned, and provides it to the callback.
+      The form fields must conform to the rdbhost protocol.
+      
+    Form fields
+      The form *must* include either a 'q' or a 'kw' field.  It may also include
+      'arg###', or 'argtype###' fields.  Argument fields are numbered like
+      'arg000', 'arg001'... in order.  Argument type fields, 'argtype000'..
+      must correspond to arg fields.
+      
+	  The 'kw' field value allows you to invoke a query that is stored in the
+	  'lookup.queries' table on the  server.  See website documentation for
+	  details.
+      
+    $.fn.populate sends a query to the server, receives the data, and populates
+      an html table with it.  If the element provided is not a table, a new
+      table is inserted in it; if the element is an empty table, it is expanded
+      with new rows, one per record, and if the table has a prototype row, that
+      row is duplicated once per record, and the record data is placed in
+      td elements based on class name matches. (a field named 'firstName' would
+      put its value in a table cell like '<td class="firstName">').  A cell
+      can have multiple classes, so adding field-name classes should not interfere
+      with styling.
+      
+    $.fn.datadump is a diagnostic-aid that puts a formatted json-string of
+      the data into the selected html elements.  It allows you to verify the
+      data retrieval functionality before doing (much) html work.
+      
+*/
 
 // SQL Engine that uses form for input, and hidden iframe for response
 //   handles file fields 
@@ -20,6 +69,13 @@ function SQLEngine(uName,authcode,subdomain)
 	this.subdomain = subdomain || 'rdbhost';
 	this.formnamectr = 0;
 	
+	// to add hidden field to form
+	function add_hidden_field($form,nm,val) {
+		var fld = $('<input type="hidden" class="to-remove-later" />');
+		fld.attr('name',nm).val(val);
+		$form.append(fld);
+	}
+
 	this.getQueryUrl = function(altPath) {
 		var proto = window.location.protocol;
 		var hparts = window.location.hostname.split('.').slice(-2);
@@ -35,7 +91,7 @@ function SQLEngine(uName,authcode,subdomain)
 		return hparts.join('.');
 	};
 
-	this.query = function(parms) //callback,errback,query,args,argtypes)
+	this.query = function(parms) 
 	/* parms is object containing various options
 		callback : function to call with data from successfull query
 		errback : function to call with error object from query failure
@@ -235,7 +291,7 @@ function SQLEngine(uName,authcode,subdomain)
 		// put password into form
 		add_hidden_field($form,'authcode', this.authcode);
 		// set format, action, and target
-		add_hidden_field($form,'format',this.format);
+		add_hidden_field($form,'format',format);
 		$form.attr('target',targettag);
 		$form.attr('action',dbUrl);
 		// add hidden iframe to end of body
@@ -397,10 +453,205 @@ function SQLEngine(uName,authcode,subdomain)
 		}
 		var winDomain = window.document.domain;
 		window.document.domain = this.getCommonDomain();
-		//alert('new windocdom: '+window.document.domain);
 		return true;
 	};
 	
 } // end of SQLEngine class
 
+
+/*
+  following section defines some jQuery plugins
+  
+*/
+
+(function ($) {
+	
+	// default generic callbacks
+	//
+	function errback(err,msg) {
+		alert('<pre>'+err.toString()+': '+msg+'</pre>');
+	}
+	function dumper(json) {
+		var str = JSON.stringify(json);
+		alert(str);
+	}
+	
+	//  configuration setting function
+	//  saves defaults as attribute on the config function
+	//
+	var opts = { errback : errback,
+		         callback : dumper,
+				 eachrec : undefined,
+				 subdomain : 'rdbhost',
+				 format : 'jsond-easy',
+				 userName : '',
+				 authcode : ''        };
+	var rdbHostConfig= function (parms) {
+		var options = $.extend({}, opts, parms||{});
+		rdbHostConfig.opts = options;
+	};
+	$.rdbHostConfig = rdbHostConfig;  // makes it a plugin
+	
+	/*
+	    withResults - calls callback with json result object
+	      or errback with error object
+	  
+	    param q : query to get data
+	    param callback : function to call with json data
+	    param errback : function to call in case of error
+	*/
+	var withResults = function(parms) {
+		var inp = $.extend({}, $.rdbHostConfig.opts, parms||{});
+		var sqlEngine = new SQLEngine(inp.userName, inp.authcode, inp.subdomain);
+		delete inp.userName; delete inp.authcode; delete inp.subdomain;
+		sqlEngine.query(inp);
+	}
+	$.withResults = withResults;
+	
+	/*
+	    eachRecord - calls 'eachrec' callback with each record,
+	      or errback with error object
+	  
+	    param q : query to get data
+	    param eachrec : function to call with each record
+	    param errback : function to call in case of error
+	*/
+	var eachRecord = function(parms) {
+		var eachrec = parms.eachrec;
+		delete parms.eachrec;
+		assert(eachrec, 'eachrec not provided');
+		function cback (json) {
+			for (var r in json.records.rows) {
+				eachrec(json.records.rows[r]);
+			}
+		}
+		parms.callback = cback;
+		$.withResults(parms);
+	}
+	$.eachRecord = eachRecord;
+
+	/*
+	    postFormData should be used as a submit handler for a data entry form.
+	
+	    param q : query to post data
+	    param kw : query-keyword to post data
+	*/
+	var postFormData = function(that,parms) {
+		var $form = $(that).closest('form');
+		var inp = $.extend({}, $.rdbHostConfig.opts, parms||{});
+		inp.formId = $form.attr('id');
+		assert(inp.formId,'form must have a unique id attribute');
+		if (inp.q) {
+			$form.find('#kw').remove();
+			$form.find('#q').remove();
+			$form.append($('<input type="hidden" id="q" name="q" >').val(inp.q));
+		}
+		if (inp.kw) {
+			$form.find('#kw').remove();
+			$form.find('#q').remove();
+			$form.append($('<input type="hidden" id="kw" name="kw" >').val(inp.kw));
+		}
+		var sqlEngine = new SQLEngine(inp.userName, inp.authcode, inp.subdomain);
+		delete inp.userName; delete inp.authcode; delete inp.subdomain;
+		sqlEngine.queryByForm(inp);
+		return true;
+	};
+	$.postFormData = postFormData;
+
+	/*
+	    populate creates an html table and inserts into  page
+	    
+	    param q : query to get data
+	*/
+	var populate = function(parms) {
+		var $selset = this;
+		function populate_html_table($table,$row,recs) {
+			var rec, $newrow;
+			$table.find('tbody').empty();
+			for (var r in recs) {
+				rec = recs[r];
+				$newrow = $row.clone().show();
+				var ctr = 0, flds = [];
+				for (var fname in rec) {
+					$newrow.find('td.'+fname).html(rec[fname]);
+					ctr += $newrow.find('td.'+fname).length;
+					flds.push(fname);
+				};
+				assert(ctr,'no td elements found with field names! '+flds.join(', '));
+				$table.append($newrow);
+			}
+		}
+		function generate_html_table($table,recs) {
+			var rec, $row, $td, fld;
+			for (var r in recs) {
+				rec = recs[r];
+				$row = $('<tr>');
+				for (var o in rec) {
+					fld = rec[o];
+					$td = $('<td>').html(fld);
+					$row.append($td);
+				}
+				$table.append($row);
+			}
+		}
+		function cback (json) {
+			var recs = json.records.rows;
+			$selset.each( function () {
+				var $table = $(this);
+				if (!$table.is('table')) {
+					$table.empty().append('<table></table>');
+					$table = $table.find('table');
+					generate_html_table($table,recs);
+				}
+				else if ( $table.find('tbody tr:first').length ) {
+					var $row = $table.find('tbody tr:first').hide();
+					populate_html_table($table,$row,recs);
+				}
+				else {
+					generate_html_table($table,recs);					
+				}
+			});
+		};
+		parms.callback = cback;
+		$.withResults(parms);
+		return $selset;
+	};
+	$.fn.populate = populate;
+	
+	/*
+	    datadump puts a <pre>-formatted json dump into the html
+	
+	    param q : query to get data
+	    param kw : query-keyword to get data
+	*/
+	var datadump = function(parms) {
+		var $selset = this;
+		function cback (json) {
+			$selset.each( function () {
+				$(this).html(JSON.stringify(json,null,4)); // 4 space indent
+			});
+		};
+		parms.callback = cback;
+		$.withResults(parms);
+		return $selset;
+	};
+	$.fn.datadump = datadump;
+		
+}(jQuery));
+
+
+/* create assert function
+  example : assert( obj === null, 'object was not null!' );
+  error message appears in javascript console, if any.
+  credit to: Ayman Hourieh http://aymanh.com/
+*/
+function AssertException(message) { this.message = message; }
+AssertException.prototype.toString = function () {
+  return 'AssertException: ' + this.message;
+};
+function assert(exp, message) {
+  if (!exp) {
+    throw new AssertException(message);
+  }
+}
 
