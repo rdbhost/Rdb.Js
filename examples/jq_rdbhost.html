@@ -13,9 +13,10 @@
 												  'authcode' : "-",
 													'subdomain' : 'rdbhost' })
         var q = 'SELECT * FROM capitols';
-				$('.targets').populate({q : q});
+				$('#inform').populateForm({q : q});
+				$('.targets').populateTable({q : q});
 				function repopulate() {
-					$('.targets').populate({q : q});
+					$('.targets').populateTable({q : q});
 				};
 				$('#demo-form').submit(function () {
 					$.postFormData(this,
@@ -30,15 +31,20 @@
   jQuery.Rdbhost Demo
 	<div class="targets"><pre id="target"></pre></div>
 	<table id="targettab" class="targets">
-		<tr>
-			<th>City</th>
-			<th>Country</th>
-		</tr>
-		<tr>
-			<td class="city">ABC</td>
-			<td class="country" style="color:red;">DEF</td>
-		</tr>
+		<thead>
+			<tr>
+				<th>City</th>
+				<th>Country</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="city">ABC</td>
+				<td class="country" style="color:red;">DEF</td>
+			</tr>
+		</tbody>
 	</table>
+	
 	<div style="border-style:double; width:400px">
 		<form action='' method='post' id='demo-form' enctype="multipart/form-data" >
 			<table>
@@ -50,6 +56,28 @@
 				</tr>
 				<tr>
 					<td>Pop</td><td><input type="text" size="30" id="arg002" name="arg002" /></td>
+				</tr>
+				<tr>
+					<td colspan="2">
+						<input type="submit" value="go" />
+						<input type="hidden" name="kw" id="kw" value="postcapitol" />
+					</td>
+				</tr>
+			</table>
+		</form>
+	</div>
+
+	<div style="border-style:double; width:400px">
+		<form action='' method='post' id='inform' enctype="multipart/form-data" >
+			<table>
+				<tr>
+					<td>City</td><td><input type="text" size="30" id="city" name="city" /></td>
+				</tr>
+				<tr>
+					<td>Country</td><td><input type="text" size="30" id="country" name="country" /></td>
+				</tr>
+				<tr>
+					<td>Pop</td><td><input type="text" size="30" id="population" name="population" /></td>
 				</tr>
 				<tr>
 					<td colspan="2">

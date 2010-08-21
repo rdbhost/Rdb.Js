@@ -67,7 +67,7 @@ function SQLEngine(uName,authcode,subdomain)
 	this.userName = uName;
 	this.authcode = authcode;
 	this.subdomain = subdomain || 'rdbhost';
-	this.formnamectr = 0;
+	//SQLEngine.formnamectr = 0;
 	
 	// to add hidden field to form
 	function add_hidden_field($form,nm,val) {
@@ -115,7 +115,9 @@ function SQLEngine(uName,authcode,subdomain)
 		
 		var iframe_requested = false;
 		var that = this;
-		var formId = 'rdb_hidden_form_rdb_hidden_form_rdb'+(that.formnamectr+=1);
+		var formId = 'rdb_hidden_form_rdb_hidden_form_rdb'+
+		             (SQLEngine.formnamectr+=1);
+		// alert('formId '+SQLEngine.formnamectr);
 		var $hiddenform = $('#'+formId);
 		// define default errback
 		if (errback === undefined) {
@@ -224,7 +226,7 @@ function SQLEngine(uName,authcode,subdomain)
 		// get form, return if not found
 		var $form = $('#'+formId);
 		if ($form.length<1) {
-			alert('form '+formId+' not found');
+			//alert('form '+formId+' not found');
 			return false;
 		}
 		// define default errback
@@ -457,6 +459,7 @@ function SQLEngine(uName,authcode,subdomain)
 	};
 	
 } // end of SQLEngine class
+SQLEngine.formnamectr = 0;
 
 
 /*
@@ -464,7 +467,7 @@ function SQLEngine(uName,authcode,subdomain)
   
 */
 
-(function ($) {
+(function ($,window) {
 	
 	// default generic callbacks
 	//
@@ -472,7 +475,7 @@ function SQLEngine(uName,authcode,subdomain)
 		alert('<pre>'+err.toString()+': '+msg+'</pre>');
 	}
 	function dumper(json) {
-		var str = JSON.stringify(json);
+		var str = JSON.stringify(json,null,4);
 		alert(str);
 	}
 	
@@ -501,11 +504,12 @@ function SQLEngine(uName,authcode,subdomain)
 	    param errback : function to call in case of error
 	*/
 	var withResults = function(parms) {
+		assert(arguments.length<=1, 'too many parms to withResults');
 		var inp = $.extend({}, $.rdbHostConfig.opts, parms||{});
 		var sqlEngine = new SQLEngine(inp.userName, inp.authcode, inp.subdomain);
 		delete inp.userName; delete inp.authcode; delete inp.subdomain;
 		sqlEngine.query(inp);
-	}
+	};
 	$.withResults = withResults;
 	
 	/*
@@ -517,6 +521,7 @@ function SQLEngine(uName,authcode,subdomain)
 	    param errback : function to call in case of error
 	*/
 	var eachRecord = function(parms) {
+		assert(arguments.length<=1, 'too many parms to eachRecord');
 		var eachrec = parms.eachrec;
 		delete parms.eachrec;
 		assert(eachrec, 'eachrec not provided');
@@ -527,7 +532,7 @@ function SQLEngine(uName,authcode,subdomain)
 		}
 		parms.callback = cback;
 		$.withResults(parms);
-	}
+	};
 	$.eachRecord = eachRecord;
 
 	/*
@@ -537,6 +542,7 @@ function SQLEngine(uName,authcode,subdomain)
 	    param kw : query-keyword to post data
 	*/
 	var postFormData = function(that,parms) {
+		assert(arguments.length<=1, 'too many parms to postFormData');
 		var $form = $(that).closest('form');
 		var inp = $.extend({}, $.rdbHostConfig.opts, parms||{});
 		inp.formId = $form.attr('id');
@@ -563,8 +569,12 @@ function SQLEngine(uName,authcode,subdomain)
 	    
 	    param q : query to get data
 	*/
-	var populate = function(parms) {
+	var populateTable = function(parms) {
+		assert(arguments.length<=1, 'too many parms to populateTable');
 		var $selset = this;
+		if (typeof(parms) === 'string') {
+			parms = { 'q' : parms };
+		}
 		function populate_html_table($table,$row,recs) {
 			var rec, $newrow;
 			$table.find('tbody').empty();
@@ -576,7 +586,7 @@ function SQLEngine(uName,authcode,subdomain)
 					$newrow.find('td.'+fname).html(rec[fname]);
 					ctr += $newrow.find('td.'+fname).length;
 					flds.push(fname);
-				};
+				}
 				assert(ctr,'no td elements found with field names! '+flds.join(', '));
 				$table.append($newrow);
 			}
@@ -598,8 +608,9 @@ function SQLEngine(uName,authcode,subdomain)
 			var recs = json.records.rows;
 			$selset.each( function () {
 				var $table = $(this);
+				assert( !$table.is('form'), 'use .populateForm for forms' );
 				if (!$table.is('table')) {
-					$table.empty().append('<table></table>');
+					$table.empty().append('<table><tbody></tbody></table>');
 					$table = $table.find('table');
 					generate_html_table($table,recs);
 				}
@@ -611,12 +622,51 @@ function SQLEngine(uName,authcode,subdomain)
 					generate_html_table($table,recs);					
 				}
 			});
-		};
+		}
 		parms.callback = cback;
 		$.withResults(parms);
 		return $selset;
 	};
-	$.fn.populate = populate;
+	$.fn.populateTable = populateTable;
+	
+	/*
+	    populateForm populates a form with a single record
+	    
+	    param q : query to get data
+	*/
+	var populateForm = function(parms) {
+		assert(arguments.length<=1, 'too many parms to populateForm');
+		var $selset = this;
+		if (typeof(parms) === 'string') {
+			parms = { 'q' : parms };
+		}
+		function populate_form($form,rec) {
+			for (var f in rec) {
+				var $inp = $form.find('input#'+f);
+				if ($inp.length) {
+					$inp.val(rec[f]);
+				}
+				else {
+					$inp = $form.find('input.'+f);
+					$inp.val(rec[f]);
+				}
+			}
+		}
+		function cback (json) {
+			if (json.records.rows.length) {
+				var rec = json.records.rows[0];
+				$selset.each( function () {
+					var $form = $(this);
+					assert( $form.is('form'), 'use .populateForm on a form' );
+					populate_form($form,rec);
+				});
+			}
+		}
+		parms.callback = cback;
+		$.withResults(parms);
+		return $selset;
+	};
+	$.fn.populateForm = populateForm;
 	
 	/*
 	    datadump puts a <pre>-formatted json dump into the html
@@ -626,18 +676,21 @@ function SQLEngine(uName,authcode,subdomain)
 	*/
 	var datadump = function(parms) {
 		var $selset = this;
+		if (typeof(parms) === 'string') {
+			parms = { 'q' : parms };
+		}
 		function cback (json) {
 			$selset.each( function () {
 				$(this).html(JSON.stringify(json,null,4)); // 4 space indent
 			});
-		};
+		}
 		parms.callback = cback;
 		$.withResults(parms);
 		return $selset;
 	};
 	$.fn.datadump = datadump;
 		
-}(jQuery));
+}(jQuery,this));
 
 
 /* create assert function
