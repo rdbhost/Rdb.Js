@@ -11,10 +11,11 @@
       is required, even when using the connection class without the plugin.
       
        
-    the module adds four functions and two methods to the jQuery namespace.
+    the module adds four functions and three methods to the jQuery namespace.
     
     The four functions are $.rdbHostConfig, $.withResults, $.eachRecord, and
-      $.postFormData.  The two methods are $.fn.populate, and $.fn.datadump.
+      $.postFormData.  The three methods are $.fn.populateTable,
+      $.fn.populateForm, and $.fn.datadump.
       
     $.rdbHostConfig takes an options object, and makes those options default for
       all subsequent functions and methods.
@@ -41,7 +42,7 @@
 	  'lookup.queries' table on the  server.  See website documentation for
 	  details.
       
-    $.fn.populate sends a query to the server, receives the data, and populates
+    $.fn.populateTable sends a query to the server, receives the data, and populates
       an html table with it.  If the element provided is not a table, a new
       table is inserted in it; if the element is an empty table, it is expanded
       with new rows, one per record, and if the table has a prototype row, that
@@ -50,6 +51,11 @@
       put its value in a table cell like '<td class="firstName">').  A cell
       can have multiple classes, so adding field-name classes should not interfere
       with styling.
+      
+    $.fn.populateForm sends a query to the server, receives the data, selects the
+      first field, and populates a form with it.  It attempts to match each field
+      name to an input field with matching id, and then attempts to match an input
+      field with matching class-name.
       
     $.fn.datadump is a diagnostic-aid that puts a formatted json-string of
       the data into the selected html elements.  It allows you to verify the
@@ -93,7 +99,7 @@ function SQLEngine(uName,authcode,subdomain)
 
 	this.query = function(parms) 
 	/* parms is object containing various options
-		callback : function to call with data from successfull query
+		callback : function to call with data from successful query
 		errback : function to call with error object from query failure
 		q : the query string itself
 		args : array of arguments (optional), must correspond with %s tokens
@@ -542,7 +548,7 @@ SQLEngine.formnamectr = 0;
 	    param kw : query-keyword to post data
 	*/
 	var postFormData = function(that,parms) {
-		assert(arguments.length<=1, 'too many parms to postFormData');
+		assert(arguments.length<=2, 'too many parms to postFormData');
 		var $form = $(that).closest('form');
 		var inp = $.extend({}, $.rdbHostConfig.opts, parms||{});
 		inp.formId = $form.attr('id');
@@ -565,8 +571,25 @@ SQLEngine.formnamectr = 0;
 	$.postFormData = postFormData;
 
 	/*
-	    populate creates an html table and inserts into  page
-	    
+	    postData submits some data (in the options object) to the server
+	      and provides the response to callback.
+	
+	    param q : query to post data
+	    param kw : query-keyword to post data
+	*/
+	var postData = function(that,parms) {
+		assert(arguments.length<=2, 'too many parms to postFormData');
+		var inp = $.extend({}, $.rdbHostConfig.opts, parms||{});
+		var sqlEngine = new SQLEngine(inp.userName, inp.authcode, inp.subdomain);
+		delete inp.userName; delete inp.authcode; delete inp.subdomain;
+		sqlEngine.query(inp);
+		return true;
+	};
+	$.postData = postData;
+
+	/*
+	    populateTable creates an html table and inserts into  page
+
 	    param q : query to get data
 	*/
 	var populateTable = function(parms) {
