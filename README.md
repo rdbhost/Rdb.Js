@@ -1,5 +1,5 @@
 ﻿
-## The Javascript Module for Accessing Rdbhost ##  
+## The Javascript Module for Accessing Rdbhost ##
 ## jQuery.rdbhost.js ##
 
 ### Dependencies ###
@@ -7,7 +7,7 @@ This module requires jQuery.  Version 1.4 or greater is recommended.
 
 ### Overview ###
 The module includes a class, *SQLEngine*, that encapsulates the interactions with the server, and a 
-jQuery plugin.  The class can be used directly, without the plugin, but the plugin is intended to be easier. 
+jQuery plugin.  The class can be used directly, without the plugin, but the plugin is intended to be easier. This document describes the plugin.  For help in using the SQLEngine object directly, there is decent commenting in the source.
 
 ### The Plugin ###
 Included are four _functions_ (called on the jQuery object) and three _methods_ (called on selection sets).  All of them take option objects as their only or second parameter. 
@@ -56,7 +56,8 @@ Requires _callback_ and _q_ or _kw_.
         }); 
 
     The above example assumes that _userName_, and _authcode_ have been set as defaults. 
-The _q_ query string (or the on-server query string referenced by _kw_) may include '%s' substition tokens, and an _args_ options must then be provided, with an element for each such token.  
+The _q_ query string (or the on-server query string referenced by _kw_) may include '%s' substition tokens, and an _args_ options must then be provided, with an element for each such token.
+  
 [see demo here](http://www.paginaswww.com/rdb/examples/jq_rdbhost_post.html)
 
 * *$.postFormData:* used to submit data to server. Call this function from a *submit* or *click* handler on the form, like:  
@@ -71,6 +72,7 @@ The _q_ query string (or the on-server query string referenced by _kw_) may incl
 The form *must* include a unique _id_.  Form fields can include _q_, _kw_, _format_, _arg###_ (where ### is a 3 digit number, '0' padded, starting with '000'), and _argtype###_.  
 The _q_ query string (or the on-server query string referenced by _kw_) may include '%s' substition tokens, and an _arg###_ field should be provided for each such token.  
 The _argtype###_ fields are optional, but (if provided) should be numbered to match _arg###_ fields, and each value should be a Python DB API type string ('STRING', 'NUMBER', 'BINARY', ...). These are used by the server to typecast the argument values before passing them to PostgreSQL.
+
 [see demo here](http://www.paginaswww.com/rdb/examples/jq_rdbhost_postbyform.html)
 
 ### Methods ###
@@ -79,10 +81,12 @@ The _argtype###_ fields are optional, but (if provided) should be numbered to ma
 If called on an empty _table_, it will create rows to match the records.  
 If called on a _div_, it will create a new _table_ in that _div_, and proceed as above.  
 If called on a table with pre-defined rows, it puts the data into cells based on matching the field name to the _td_ cell's _class_ value. If any class in the cell matches the field name, that is a match.
+
 [see demo here](http://www.paginaswww.com/rdb/examples/jq_rdbhost_table.html)
 
 * *$.fn.populateForm:* sends query to server, gets results, and populates an html form with the data in the first record.  
 It attempts to match each field name to an input field with matching _id_, and then attempts to match an input field with matching _class_-name.
+
 [see demo here](http://www.paginaswww.com/rdb/examples/jq_rdbhost_formpop.html)
 
 * *$.fn.datadump:* sends query, gets results, formats the data as a pretty-printed JSON string, and inserts it into each item in the selection set.  Intended as a diagnostic aid.
