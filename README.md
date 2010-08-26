@@ -1,6 +1,6 @@
 ﻿
-## The Javascript Module for Accessing Rdbhost ##
-## jQuery.rdbhost.js ##
+## The Javascript Module for Accessing Rdbhost 
+## jquery.rdbhost.js ##
 
 ### Dependencies ###
 This module requires jQuery.  Version 1.4 or greater is recommended.
@@ -23,7 +23,7 @@ Before we discuss the functions and methods themselves, let's go over the option
 
 * *kw:* a lookup keyword, used to lookup a query pre-stored on the server. All roles can execute queries via _kw_.  Either _q_ or _kw_ is *required*.
 
-* *args:* an array with arguments to replace substitution tokens in the query string.  The number of _args_ elements should match the number of substitution tokens in the query string.  Can be used with _kw_s also, in which case the args interpolate into the query string on the server, indexed by the _kw_ value.
+* *args:* an array with arguments to replace substitution tokens in the query string.  The number of _args_ elements should match the number of substitution tokens in the query string.  Can be used with _kw_ s also, in which case the args interpolate into the query string on the server, indexed by the _kw_ value.
 
 * *argtypes:* an array with types for the arguments. 
 If provided, the length should be the same as the args array. The values are Python DB API types, such as 'NUMERIC', 'STRING', 'BINARY'...
@@ -71,6 +71,7 @@ The _q_ query string (or the on-server query string referenced by _kw_) may incl
     The above example assumes that _userName_, and _authcode_ have been set as defaults. _kw_ could have been provided as a field value in the form.  _redisplay_ is a function that does some appropriate followup action.
 The form *must* include a unique _id_.  Form fields can include _q_, _kw_, _format_, _arg###_ (where ### is a 3 digit number, '0' padded, starting with '000'), and _argtype###_.  
 The _q_ query string (or the on-server query string referenced by _kw_) may include '%s' substition tokens, and an _arg###_ field should be provided for each such token.  
+_arg###_ fields may be *file* fields, and this is the surest way to submit binary data with the query.
 The _argtype###_ fields are optional, but (if provided) should be numbered to match _arg###_ fields, and each value should be a Python DB API type string ('STRING', 'NUMBER', 'BINARY', ...). These are used by the server to typecast the argument values before passing them to PostgreSQL.
 
 [see demo here](http://www.paginaswww.com/rdb/examples/jq_rdbhost_postbyform.html)
@@ -90,3 +91,6 @@ It attempts to match each field name to an input field with matching _id_, and t
 [see demo here](http://www.paginaswww.com/rdb/examples/jq_rdbhost_formpop.html)
 
 * *$.fn.datadump:* sends query, gets results, formats the data as a pretty-printed JSON string, and inserts it into each item in the selection set.  Intended as a diagnostic aid.
+
+### SQLEngine ###
+Documentation for the engine itself is in the source code.  Examples can be found in the 'examples' directory.  The datatables* examples all use the plain SQLEngine, rather than the plugin.
