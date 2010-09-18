@@ -2,27 +2,27 @@
 <html>
 <head>
 	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
-	<title>RdbHost Plugin .populateTable div Demo</title>
+	<title>RdbHost Plugin .populateTable example</title>
     <script language="javascript" type="text/javascript"
 				src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.js"></script>
     <script language="javascript" type="text/javascript"
 				src="../js/jquery.rdbhost.js"></script>
-    <script language="javascript" type="text/javascript"
-				src="../js/json2.js"></script>
+    <script language="javascript" type="text/javascript" src="../js/json2.js"></script>
 		<script>
     $(document).ready(function () {
 		    $.rdbHostConfig({ 'userName' : "r0000000002",
 												  'authcode' : "-" })
         var q = 'SELECT * FROM capitols';
-				$('.targets').populateTable({q : q});
+				$('.targets').datadump({q : q});
     })
     </script>
 </head>
 <body>
-  <h3>jQuery.Rdbhost $.populuateTable div Demo</h3>
-	<p>This html table is populated from the database, and is generated to suit the
-	  data. Demonstrates generating a table to fill a <i>div</i>.</p>
-
-  <div class="targets"><pre id="target"></pre></div>
+  <h3>jQuery.Rdbhost .datadump Demo</h3>
+	<p>This div is populated from the database.  Format is just stringified JSON.</p>
+	<div>
+		<pre class="targets"></pre>
+	</div>
+	
 </body>
 </html>

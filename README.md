@@ -4,6 +4,7 @@
 
 ### Dependencies ###
 This module requires jQuery.  Version 1.4 or greater is recommended.
+Use with Internet Explorer 7 requires json2.js also.
 
 ### Overview ###
 The module includes a class, *SQLEngine*, that encapsulates the interactions with the server, and a 
@@ -91,6 +92,10 @@ It attempts to match each field name to an input field with matching _id_, and t
 [see demo here](http://www.paginaswww.com/rdb/examples/jq_rdbhost_formpop.html)
 
 * *$.fn.datadump:* sends query, gets results, formats the data as a pretty-printed JSON string, and inserts it into each item in the selection set.  Intended as a diagnostic aid.
+
+[see demo here](http://www.paginaswww.com/rdb/examples/jq_rdbhost_dump.html)
+
+----
 
 ### SQLEngine ###
 Documentation for the engine itself is in the source code.  Examples can be found in the 'examples' directory.  The datatables* examples all use the plain SQLEngine, rather than the plugin.
