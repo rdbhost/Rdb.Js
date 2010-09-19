@@ -577,8 +577,8 @@ SQLEngine.formnamectr = 0;
 	    param q : query to post data
 	    param kw : query-keyword to post data
 	*/
-	var postData = function(that,parms) {
-		assert(arguments.length<=2, 'too many parms to postFormData');
+	var postData = function(parms) {
+		assert(arguments.length<2, 'too many parms to postData');
 		var inp = $.extend({}, $.rdbHostConfig.opts, parms||{});
 		var sqlEngine = new SQLEngine(inp.userName, inp.authcode, inp.subdomain);
 		delete inp.userName; delete inp.authcode; delete inp.subdomain;

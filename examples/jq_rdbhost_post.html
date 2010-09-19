@@ -23,8 +23,7 @@
 					var place = $form.find('#place').val().split(',');
 					var pop = $form.find('#population').val();
 					var args = [place[0], place[1]||'', pop];
-					$.postData( this,
-											{ 'userName' : 'p0000000002',
+					$.postData( { 'userName' : 'p0000000002',
 												'authcode' : '-',
 												'kw'       : 'postcapitol',
 												'args'     : args,
