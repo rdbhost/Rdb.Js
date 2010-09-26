@@ -43,12 +43,8 @@ Not required, but the default is a basic _*JSON*_ dump and probably not what you
 ### Functions ###
 * *$.rdbHostConfig:* Stores its options as the default for all subsequent functions. It can accept *any* or *all* of the options.
 
-* *$.withResults:* sends query to server, gets results, calls callback with single result object as the parameter.
+* *$.postData:* used to submit data to server, similar to an $.ajax call.  This method ends query to server, gets results, calls callback with single result object as the parameter.
 Requires _callback_ and _q_ or _kw_.
-
-* *$.eachRecord:* sends query to server, gets results, calls _errback_ if status is 'error', otherwise, calls _eachrec_ callback with each record.  By default, the _jsond-easy_ format is used, and each record is an object with named attribute for each record field.
-
-* *$.postData:* used to submit data to server, similar to an $.ajax call. 
 
         $.ready(function () { 
             $.postData( { kw : 'logthispage',
@@ -61,7 +57,7 @@ The _q_ query string (or the on-server query string referenced by _kw_) may incl
   
 [see demo here](http://www.paginaswww.com/rdb/examples/jq_rdbhost_post.html)
 
-* *$.postFormData:* used to submit data to server. Call this function from a *submit* or *click* handler on the form, like:  
+* *$.postFormData:* used to submit data to server, where the data is in an html form. Call this function from a *submit* or *click* handler on the form, like:  
 
         $('#demo-form').submit(function () { 
             $.postFormData(this,
@@ -76,6 +72,10 @@ _arg###_ fields may be *file* fields, and this is the surest way to submit binar
 The _argtype###_ fields are optional, but (if provided) should be numbered to match _arg###_ fields, and each value should be a Python DB API type string ('STRING', 'NUMBER', 'BINARY', ...). These are used by the server to typecast the argument values before passing them to PostgreSQL.
 
 [see demo here](http://www.paginaswww.com/rdb/examples/jq_rdbhost_postbyform.html)
+
+* *$.withResults:* functionally identical to $.postData.
+
+* *$.eachRecord:* sends query to server, gets results, calls _errback_ if status is 'error', otherwise, calls _eachrec_ callback with each record.  By default, the _jsond-easy_ format is used, and each record is an object with named attribute for each record field.
 
 ### Methods ###
 
@@ -95,7 +95,7 @@ It attempts to match each field name to an input field with matching _id_, and t
 
 [see demo here](http://www.paginaswww.com/rdb/examples/jq_rdbhost_dump.html)
 
-----
+=====
 
 ### SQLEngine ###
 Documentation for the engine itself is in the source code.  Examples can be found in the 'examples' directory.  The datatables* examples all use the plain SQLEngine, rather than the plugin.
