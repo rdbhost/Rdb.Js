@@ -10,6 +10,20 @@ Use with Internet Explorer 7 requires json2.js also.
 The module includes a class, *SQLEngine*, that encapsulates the interactions with the server, and a 
 jQuery plugin.  The class can be used directly, without the plugin, but the plugin is intended to be easier. This document describes the plugin.  For help in using the SQLEngine object directly, there is decent commenting in the source.
 
+This document attempts to provide an overview of the module, and tell you enough
+to do useful things with the library.  There is much more to know about the service,
+documented on the site:
+
+[Table of Contents](http://www.rdbhost.com/contents.html)  
+Some features of the service:
+
+* binary uploads
+* raw binary downloads
+* json
+* xml
+* deferred queries with higher time limits
+
+
 ### The Plugin ###
 Included are four _functions_ (called on the jQuery object) and three _methods_ (called on selection sets).  All of them take option objects as their only or second parameter. 
 

@@ -227,7 +227,7 @@ function SQLEngine(uName,authcode,subdomain)
 		var format = parms.format || this.format;
 		
 		var that = this;
-		var targettag = 'upload_target'+formId;
+		var targettag = 'upload_target'+formId+(SQLEngine.formnamectr+=1);
 		var target, action;
 		// get form, return if not found
 		var $form = $('#'+formId);
