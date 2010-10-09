@@ -81,6 +81,13 @@ function SQLEngine(uName,authcode,subdomain)
 		fld.attr('name',nm).val(val);
 		$form.append(fld);
 	}
+	// delay before removing iframe, workaround for ff 'busy' bug.
+	function remove_iframe(ttag) {
+		function removeiframelater() {
+			$('#'+ttag).remove();
+		}
+		setTimeout(removeiframelater,1);
+	}
 
 	this.getQueryUrl = function(altPath) {
 		var proto = window.location.protocol;
@@ -283,13 +290,13 @@ function SQLEngine(uName,authcode,subdomain)
 				errback('no content');
 			}
 		}
-		// function to cleanup after data recieved
+		// function to cleanup after data received
 		function cleanup_submit(formtag) {
 			var $form = $('#'+formtag);
 			$form.find('.to-remove-later').remove();
 			$form.attr('target',target);  // restore saved target,action
 			$form.attr('action',action);
-			$('#'+targettag).remove();
+			remove_iframe(targettag)
 		}
 		// init vars
 		var dbUrl =  this.getQueryUrl(); 
@@ -440,7 +447,7 @@ function SQLEngine(uName,authcode,subdomain)
 			$form.find('.to-remove-later').remove();
 			$form.attr('target',target);  // restore saved target,action
 			$form.attr('action',action);
-			$('#'+targettag).remove();
+			remove_iframe(targettag);
 		}
 		// init vars
 		var dbUrl =  this.getLoginUrl(); 
