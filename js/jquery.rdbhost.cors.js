@@ -72,7 +72,7 @@ function SQLEngine(uName,authcode,domain)
 	this.format = 'json';
 	this.userName = uName;
 	this.authcode = authcode;
-	this.domain = domain || 'dev.rdbhost.com'
+	this.domain = domain || 'www.rdbhost.com'
 	
 	this.getQueryUrl = function(altPath) {
 		var proto = window.location.protocol;

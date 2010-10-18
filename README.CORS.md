@@ -1,24 +1,23 @@
 ﻿
-## The Javascript Module for Accessing Rdbhost from modern Browsers
+## The Javascript Module for Accessing Rdbhost (CORS version)
 ## jquery.rdbhost.cors.js ##
 
 ### Dependencies ###
-This module requires jQuery.  Version 1.4 or greater is required. Use with Internet Explorer 7 requires json2.js also.
+This module requires jQuery.  Version 1.4 or greater is required. 
+This module only functions in browsers that support CORS; these browsers include Firefox 3.5+, Chrome 5+, Safari 4+, and (supposedly) Opera.
 
 ### Overview ###
 The module includes a class, *SQLEngine*, that encapsulates the interactions with the server, and a 
 jQuery plugin.  The class can be used directly, without the plugin, but the plugin is intended to be easier. This document describes the plugin.  For help in using the SQLEngine object directly, there is decent commenting in the source.
 
-*CORS*  Cross Origin Resource Sharing  
+*CORS* is an acronym for Cross Origin Resource Sharing  
 
-This module only functions in browsers that support CORS; these browsers include Firefox 3.5+, Chrome 5+, Safari 4+, and Opera (supposedly).
+There is a sister module, _jquery.rdbhost.js_, also in the /js subdirectory that supports use of *Rdbhost* services through a subdomain on your site domain.  That module requires the DNS configuration, but works in nearly all browsers now in common use.  That module also supports binary data via file uploads, and this one does not.  
 
-There is a sister module, _jquery.rdbhost.js_, in the /js library that supports use of #Rdbhost# services through a subdomain on your site domain.  That module requires the DNS configuration, but works in nearly all browsers now in common use.  That module also supports binary data via file uploads, and this one does not.  
-
-[jquery.rdbhost.js readme](Readme.md) 
+[jquery.rdbhost.js readme](Readme.md)  
 [DNS management](http://www.rdbhost.com/dns.html)
 
-The cors version is a large subset of the regular version, so you can develop with the cors version, and when necessary you can 'upgrade' to the regular version with no more effort than changing the script tag.
+The cors version is a large subset of the regular version, so you can develop with the cors version, and when necessary you can 'upgrade' to the regular version with no more source-related effort than changing the script tag.
 
 This document attempts to provide an overview of the module, and tell you enough to do useful things with the library.  There is much more to know about the service,
 documented on the site:
