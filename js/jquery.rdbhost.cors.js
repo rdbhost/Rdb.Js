@@ -1,6 +1,6 @@
 /*
  
-    jquery.rdbhost.js
+    jquery.rdbhost.cors.js
     
     A jquery plugin to access PostgreSQL databases on Rdbhost.com
   
@@ -10,13 +10,11 @@
       that class can be used by itself, aside from the plugins.  jQuery 1.4+
       is required, even when using the connection class without the plugin.
       
-       
     the module adds four functions and three methods to the jQuery namespace.
     
     The four functions are $.rdbHostConfig, $.withResults, $.eachRecord, and
       $.postFormData.  The three methods are $.fn.populateTable,
-      $.fn.populateForm, and $.fn.datadump.  There is also a $.postData alias
-      to $.withResults
+      $.fn.populateForm, and $.fn.datadump.
       
     $.rdbHostConfig takes an options object, and makes those options default for
       all subsequent functions and methods.
@@ -37,7 +35,8 @@
       The form *must* include either a 'q' or a 'kw' field.  It may also include
       'arg###', or 'argtype###' fields.  Argument fields are numbered like
       'arg000', 'arg001'... in order.  Argument type fields, 'argtype000'..
-      must correspond to arg fields. Argument fields may be file fields.
+      must correspond to arg fields.  Argument fields may NOT be file fields.
+      Use jquery.rdbhost.js if you need file fields or binary.
       
 	  The 'kw' field value allows you to invoke a query that is stored in the
 	  'lookup.queries' table on the  server.  See website documentation for
@@ -54,7 +53,7 @@
       with styling.
       
     $.fn.populateForm sends a query to the server, receives the data, selects the
-      first record, and populates a form with it.  It attempts to match each field
+      first field, and populates a form with it.  It attempts to match each field
       name to an input field with matching id, and then attempts to match an input
       field with matching class-name.
       
@@ -64,45 +63,24 @@
       
 */
 
-// SQL Engine that uses form for input, and hidden iframe for response
-//   handles file fields 
+// SQL Engine that uses AJAX, and functions on browsers that support the
+//   CORS extension to HTTP 
 //
-function SQLEngine(uName,authcode,subdomain)
+function SQLEngine(uName,authcode,domain)
 {
 	// store engine config info
-	this.format = 'jsond';
+	this.format = 'json';
 	this.userName = uName;
 	this.authcode = authcode;
-	this.subdomain = subdomain || 'rdbhost';
-	//SQLEngine.formnamectr = 0;
+	this.domain = domain || 'dev.rdbhost.com'
 	
-	// to add hidden field to form
-	function add_hidden_field($form,nm,val) {
-		var fld = $('<input type="hidden" class="to-remove-later" />');
-		fld.attr('name',nm).val(val);
-		$form.append(fld);
-	}
-	// delay before removing iframe, workaround for ff 'busy' bug.
-	function remove_iframe(ttag) {
-		function removeiframelater() {
-			$('#'+ttag).remove();
-		}
-		setTimeout(removeiframelater,1);
-	}
-
 	this.getQueryUrl = function(altPath) {
 		var proto = window.location.protocol;
-		var hparts = window.location.hostname.split('.').slice(-2);
-		hparts.unshift(this.subdomain);
 		if (!altPath) { altPath = '/db/'+this.userName; }
-		return proto+'//'+hparts.join('.')+altPath;
+		return proto+'//'+this.domain+altPath;
 	};
 	this.getLoginUrl = function() {
 		return this.getQueryUrl('/mbr/jslogin');
-	};
-	this.getCommonDomain = function() {
-		var hparts = window.location.hostname.split('.').slice(-2);
-		return hparts.join('.');
 	};
 
 	this.query = function(parms) 
@@ -115,7 +93,7 @@ function SQLEngine(uName,authcode,subdomain)
 		argtypes : array of python DB API types, one per argument
 		plainTextJson : true if JSON parsing to be skipped, in lieu of
 				 returning the JSON plaintext
-		format : 'jsond' or 'jsond-easy'
+		format : 'json' or 'json-easy'
 	*/
 	{
 		var callback = parms.callback;
@@ -127,12 +105,7 @@ function SQLEngine(uName,authcode,subdomain)
 		var plainText = parms.plainTextJson;
 		var format = parms.format || this.format;
 		
-		var iframe_requested = false;
 		var that = this;
-		var formId = 'rdb_hidden_form_rdb_hidden_form_rdb'+
-		             (SQLEngine.formnamectr+=1);
-		// alert('formId '+SQLEngine.formnamectr);
-		var $hiddenform = $('#'+formId);
 		// define default errback
 		if (errback === undefined) {
 			errback = function () {
@@ -140,57 +113,42 @@ function SQLEngine(uName,authcode,subdomain)
 				alert(arg2.join(', '));
 			};
 		}
-		// local callbacks to do cleanup prior to 'real' callback
-		function qErrback(err,msg) {
-			// if frame loaded by 'back button', skip over it
-			if (!iframe_requested) {
-				parent.history.back();
-			}
-			iframe_requested = false;
-			$hiddenform.remove();
-			errback(err,msg);
-		}
+		// super callback that checks for server side errors, calls errback 
+		//  where appropriate
 		function qCallback(json) {
-			// if frame loaded by 'back button', skip over it
-			if (!iframe_requested) {
-				parent.history.back();
+			if ( json.status[0] === 'error' ) {
+				errback(json.status[1]);
 			}
-			iframe_requested = false;
-			$hiddenform.remove();
-			callback(json);
-		}
-		// create hidden form if necessary
-		if ( $hiddenform.length < 1 ) {
-			var $newform = $(('<form method="post" name="~~id~~" id="~~id~~"'+
-							  ' enctype="multipart/form-data" style="display:none">'+
-							  ' </form>').replace(/~~id~~/g,formId));
-			$('body').append($newform);
-			$hiddenform = $('#'+formId);
-		}
-		// put query in hidden form
-		add_hidden_field($hiddenform,'q',query);
-		add_hidden_field($hiddenform,'kw',kw);
-		// if params are provided, convert to named form 'arg000', 'arg001'...
-		if (args !== undefined) {
-			for ( var i=0; i<args.length; i+=1 ) {
-				var num = '000'+i;
-				var nm = 'arg'+num.substr(num.length-3);
-				add_hidden_field($hiddenform,nm,args[i]);
+			else {
+				callback(json);
 			}
 		}
-		// remove submit handler, if one already, and bind new handler
-		$hiddenform.unbind('submit');
-		$hiddenform.submit(function () {
-			iframe_requested = true;
-			var res = that.queryByForm({ 'formId' : formId,
-										  'callback' : qCallback,
-										  'errback' : qErrback,
-										  'format' : format,
-										  'plainTextJson' : plainText });
-			return res;
-		});
-		// submit the hidden form
-		$hiddenform.submit();
+		// create data record
+		var data = { 'format' : format,
+			         'q' : query,
+					 'kw' : kw };
+		// iterate over arg and argtype lists, and add
+		//  arg### values to data
+		var argn = '', argntype, istr;
+		for ( var i=0; i<args.length; i++ ) {
+			istr = '00'+i;
+			argn = 'arg'+istr.substring(istr.length-3);
+			data[argn] = args[i];
+			if ( i<argtypes.length && argtypes[i] !== undefined ) {
+				argntype = 'argtype'+istr.substring(istr.length-3);
+				data[argntype] = argtypes[i];
+			}
+		}
+		// use jQuery ajax call to submit to server
+        $.ajax({
+            type: "POST",
+            url: this.getQueryUrl(),
+            data: data,
+            dataType: 'json',
+            success: qCallback,
+            error: errback
+        });
+
 	};
 	
 	
@@ -235,8 +193,6 @@ function SQLEngine(uName,authcode,subdomain)
 		var format = parms.format || this.format;
 		
 		var that = this;
-		var targettag = 'upload_target'+formId+(SQLEngine.formnamectr+=1);
-		var target, action;
 		// get form, return if not found
 		var $form = $('#'+formId);
 		if ($form.length<1) {
@@ -250,180 +206,106 @@ function SQLEngine(uName,authcode,subdomain)
 				alert(arg2.join(', '));
 			};
 		}
-
-		// function to handle json when loaded		
-		function results_loaded(callback,errback) {
-			//
-			var $fr = $(frames[targettag].document);
-			if ($fr.length === 0) {
-				alert('target "~" iframe document not found'.replace('~',targettag));
-			}
-			var cont = $.trim($fr.find('body script').html());
-			var json_result, stat;
-			if ( cont ) {
-				//cont = cont.replace(/^\s*<pr[^>]+>/i,''); // remove opening pre
-				//cont = cont.replace(/<[/]pr[^>]+\s*>$/i,''); // remove end pre
-				if (cont.substr(0,1)==='{') {
-					if ( plainTextJson ) {
-						callback(cont);
-					}
-					else {
-						try {
-							json_result = JSON.parse(cont);
-						}
-						catch(err) {
-							errback('json err: '+err.toString());
-							return;
-						}
-						if (json_result.status[0] === 'error') {
-							errback(json_result.status[1],json_result.error[1]);
-						}
-						else {
-							callback(json_result);
-						}
-					}
-				}
-				else {
-					errback('not json '+cont.substr(0,3));
-				}
+		// super callback that checks for server side errors, calls errback 
+		//  where appropriate
+		function qCallback(json) {
+			if ( json.status[0] === 'error' ) {
+				errback(json.status[1]);
 			}
 			else {
-				errback('no content');
+				callback(json);
 			}
 		}
-		// function to cleanup after data received
-		function cleanup_submit(formtag) {
-			var $form = $('#'+formtag);
-			$form.find('.to-remove-later').remove();
-			$form.attr('target',target);  // restore saved target,action
-			$form.attr('action',action);
-			remove_iframe(targettag)
+
+		// iterate over arg and argtype lists, and add
+		//  arg### values to data
+		var argn = '', argntype, istr, data = {}, fldnm;
+		var labels = ['q','kw','format'];
+		for (var i in labels) {
+			if ( labels.hasOwnProperty(i) ) {
+				fldnm = labels[i];
+				if ($form.find('#'+fldnm).length) {
+					data[fldnm] = $form.find('#'+fldnm).val();			
+				}
+			}
 		}
-		// init vars
-		var dbUrl =  this.getQueryUrl(); 
-		//dbUrl = "http://rdbhost.paginaswww.com/helloalert.html";
-		target = $form.attr('target'); // save vals
-		action = $form.attr('action');
-		// put password into form
-		add_hidden_field($form,'authcode', this.authcode);
-		// set format, action, and target
-		add_hidden_field($form,'format',format);
-		$form.attr('target',targettag);
-		$form.attr('action',dbUrl);
-		// add hidden iframe to end of body
-		var iframeTxt = '<iframe id="~tt~" name="~tt~" src="" style="display:none;" ></iframe>';
-		if ( $('#'+targettag).length === 0 ) {
-			iframeTxt = iframeTxt.replace(/~tt~/g,targettag);
-			$('body').append($(iframeTxt));
-			// bind action functions to hidden iframe
-			$('#'+targettag).load(function() {
-				results_loaded(callback,errback);
-				cleanup_submit(formId);
-			});
+		for ( var i=0; i<1000; i++ ) {
+			istr = '00'+i;
+			argn = 'arg'+istr.substring(istr.length-3);
+			fld = $form.find('#'+argn);
+			if (fld.length>0) {
+				data[argn] = fld.val();
+			}
+			else {
+				break;
+			}
+			argntyp = 'argtype'+istr.substring(istr.length-3);
+			fldtyp = $form.find('#'+argntyp);
+			if (fldtyp.length>0) {
+				data[argntyp] = fldtyp.val();
+			}
 		}
-		var winDomain = window.document.domain;
-		window.document.domain = this.getCommonDomain();
-		//alert('new windocdom: '+window.document.domain);
-		return true;
+		// ensure data type requests
+		if (!data['format']) {
+			data['format'] = 'json';
+		}
+		// use jQuery ajax call to submit to server
+		var url = this.getQueryUrl();
+        $.ajax({
+            type: "POST",
+            url: url,
+            data: data,
+            dataType: 'json',
+            success: qCallback,
+            error: errback
+        });
+		return false;
 	};
 
-	this.loginByForm = function(parms)
-	/* parms is object containing various options
-		formId : the id of the form with the data
-		callback : function to call with data from successfull query
-		errback : function to call with error object from query failure
-		plainTextJson : true if JSON parsing to be skipped, in lieu of
-				 returning the JSON plaintext
+	/* loginAjax
+	   logs in with email and password.  If on www.rdbhost.com and user logged
+	   in to rdbhost account, email/password are optional.
+	   
+	   only works on rdbhost.com, at this point
 	*/
+	this.loginAjax = function(email,passwd)
 	{
-		var callback = parms.callback;
-		var errback = parms.errback;
-		var formId = parms.formId;
-		var plainTextJson = parms.plainTextJson;
-		
-		var that = this;
-		// get form, return if not found
-		var $form = $('#'+formId);
-		if ($form.length<1) {
-			alert('form '+formId+' not found');
-			return false;
-		}
-		var target = $form.attr('target'); // save vals
-		var action = $form.attr('action');
-		var targettag = 'upload_target'+formId;
-		// define default errback
-		if (errback === undefined) {
-			errback = function () {
-				var arg2 = Array.apply(null,arguments);
-				alert(arg2.join(', '));
-			};
-		}
-		// function to handle json when loaded		
-		function results_loaded(callback,errback) {
-			//
-			var $fr = $(frames[targettag].document);
-			if ($fr.length === 0) {
-				alert('target "~" iframe document not found'.replace('~',targettag));
-			}
-			var cont = $.trim($fr.find('body script').html());
-			var json_result, stat;
-			if ( cont ) {
-				if (cont.substr(0,1)==='{') {
-					if ( plainTextJson ) {
-						callback(cont);
+		var stat;
+		var jsloginUrl = this.getLoginUrl();
+		alert('jsLogin url: '+jsloginUrl);
+
+		$.ajax({type: "POST",
+				url: jsloginUrl,
+				async: false,
+				data: {'password' : passwd,
+					   'email' : email },
+				dataType: "json",
+				success: function(d)
+				{
+					if (d === null || d === '' || d === undefined) {
+						alert('login failed: timeout');
+						stat = false;
+					}
+					else if (d.status[0] === 'error') {
+						alert('login db failed: '+d.status[1]);
+						stat = false;
+					}
+					else if (d.status[0] === 'complete') {
+						stat = d.roles;
 					}
 					else {
-						try {
-							json_result = JSON.parse(cont);
-						}
-						catch(err) {
-							errback('json err: '+err.toString());
-							return;
-						}
-						if (json_result.status[0] === 'error') {
-							errback(json_result.status[1],json_result.error[1]);
-						}
-						else {
-							callback(json_result);
-						}
+						alert('wonkers! status: '+d.status[0]);
+						stat = false;
 					}
+				},
+				error: function(xhr,errtype,exc)
+				{
+					// set page location elsewhere
+					alert('login connect failed: '+errtype);
+					stat = false;
 				}
-				else {
-					errback('not json '+cont.substr(0,3));
-				}
-			}
-			else {
-				errback('no content');
-			}
-		}
-		// function to cleanup after data recieved
-		function cleanup_submit(formtag) {
-			var $form = $('#'+formtag);
-			$form.find('.to-remove-later').remove();
-			$form.attr('target',target);  // restore saved target,action
-			$form.attr('action',action);
-			remove_iframe(targettag);
-		}
-		// init vars
-		var dbUrl =  this.getLoginUrl(); 
-		// set format, action, and target
-		add_hidden_field($form,'format',this.format);
-		$form.attr('target',targettag);
-		$form.attr('action',dbUrl);
-		// add hidden iframe to end of body
-		var iframeTxt = '<iframe id="~tt~" name="~tt~" src="" style="display:none;" ></iframe>';
-		if ( $('#'+targettag).length === 0 ) {
-			iframeTxt = iframeTxt.replace(/~tt~/g,targettag);
-			$('body').append($(iframeTxt));
-			// bind action functions to hidden iframe
-			$('#'+targettag).load(function() {
-				results_loaded(callback,errback);
-				cleanup_submit(formId);
-			});
-		}
-		var winDomain = window.document.domain;
-		window.document.domain = this.getCommonDomain();
-		return true;
+		});
+		return stat;
 	};
 	
 } // end of SQLEngine class
@@ -441,6 +323,9 @@ SQLEngine.formnamectr = 0;
 	//
 	function errback(err,msg) {
 		alert('<pre>'+err.toString()+': '+msg+'</pre>');
+		/* alert(err.status);
+		alert(err.statusText);
+		alert(err.responseText); */
 	}
 	function dumper(json) {
 		var str = JSON.stringify(json,null,4);
@@ -453,8 +338,7 @@ SQLEngine.formnamectr = 0;
 	var opts = { errback : errback,
 		         callback : dumper,
 				 eachrec : undefined,
-				 subdomain : 'rdbhost',
-				 format : 'jsond-easy',
+				 format : 'json-easy',
 				 userName : '',
 				 authcode : ''        };
 	var rdbHostConfig= function (parms) {
@@ -474,8 +358,8 @@ SQLEngine.formnamectr = 0;
 	var withResults = function(parms) {
 		assert(arguments.length<=1, 'too many parms to withResults');
 		var inp = $.extend({}, $.rdbHostConfig.opts, parms||{});
-		var sqlEngine = new SQLEngine(inp.userName, inp.authcode, inp.subdomain);
-		delete inp.userName; delete inp.authcode; delete inp.subdomain;
+		var sqlEngine = new SQLEngine(inp.userName, inp.authcode);
+		delete inp.userName; delete inp.authcode;
 		sqlEngine.query(inp);
 	};
 	$.withResults = withResults;
@@ -525,10 +409,10 @@ SQLEngine.formnamectr = 0;
 			$form.find('#q').remove();
 			$form.append($('<input type="hidden" id="kw" name="kw" >').val(inp.kw));
 		}
-		var sqlEngine = new SQLEngine(inp.userName, inp.authcode, inp.subdomain);
-		delete inp.userName; delete inp.authcode; delete inp.subdomain;
+		var sqlEngine = new SQLEngine(inp.userName, inp.authcode);
+		delete inp.userName; delete inp.authcode
 		sqlEngine.queryByForm(inp);
-		return true;
+		return false;
 	};
 	$.postFormData = postFormData;
 
@@ -542,8 +426,8 @@ SQLEngine.formnamectr = 0;
 	var postData = function(parms) {
 		assert(arguments.length<2, 'too many parms to postData');
 		var inp = $.extend({}, $.rdbHostConfig.opts, parms||{});
-		var sqlEngine = new SQLEngine(inp.userName, inp.authcode, inp.subdomain);
-		delete inp.userName; delete inp.authcode; delete inp.subdomain;
+		var sqlEngine = new SQLEngine(inp.userName, inp.authcode);
+		delete inp.userName; delete inp.authcode;
 		sqlEngine.query(inp);
 		return true;
 	};
