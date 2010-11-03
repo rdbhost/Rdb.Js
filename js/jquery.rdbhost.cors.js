@@ -29,7 +29,8 @@
       
     $.postFormData takes a form as input, submits that form to the server,
       receives the data returned, and provides it to the callback.
-      The form fields must conform to the rdbhost protocol.
+      The form fields must conform to the rdbhost protocol, that is, they
+      must have the names listed on the http:www.rdbhost.com/protocol.html page.
       
     Form fields
       The form *must* include either a 'q' or a 'kw' field.  It may also include
