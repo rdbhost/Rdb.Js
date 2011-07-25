@@ -176,7 +176,7 @@ function SQLEngine(uName, authcode, subdomain)
 		}
 		// put query in hidden form
 		add_hidden_field($hiddenform,'q',query);
-    if (kw) {
+    if (kw !== undefined && kw !== null) {
   		add_hidden_field($hiddenform,'kw',kw);
     }
 		// if params are provided, convert to named form 'arg000', 'arg001'...

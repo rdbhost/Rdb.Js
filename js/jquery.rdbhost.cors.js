@@ -126,8 +126,9 @@ function SQLEngine(uName,authcode,domain)
 		}
 		// create data record
 		var data = { 'format' : format,
-			         'q' : query,
-					 'kw' : kw };
+			           'q' : query }
+	  if ( kw !== undefined && kw !== null )
+				data['kw'] = kw;
 		// iterate over arg and argtype lists, and add
 		//  arg### values to data
 		var argn = '', argntype, istr;
@@ -223,12 +224,10 @@ function SQLEngine(uName,authcode,domain)
 		var argn = '', argntype, istr, data = {}, fldnm;
 		var labels = ['q','kw','format'];
 		for (var i in labels) {
-			if ( labels.hasOwnProperty(i) ) {
-				fldnm = labels[i];
-				if ($form.find('#'+fldnm).length) {
-					data[fldnm] = $form.find('#'+fldnm).val();			
-				}
-			}
+      fldnm = labels[i];
+      if ($form.find('#'+fldnm).length) {
+        data[fldnm] = $form.find('#'+fldnm).val();			
+      }
 		}
 		for ( var i=0; i<1000; i++ ) {
 			istr = '00'+i;
