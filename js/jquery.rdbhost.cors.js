@@ -29,7 +29,8 @@
       
     $.postFormData takes a form as input, submits that form to the server,
       receives the data returned, and provides it to the callback.
-      The form fields must conform to the rdbhost protocol.
+      The form fields must conform to the rdbhost protocol, that is, they
+      must have the names listed on the http:www.rdbhost.com/protocol.html page.
       
     Form fields
       The form *must* include either a 'q' or a 'kw' field.  It may also include
@@ -72,7 +73,7 @@ function SQLEngine(uName,authcode,domain)
 	this.format = 'json';
 	this.userName = uName;
 	this.authcode = authcode;
-	this.domain = domain || 'dev.rdbhost.com'
+	this.domain = domain || 'www.rdbhost.com'
 	
 	this.getQueryUrl = function(altPath) {
 		var proto = window.location.protocol;
@@ -125,8 +126,9 @@ function SQLEngine(uName,authcode,domain)
 		}
 		// create data record
 		var data = { 'format' : format,
-			         'q' : query,
-					 'kw' : kw };
+			           'q' : query }
+	  if ( kw !== undefined && kw !== null )
+				data['kw'] = kw;
 		// iterate over arg and argtype lists, and add
 		//  arg### values to data
 		var argn = '', argntype, istr;
@@ -222,12 +224,10 @@ function SQLEngine(uName,authcode,domain)
 		var argn = '', argntype, istr, data = {}, fldnm;
 		var labels = ['q','kw','format'];
 		for (var i in labels) {
-			if ( labels.hasOwnProperty(i) ) {
-				fldnm = labels[i];
-				if ($form.find('#'+fldnm).length) {
-					data[fldnm] = $form.find('#'+fldnm).val();			
-				}
-			}
+      fldnm = labels[i];
+      if ($form.find('#'+fldnm).length) {
+        data[fldnm] = $form.find('#'+fldnm).val();			
+      }
 		}
 		for ( var i=0; i<1000; i++ ) {
 			istr = '00'+i;

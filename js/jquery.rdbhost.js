@@ -64,21 +64,29 @@
       
 */
 
+
+/*
+  logging
+*/
+function consoleLog(msg) {
+  window.console.log(msg);
+}
+
+
 // SQL Engine that uses form for input, and hidden iframe for response
 //   handles file fields 
 //
-function SQLEngine(uName,authcode,subdomain)
+function SQLEngine(uName, authcode, subdomain)
 {
 	// store engine config info
 	this.format = 'jsond';
 	this.userName = uName;
 	this.authcode = authcode;
 	this.subdomain = subdomain || 'rdbhost';
-	//SQLEngine.formnamectr = 0;
-	
+
 	// to add hidden field to form
 	function add_hidden_field($form,nm,val) {
-		var fld = $('<input type="hidden" class="to-remove-later" />');
+		var fld = $('<input type="hidden" class="hidden-field-auto" />');
 		fld.attr('name',nm).val(val);
 		$form.append(fld);
 	}
@@ -124,15 +132,13 @@ function SQLEngine(uName,authcode,subdomain)
 		var kw = parms.kw;
 		var args = parms.args || [];
 		var argtypes = parms.argtypes || [];
+    var namedArgs = parms.namedArgs || {};
 		var plainText = parms.plainTextJson;
 		var format = parms.format || this.format;
 		
 		var iframe_requested = false;
 		var that = this;
-		var formId = 'rdb_hidden_form_rdb_hidden_form_rdb'+
-		             (SQLEngine.formnamectr+=1);
-		// alert('formId '+SQLEngine.formnamectr);
-		var $hiddenform = $('#'+formId);
+		var formId = 'rdb_hidden_form_'+(SQLEngine.formnamectr+=1);
 		// define default errback
 		if (errback === undefined) {
 			errback = function () {
@@ -160,6 +166,7 @@ function SQLEngine(uName,authcode,subdomain)
 			callback(json);
 		}
 		// create hidden form if necessary
+    var $hiddenform = $('#'+formId);
 		if ( $hiddenform.length < 1 ) {
 			var $newform = $(('<form method="post" name="~~id~~" id="~~id~~"'+
 							  ' enctype="multipart/form-data" style="display:none">'+
@@ -169,18 +176,24 @@ function SQLEngine(uName,authcode,subdomain)
 		}
 		// put query in hidden form
 		add_hidden_field($hiddenform,'q',query);
-		add_hidden_field($hiddenform,'kw',kw);
+    if (kw !== undefined && kw !== null) {
+  		add_hidden_field($hiddenform,'kw',kw);
+    }
 		// if params are provided, convert to named form 'arg000', 'arg001'...
-		if (args !== undefined) {
-			for ( var i=0; i<args.length; i+=1 ) {
-				var num = '000'+i;
-				var nm = 'arg'+num.substr(num.length-3);
-				add_hidden_field($hiddenform,nm,args[i]);
-			}
-		}
+    for ( var i=0; i<args.length; i+=1 ) {
+      var num = '000'+i;
+      var nm = 'arg'+num.substr(num.length-3);
+      add_hidden_field($hiddenform,nm,args[i]);
+    }
+    // if named params provided
+    $.each(namedArgs, function (k,v) {
+      var nm = 'arg:'+k;
+      add_hidden_field($hiddenform,nm,v);
+    });
 		// remove submit handler, if one already, and bind new handler
 		$hiddenform.unbind('submit');
-		$hiddenform.submit(function () {
+		$hiddenform.submit(function (ev) {
+      ev.stopPropagation();
 			iframe_requested = true;
 			var res = that.queryByForm({ 'formId' : formId,
 										  'callback' : qCallback,
@@ -235,12 +248,11 @@ function SQLEngine(uName,authcode,subdomain)
 		var format = parms.format || this.format;
 		
 		var that = this;
-		var targettag = 'upload_target'+formId+(SQLEngine.formnamectr+=1);
+		var targettag = 'upload_target_'+formId+'_'+(SQLEngine.formnamectr+=1);
 		var target, action;
 		// get form, return if not found
 		var $form = $('#'+formId);
 		if ($form.length<1) {
-			//alert('form '+formId+' not found');
 			return false;
 		}
 		// define default errback
@@ -248,21 +260,25 @@ function SQLEngine(uName,authcode,subdomain)
 			errback = function () {
 				var arg2 = Array.apply(null,arguments);
 				alert(arg2.join(', '));
+        //consoleLog(arg2.join(', '));
 			};
 		}
+
+    function results_bad(err,msg) {
+      errback(err,msg);
+      cleanup_submit(formId);
+    }
 
 		// function to handle json when loaded		
 		function results_loaded(callback,errback) {
 			//
 			var $fr = $(frames[targettag].document);
 			if ($fr.length === 0) {
-				alert('target "~" iframe document not found'.replace('~',targettag));
+				results_bad('target "~" iframe document not found'.replace('~',targettag));
 			}
 			var cont = $.trim($fr.find('body script').html());
-			var json_result, stat;
+			var json_result;
 			if ( cont ) {
-				//cont = cont.replace(/^\s*<pr[^>]+>/i,''); // remove opening pre
-				//cont = cont.replace(/<[/]pr[^>]+\s*>$/i,''); // remove end pre
 				if (cont.substr(0,1)==='{') {
 					if ( plainTextJson ) {
 						callback(cont);
@@ -272,11 +288,11 @@ function SQLEngine(uName,authcode,subdomain)
 							json_result = JSON.parse(cont);
 						}
 						catch(err) {
-							errback('json err: '+err.toString());
+							results_bad('json err: '+err.toString());
 							return;
 						}
 						if (json_result.status[0] === 'error') {
-							errback(json_result.status[1],json_result.error[1]);
+							results_bad(json_result.status[1],json_result.error[1]);
 						}
 						else {
 							callback(json_result);
@@ -284,17 +300,17 @@ function SQLEngine(uName,authcode,subdomain)
 					}
 				}
 				else {
-					errback('not json '+cont.substr(0,3));
+					results_bad('not json '+cont.substr(0,3));
 				}
 			}
 			else {
-				errback('no content');
+				results_bad('no content');
 			}
 		}
 		// function to cleanup after data received
 		function cleanup_submit(formtag) {
 			var $form = $('#'+formtag);
-			$form.find('.to-remove-later').remove();
+			$form.find('.hidden-field-auto').remove();
 			$form.attr('target',target);  // restore saved target,action
 			$form.attr('action',action);
 			remove_iframe(targettag)
@@ -399,7 +415,7 @@ function SQLEngine(uName,authcode,subdomain)
 		// function to cleanup after data recieved
 		function cleanup_submit(formtag) {
 			var $form = $('#'+formtag);
-			$form.find('.to-remove-later').remove();
+			$form.find('.hidden-field-auto').remove();
 			$form.attr('target',target);  // restore saved target,action
 			$form.attr('action',action);
 			remove_iframe(targettag);
@@ -466,7 +482,7 @@ SQLEngine.formnamectr = 0;
 	/*
 	    withResults - calls callback with json result object
 	      or errback with error object
-	  
+
 	    param q : query to get data
 	    param callback : function to call with json data
 	    param errback : function to call in case of error
@@ -483,7 +499,7 @@ SQLEngine.formnamectr = 0;
 	/*
 	    eachRecord - calls 'eachrec' callback with each record,
 	      or errback with error object
-	  
+
 	    param q : query to get data
 	    param eachrec : function to call with each record
 	    param errback : function to call in case of error
@@ -515,17 +531,15 @@ SQLEngine.formnamectr = 0;
 		var inp = $.extend({}, $.rdbHostConfig.opts, parms||{});
 		inp.formId = $form.attr('id');
 		assert(inp.formId,'form must have a unique id attribute');
+    $form.find('#q').remove();
 		if (inp.q) {
-			$form.find('#kw').remove();
-			$form.find('#q').remove();
 			$form.append($('<input type="hidden" id="q" name="q" >').val(inp.q));
-		}
-		if (inp.kw) {
-			$form.find('#kw').remove();
-			$form.find('#q').remove();
+    }
+    $form.find('#kw').remove();
+		if (inp.kw !== undefined && inp.kw !== null) {
 			$form.append($('<input type="hidden" id="kw" name="kw" >').val(inp.kw));
-		}
-		var sqlEngine = new SQLEngine(inp.userName, inp.authcode, inp.subdomain);
+    }
+    var sqlEngine = new SQLEngine(inp.userName, inp.authcode, inp.subdomain);
 		delete inp.userName; delete inp.authcode; delete inp.subdomain;
 		sqlEngine.queryByForm(inp);
 		return true;
@@ -535,7 +549,7 @@ SQLEngine.formnamectr = 0;
 	/*
 	    postData submits some data (in the options object) to the server
 	      and provides the response to callback.
-	
+
 	    param q : query to post data
 	    param kw : query-keyword to post data
 	*/
@@ -616,7 +630,7 @@ SQLEngine.formnamectr = 0;
 	
 	/*
 	    populateForm populates a form with a single record
-	    
+
 	    param q : query to get data
 	*/
 	var populateForm = function(parms) {
@@ -655,7 +669,7 @@ SQLEngine.formnamectr = 0;
 	
 	/*
 	    datadump puts a <pre>-formatted json dump into the html
-	
+
 	    param q : query to get data
 	    param kw : query-keyword to get data
 	*/
