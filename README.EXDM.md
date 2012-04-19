@@ -1,8 +1,6 @@
 ﻿
 ## The Javascript Module for Accessing Rdbhost 
-## jquery.rdbhost.js ##
-
-##Strongly Recommended: Use the [rdbhost.jquery.exdm.js](README.EXDM.md) module instead of this one.##
+## jquery.rdbhost.exdm.js ##
 
 ### Dependencies ###
 This module requires jQuery.  Version 1.4 or greater is recommended.
@@ -12,10 +10,10 @@ Use with Internet Explorer 7 requires json2.js also.
 The module includes a class, *SQLEngine*, that encapsulates the interactions with the server, and a 
 jQuery plugin.  The class can be used directly, without the plugin, but the plugin is intended to be easier. This document describes the plugin.  For help in using the SQLEngine object directly, there is decent commenting in the source.
 
-There are two sister modules, _jquery.rdbhost.cors.js_ and _jquery.rdbhost.exdm.js_, in the /js library.  The former is an #ajax#-only module that relies on the client's browse supporting the cors http extension.  It functions only on modern CORS-compliant browsers, so its business applicability is more limited than the full module.  (CORS = Cross Origin Resource Sharing)  The second relies on you setting up a domain pointer to our server for a subdomain of your hosting domain.
+There are two sister modules, _jquery.rdbhost.cors.js_ and _jquery.rdbhost.js_, in the /js library.  The former is an #ajax#-only module that relies on the client's browse supporting the cors http extension.  It functions only on modern CORS-compliant browsers, so its business applicability is more limited than the full module.  (CORS = Cross Origin Resource Sharing)  The second relies on you setting up a domain pointer to our server for a subdomain of your hosting domain.
 [CORS readme](README.CORS.md) 
 
-If you use the full module, you need to do some DNS management on the domain you host your static files on, even if that is your local machine.  See [DNS management](http://www.rdbhost.com/dns.html)
+The _jquery.rdbhost.exdm.js_ is the preferred module to use, as it works for the greatest range of browsers, and requires the least amount of preparatory work.
 
 This document attempts to provide an overview of the module, and tell you enough to do useful things with the library.  There is much more to know about the service,
 documented on the site:
@@ -87,15 +85,12 @@ The _q_ query string (or the on-server query string referenced by _kw_) may incl
   
 [see demo here](http://www.paginaswww.com/rdb/examples/jq_rdbhost_post.html)
 
-* *$.postFormData:* used to submit data to server, where the data is in an html form. Call this function from a *submit* or *click* handler on the form, like:  
+* *$.postFormData:* used to submit data to server, where the data is in an html form. Call this function before the form gets submitted, not from a *submit* or *click* handler on the form:
 
-        $('#demo-form').submit(function () { 
-            $.postFormData(this,
+            $.postFormData($('#demo-form'),
                            {'kw':'updater',
                             'callback':redisplay});
-            return true;
-        }); 
- 
+
     The above example assumes that _userName_, and _authcode_ have been set as defaults. _kw_ could have been provided as a field value in the form.  _redisplay_ is a function that does some appropriate followup action.
 The form *must* include a unique _id_.  Form fields can include _q_, _kw_, _format_, _arg###_ (where ### is a 3 digit number, '0' padded, starting with '000'), and _argtype###_.  
 The _q_ query string (or the on-server query string referenced by _kw_) may include '%s' substition tokens, and an _arg###_ field should be provided for each such token.  
