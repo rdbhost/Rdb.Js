@@ -115,6 +115,9 @@ function SQLEngine(userName, authcode, domain)
 	var format = 'json-exdm',
       remote = 'https://'+domain,
       easyXDMAjaxHandle = userName.substring(1);
+  if ( ! domain ) {
+    domain = 'www.rdbhost.com';
+  }
   if (CONNECTIONS[easyXDMAjaxHandle] === undefined) {
     createConnection(userName, domain);
   }

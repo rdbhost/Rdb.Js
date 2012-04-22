@@ -137,7 +137,8 @@ asyncTest('$.postFornData test', 4+1, function() {
 // do SELECT query form way
 var testdiv = "<div id=\"qunit_div\"></div>";
 
-module('$.datadump tests', {
+var setup_counter = 0;
+module('plugin display tests', {
   setup: function () {
     $.rdbHostConfig( {
       'domain': domain,
@@ -169,7 +170,7 @@ test('$.datadump setup verification', function() {
 asyncTest('$.datadump test', 2+1, function() {
 
   var that = this;
-  $('#qunit_div').datadump('SELECT 1 AS col');
+  $('#qunit_div').datadump('SELECT \'abc\' AS txt, 1 AS num');
 
   setTimeout(function () {
       // timeout allows for datadump to act
@@ -183,16 +184,17 @@ asyncTest('$.datadump test', 2+1, function() {
 
 
 /* $.fn.populateTable,  */
-asyncTest('$.populateTable test', 2+1, function() {
+asyncTest('$.populateTable test', 3+1, function() {
 
   var that = this;
+  ok($('#qunit_div').length > 0, 'qunit div is there');
   $('#qunit_div').populateTable('SELECT \'abc\' AS txt, 1 AS num');
 
   setTimeout(function () {
       // timeout allows for datadump to act
       var div = $('#qunit_div').html();
       ok(div.length > 10, 'div has content');
-      var tst = /table/;
+      var tst = /table/i;
       ok(tst.test(div), 'content includes table');
       start();
     }, 1000);
@@ -246,7 +248,7 @@ asyncTest('$.populateForm test', 2+1, function() {
       var txtin = $form.find('input#txt').val();
       equal(txtin,'abc',"txt field has correct value");
       start();
-    }, 1000);
+    }, 2000);
 });
 
 
