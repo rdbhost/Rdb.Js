@@ -507,7 +507,7 @@
 				var anButtons, anStatic, nPaginateList;
 				var fnClick = function() {
 					/* Use the information in the element to jump to the required page */
-					var iTarget = (this.innerHTML * 1) - 1;
+					var iTarget = this.innerHTML - 1;
 					oSettings._iDisplayStart = iTarget * oSettings._iDisplayLength;
 					fnCallbackDraw( oSettings );
 					return false;

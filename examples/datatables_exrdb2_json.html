@@ -29,7 +29,7 @@
           var newJson = {'aaData': json.records.rows};
           fnCallback(newJson);
         }
-        var res = rdb.query({  'callback': cBack,
+        var res = rdb.query({ 'callback': cBack,
                               'errback': alert,
                               'q': q   });
       }

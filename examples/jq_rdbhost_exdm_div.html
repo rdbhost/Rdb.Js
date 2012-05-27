@@ -6,7 +6,8 @@
     <script language="javascript" type="text/javascript"
 				src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.js"></script>
     <script language="javascript" type="text/javascript"
-				src="../js/jquery.rdbhost.cors.js"></script>
+        src="http://dev.rdbhost.com/js/easyxdm/easyXDM.debug.js"></script>
+    <script language="javascript" type="text/javascript" src="../js/jquery.rdbhost.exdm.js"></script>
     <script language="javascript" type="text/javascript"
 				src="../js/json2.js"></script>
 		<script>
@@ -14,8 +15,8 @@
 		    $.rdbHostConfig({ 'userName' : "r0000000002",
 												  'authcode' : "-" });
         var q = 'SELECT * FROM capitols';
-				$('.targets').populateTable({q : q});
-    })
+        $('.targets').populateTable( { q : q } );
+    });
     </script>
 </head>
 <body>

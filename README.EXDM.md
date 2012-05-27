@@ -1,8 +1,6 @@
 ﻿
 ## The Javascript Module for Accessing Rdbhost 
-## jquery.rdbhost.js ##
-
-##Strongly Recommended: Use the [rdbhost.jquery.exdm.js](README.EXDM.md) module instead of this one.##
+## jquery.rdbhost.exdm.js ##
 
 ### Dependencies ###
 This module requires jQuery.  Version 1.4 or greater is recommended.
@@ -12,10 +10,10 @@ Use with Internet Explorer 7 requires json2.js also.
 The module includes a class, *SQLEngine*, that encapsulates the interactions with the server, and a 
 jQuery plugin.  The class can be used directly, without the plugin, but the plugin is intended to be easier. This document describes the plugin.  For help in using the SQLEngine object directly, there is decent commenting in the source.
 
-There are two sister modules, _jquery.rdbhost.cors.js_ and _jquery.rdbhost.exdm.js_, in the /js library.  The former is an #ajax#-only module that relies on the client's browse supporting the cors http extension.  It functions only on modern CORS-compliant browsers, so its business applicability is more limited than the full module.  (CORS = Cross Origin Resource Sharing)  The second relies on you setting up a domain pointer to our server for a subdomain of your hosting domain.
+There are two sister modules, _jquery.rdbhost.cors.js_ and _jquery.rdbhost.js_, in the /js library.  The former is an #ajax#-only module that relies on the client's browse supporting the cors http extension.  It functions only on modern CORS-compliant browsers, so its business applicability is more limited than the full module.  (CORS = Cross Origin Resource Sharing)  The second relies on you setting up a domain pointer to our server for a subdomain of your hosting domain.
 [CORS readme](README.CORS.md) 
 
-If you use the full module, you need to do some DNS management on the domain you host your static files on, even if that is your local machine.  See [DNS management](http://www.rdbhost.com/dns.html)
+The _jquery.rdbhost.exdm.js_ is the preferred module to use, as it works for the greatest range of browsers, and requires the least amount of preparatory work.
 
 This document attempts to provide an overview of the module, and tell you enough to do useful things with the library.  There is much more to know about the service,
 documented on the site:
@@ -51,7 +49,7 @@ If provided, the length should be the same as the args array. The values are Pyt
 
 * *format:* either _jsond_ or _jsond-easy_. default = _jsond-easy_. 
 
-* *subdomain:* if your domain pointer to our server does not use the subdomain _rdbhost_, provide the actual subdomain here. default = _rdbhost_.
+* *domain:* what rdbhost server are you using?  default www.rdbhost.com
 
 * *callback:* a function that gets called with the data, once data is received.  Used by functions, not by methods. 
 Not required, but the default is a basic _*JSON*_ dump and probably not what you want.
@@ -85,17 +83,14 @@ Requires _callback_ and _q_ or _kw_.
 The _q_ query string (or the on-server query string referenced by _kw_) may include '%s' substition tokens, and an _args_ options must then be provided, with an element for each such token. Any response data from the server will be passed to the callback.
 
   
-[see demo here](http://www.paginaswww.com/rdb/examples/jq_rdbhost_post.html)
+[see demo here](http://www.paginaswww.com/rdb/examples/jq_rdbhost_exdm_post.html)
 
-* *$.postFormData:* used to submit data to server, where the data is in an html form. Call this function from a *submit* or *click* handler on the form, like:  
+* *$.postFormData:* used to submit data to server, where the data is in an html form. Call this function before the form gets submitted, not from a *submit* or *click* handler on the form:
 
-        $('#demo-form').submit(function () { 
-            $.postFormData(this,
+            $.postFormData($('#demo-form'),
                            {'kw':'updater',
                             'callback':redisplay});
-            return true;
-        }); 
- 
+
     The above example assumes that _userName_, and _authcode_ have been set as defaults. _kw_ could have been provided as a field value in the form.  _redisplay_ is a function that does some appropriate followup action.
 The form *must* include a unique _id_.  Form fields can include _q_, _kw_, _format_, _arg###_ (where ### is a 3 digit number, '0' padded, starting with '000'), and _argtype###_.  
 The _q_ query string (or the on-server query string referenced by _kw_) may include '%s' substition tokens, and an _arg###_ field should be provided for each such token.  
@@ -105,7 +100,7 @@ Any response data from the server will be passed to the callback.
 Remember to avoid the use of '.preventDefault()' and 'return false', as the form itself does get submitted.
 It is also recommended to explicitly set 'enctype' and 'method' attributes on the form.
 
-[see demo here](http://www.paginaswww.com/rdb/examples/jq_rdbhost_postbyform.html)
+[see demo here](http://www.paginaswww.com/rdb/examples/jq_rdbhost_exdm_postbyform.html)
 
 * *$.withResults:* functionally identical to $.postData.
 
@@ -118,16 +113,16 @@ If called on an empty _table_, it will create rows to match the records.
 If called on a _div_, it will create a new _table_ in that _div_, and proceed as above.  
 If called on a table with pre-defined rows, it puts the data into cells based on matching the field name to the _td_ cell's _class_ value. If any class in the cell matches the field name, that is a match.
 
-[see demo here](http://www.paginaswww.com/rdb/examples/jq_rdbhost_table.html)
+[see demo here](http://www.paginaswww.com/rdb/examples/jq_rdbhost_exdm_table.html)
 
 * *$.fn.populateForm:* sends query to server, gets results, and populates an html form with the data in the first record.  
 It attempts to match each field name to an input field with matching _id_, and then attempts to match an input field with matching _class_-name.
 
-[see demo here](http://www.paginaswww.com/rdb/examples/jq_rdbhost_formpop.html)
+[see demo here](http://www.paginaswww.com/rdb/examples/jq_rdbhost_exdm_formpop.html)
 
 * *$.fn.datadump:* sends query, gets results, formats the data as a pretty-printed JSON string, and inserts it into each item in the selection set.  Intended as a diagnostic aid.
 
-[see demo here](http://www.paginaswww.com/rdb/examples/jq_rdbhost_dump.html)
+[see demo here](http://www.paginaswww.com/rdb/examples/jq_rdbhost_exdm_dump.html)
 
 =====
 

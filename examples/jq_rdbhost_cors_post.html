@@ -12,12 +12,12 @@
     $(document).ready(function () {
 		    $.rdbHostConfig({ 'userName' : "r0000000002",
 												  'authcode' : "-",
-													'subdomain' : 'rdbhost' })
+													'subdomain' : 'rdbhost' });
         var q = 'SELECT * FROM capitols';
 				$('.targets').populateTable({q : q});
 				function repopulate() {
 					$('.targets').populateTable({q : q});
-				};
+				}
 				$('#demo-form').submit(function () {
 					var $form = $('#demo-form');
 					var place = $form.find('#place').val().split(',');

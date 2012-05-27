@@ -4,25 +4,27 @@
 	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
 	<title>RdbHost Plugin $.postByForm example</title>
     <script language="javascript" type="text/javascript"
-				src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.js"></script>
+			src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.js"></script>
     <script language="javascript" type="text/javascript"
-				src="../js/jquery.rdbhost.cors.js"></script>
+      src="http://dev.rdbhost.com/js/easyxdm/easyXDM.debug.js"></script>
+    <script language="javascript" type="text/javascript" src="../js/jquery.rdbhost.exdm.js"></script>
     <script language="javascript" type="text/javascript" src="../js/json2.js"></script>
 		<script>
     $(document).ready(function () {
         var q = 'SELECT * FROM capitols';
+        $.rdbHostConfig({domain : 'dev.rdbhost.com'});
 				function repopulate() {
 					$('.targets').populateTable({q : q,
 																			 userName : 'r0000000002',
 																			 authcode : ''  });
 				}
 				repopulate();
-				$('#demo-form').submit(function () {
-					return $.postFormData(this,
-															 { 'userName' : 'p0000000002',
-															   'authcode' : '-',
-																 'callback' : repopulate });
-				});
+				//$('#demo-form').submit(function () {
+				//	return $.postFormData(this,
+        $.postFormData( $('#demo-form'),
+                       { 'userName' : 'p0000000002',
+                         'authcode' : '-',
+                         'callback' : repopulate });
     })
     </script>
 </head>
@@ -37,7 +39,7 @@
 	<div class="targets"><pre id="target"></pre></div>
 	
 	<div style="border-style:double; width:400px">
-		<form action='' method='post' id='demo-form' enctype="multipart/form-data" >
+		<form action='' method='post' id='demo-form' enctype="multipart/form-data" target="request_target">
 			<table>
 				<tr>
 					<td>City</td><td><input type="text" size="30" id="arg000" name="arg000" /></td>

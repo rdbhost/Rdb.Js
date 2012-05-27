@@ -195,12 +195,11 @@ function SQLEngine(uName, authcode, subdomain)
 		$hiddenform.submit(function (ev) {
       ev.stopPropagation();
 			iframe_requested = true;
-			var res = that.queryByForm({ 'formId' : formId,
-										  'callback' : qCallback,
-										  'errback' : qErrback,
-										  'format' : format,
-										  'plainTextJson' : plainText });
-			return res;
+			return that.queryByForm({ 'formId' : formId,
+                                'callback' : qCallback,
+                                'errback' : qErrback,
+                                'format' : format,
+                                'plainTextJson' : plainText });
 		});
 		// submit the hidden form
 		$hiddenform.submit();
@@ -466,16 +465,15 @@ SQLEngine.formnamectr = 0;
 	//  configuration setting function
 	//  saves defaults as attribute on the config function
 	//
-	var opts = { errback : errback,
-		         callback : dumper,
-				 eachrec : undefined,
-				 subdomain : 'rdbhost',
-				 format : 'jsond-easy',
-				 userName : '',
-				 authcode : ''        };
+	var opts = {  errback : errback,
+                callback : dumper,
+                eachrec : undefined,
+                subdomain : 'rdbhost',
+                format : 'jsond-easy',
+                userName : '',
+                authcode : ''        };
 	var rdbHostConfig= function (parms) {
-		var options = $.extend({}, opts, parms||{});
-		rdbHostConfig.opts = options;
+    rdbHostConfig.opts = $.extend({}, opts, parms||{});
 	};
 	$.rdbHostConfig = rdbHostConfig;  // makes it a plugin
 	

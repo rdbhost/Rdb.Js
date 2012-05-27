@@ -6,37 +6,24 @@
     <script language="javascript" type="text/javascript"
 				src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.js"></script>
     <script language="javascript" type="text/javascript"
-				src="../js/jquery.rdbhost.js"></script>
+        src="http://dev.rdbhost.com/js/easyxdm/easyXDM.debug.js"></script>
+    <script language="javascript" type="text/javascript" src="../js/jquery.rdbhost.exdm.js"></script>
     <script language="javascript" type="text/javascript" src="../js/json2.js"></script>
 		<script>
     $(document).ready(function () {
 		    $.rdbHostConfig({ 'userName' : "r0000000002",
 												  'authcode' : "-" });
         var q = 'SELECT * FROM capitols';
-				$('.targets').populateTable({q : q});
+				$('.targets').datadump({q : q});
     })
     </script>
 </head>
 <body>
-  <h3>jQuery.Rdbhost .populateTable Demo</h3>
-	<p>This table is populated from the database.  Demonstrates individual
-	  formatting of individual fields, and field selection.</p>
-	<table id="targettab" class="targets">
-		<thead>
-			<tr>
-				<th>City</th>
-				<th>Country</th>
-				<th>Pop</th>
-			</tr>
-		</thead>
-		<tbody>
-			<tr>
-				<td class="city">ABC</td>
-				<td class="country" style="color:red;">DEF</td>
-				<td class="population" style="color:blue;"></td>
-			</tr>
-		</tbody>
-	</table>
+  <h3>jQuery.Rdbhost .datadump Demo</h3>
+	<p>This div is populated from the database.  Format is just stringified JSON.</p>
+	<div>
+		<pre class="targets"></pre>
+	</div>
 	
 </body>
 </html>

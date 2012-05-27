@@ -1,0 +1,87 @@
+<!doctype html>
+<html>
+    <head>
+        <title>OpenID Login Demo</title>
+        <script src="http://dev.rdbhost.com/js/easyxdm/easyXDM.debug.js"></script>
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.js"></script>
+        <script src="/rdb/js/jquery.rdbhost.exdm.js"> </script>
+    </head>
+    <body>
+        <script type="text/javascript">
+            document.write("Domain: " + location.host);
+        </script>
+        <div>
+            This example shows how to use easyXDM to call regular ajax/cors services (no JSONP) from remote domains.
+        </div>
+        <div id="container" width="700" height="500"></div>
+        <script type="text/javascript">
+            var host = 'dev.rdbhost.com';
+            var openidForm = '<html><body>'+
+                    '<form action="https://~host~/auth/openid/02/one" method="get">     '+
+                    'OpenID Identifier URL<input name="openidurl" size="75"/>  <br/>    '+
+                    '<input type="submit" />                                            '+
+                    '<p>Provide your OpenId identifier, complete with http: <br/>       '+
+                    'Examples: <ul><li>http://example.livejournal.com</li>              '+
+                    '<li>http://example.myopenid.com</li></ul>                          '+
+                    '<p>The OpenID Provider will ask if you wish to verify ID for       '+
+                    '"www.rdbhost.com".  Respond "yes", as Rdbhost handles the OpenID   '+
+                    'verification for us.</p>                                           '+
+                    '</form></body></html>';
+            openidForm = openidForm.replace('~host~',host);
+
+            var successText = '<h3>Logged In</h3>'+
+                    'ID: <span id="identifier"></span><br/>'+
+                    'Account: <span id="account"></span><br/>'+
+                    '<p>If this is your first time here, we created an account '+
+                    '<i>(nothing more than an account number in an accounts list, really)</i>.<br/>'+
+                    'If you return and log in again, it will show you the same account '+
+                    ' number.</p>';
+
+            var failureText = '<h3>NOT Logged In</h3>'+
+                    'Error: <span id="error"></span>'+
+                    '<p>Your login failed. Return to openid login page and try again.</p>';
+
+            var cancelText = '<h3>Log in Cancelled</h3>'+
+                    '<p>Apparently, you cancelled your authentication at the OpenID provider.</p>';
+
+
+            // we are logging into app on account 2
+            var uid = '0000000002',
+                err = undefined;
+            // this function handles the response from Rdbhost at end of login process.
+            // pass it as last parameter to LoginFunction
+            //
+            function onLogin(response) {
+              var stat = response.status;
+              if (stat[0] === 'error') {
+                var error = response.error[1];
+                err = 'Error on OpenId Login %s'.replace('%s',error);
+                $('#container').html(failureText);
+                $('#error').html(err);
+              }
+              else if (stat[0] === 'complete') {
+                var resRow = response.records.rows[0]; // get first row
+                if (resRow[1] === 'success') {
+                  $('#container').html(successText);
+                  $('#account').html(resRow[3]);
+                  $('#identifier').html(resRow[2]);
+                }
+                else if (resRow[1] === 'cancel') {
+                  $('#container').html(cancelText);
+                }
+                else {
+                  $('#container').html(failureText);
+                  $('#error').html(resRow[2]);
+                }
+              }
+              else {
+                err = 'unknown error in login %s'.replace('%s',resRow[1]);
+                $('#container').html(failureText);
+                $('#error').html(err);
+              }
+            }
+
+            LoginFunction(uid, host, 'container', openidForm, onLogin);
+        </script>
+    </body>
+</html>

@@ -10,12 +10,14 @@
     <script language="javascript" type="text/javascript"
 						src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.js"></script>
 		<script type="text/javascript" language="javascript" src="datatables/js/jquery.dataTables.js"></script>
-    <script language="javascript" type="text/javascript" src="../js/jquery.rdbhost.js"></script>
+    <script language="javascript" type="text/javascript"
+        src="http://dev.rdbhost.com/js/easyxdm/easyXDM.debug.js"></script>
+    <script language="javascript" type="text/javascript" src="../js/jquery.rdbhost.exdm.js"></script>
     <script language="javascript" type="text/javascript" src="../js/json2.js"></script>
 		<script type="text/javascript" charset="utf-8">
 			$(document).ready(function() {
 				// create rdbhost sql engine object
-				var rdb = new SQLEngine("r0000000002","-",'rdbhost');
+				var rdb = new SQLEngine("r0000000002","-",'dev.rdbhost.com');
 				// getData is a callback for dataTables to fetch additional
 				//   data dynamically as user pages up/down
 				var q = 'SELECT count(*) FROM css_data; '+
@@ -25,8 +27,8 @@
 					//   to suit dataTables, and calls the dataTables callback
 					//  fnCallback with the reformed data
 					function cBack(json) {
-						var rows = json.result_sets[1].records.rows
-						var ct = json.result_sets[0].records.rows[0][0]
+						var rows = json.result_sets[1].records.rows;
+						var ct = json.result_sets[0].records.rows[0][0];
 						var newJson = {'aaData' : rows,
 												   'iTotalDisplayRecords' : ct };
 						fnCallback(newJson);
@@ -47,6 +49,7 @@
 					// query server, and pass data to cBack
 					rdb.query({	'callback': cBack,
 											'errback': alert,
+                      'format': 'json',
 											'q': q0	 })
 				}
 				// put empty table into page
@@ -76,6 +79,7 @@
 				var qstart = 'SELECT * FROM css_data LIMIT 1';
 				rdb.query({	'callback': createTable,
 										'errback': alert,
+                    'format': 'json',
 										'q': qstart	 })
 			} );
 		</script>
