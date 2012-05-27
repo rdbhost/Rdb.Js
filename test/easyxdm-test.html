@@ -1,0 +1,49 @@
+<!doctype html>
+<html>
+    <head>
+        <title>easyXDM</title>
+        <script language="javascript" type="text/javascript"
+          src="http://dev.rdbhost.com/js/easyxdm/easyXDM.debug.js"></script>
+        <script type="text/javascript">
+            // this is only bootstrapping code
+            var REMOTE = 'http://dev.rdbhost.com';
+
+            // this is really what you are after
+            var rpc = new easyXDM.Rpc({
+                local: "/static/0000000002/easyxdm/name.html",
+                swf: "/js/easyxdm/easyxdm.swf",
+                remote: REMOTE + "/static/0000000002/easyxdm/cors/index.html",
+                remoteHelper: REMOTE + "/static/0000000002/easyxdm/name.html",
+                onReady : function() {
+                  rpc.request({
+                      url : '/static/0000000002/easyxdm/ascii-file.txt',
+                      method : "POST"
+                    },
+                    function(response) {
+                      alert(response.data);
+                    },
+                    function(err) {
+                      alert(err.message);
+                    }
+                  )
+                }
+            }, {
+                remote: {
+                    request: {}
+                }
+            });
+ 
+
+        </script>
+    </head>
+    <body>
+        <script type="text/javascript">
+            document.write("Domain: " + location.host);
+        </script>
+        <div id="embedded">
+        </div>
+        <div>
+            This example shows how to use easyXDM to call regular ajax/cors services (no JSONP) from remote domains.
+        </div>
+    </body>
+</html>

@@ -1083,8 +1083,8 @@ function saveGlobal() {
 
 function checkPollution( name ) {
 	var newGlobals,
-		deletedGlobals,
-		old = config.pollution;
+		  deletedGlobals,
+		  old = config.pollution;
 
 	saveGlobal();
 

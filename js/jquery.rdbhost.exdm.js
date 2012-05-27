@@ -98,11 +98,56 @@ function createConnection(username,domain) {
           returnResponse: function(response) {
               CONNECTIONS[uid].handler(response);
             }
-          }
+        }
     }
   );
 
   return uid;
+}
+
+function LoginFunction(uid, domain, container, start, onComplete) {
+  // remote rpc created for use by .queryByForm() method
+  var REMOTE = 'https://'+domain;
+  if (typeof(container) === 'string') {
+    container = document.getElementById(container);
+  }
+
+  function loadIFrame(remoteRpc, stuff, height, width) {
+    if (stuff.substr(0,4) === 'http') {
+      remoteRpc.loadIFrame(stuff, height, width);
+    }
+    else {
+      remoteRpc.loadIFrameContent(stuff, height, width);
+    }
+  }
+
+  var rpc = new easyXDM.Rpc({
+      remote: REMOTE + "/static/~/receiver_debug.html".replace('~',uid),
+      swf: REMOTE + "/js/easyxdm/easyxdm.swf",
+      remoteHelper: REMOTE + "/static/~/easyxdm/name.html".replace('~',uid),
+      container: container,
+      onReady: function () {
+            var h = parseInt(container.attributes.height.value),
+                w = parseInt(container.attributes.width.value);
+            var widgetFrame = container.getElementsByTagName('iframe')[0];
+            widgetFrame.height = h;
+            widgetFrame.width = w;
+            loadIFrame(rpc, start, h-25, w-25);
+          }
+    }, {
+      local: {
+          returnResponse: function(response) {
+              jsonResp = JSON.parse(response);
+              onComplete(jsonResp);
+              rpc.destroy();
+            }
+          },
+      remote: {
+          loadIFrame: {},
+          loadIFrameContent: {}
+        }
+    }
+  );
 }
 
 
@@ -386,13 +431,12 @@ function SQLEngine(userName, authcode, domain)
 	var opts = {  errback : errback,
                 callback : dumper,
                 eachrec : undefined,
-                domain : 'dev.rdbhost.com',
+                domain : 'www.rdbhost.com',
                 format : 'json-easy',
                 userName : '',
                 authcode : ''        };
 	var rdbHostConfig= function (parms) {
-		var options = $.extend({}, opts, parms||{});
-		rdbHostConfig.opts = options;
+    rdbHostConfig.opts = $.extend({}, opts, parms||{});
 	};
 	$.rdbHostConfig = rdbHostConfig;  // makes it a plugin
 

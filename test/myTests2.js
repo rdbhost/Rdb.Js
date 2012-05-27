@@ -116,7 +116,6 @@ test('$.postFormData setup verification', function() {
 
 asyncTest('$.postFornData test', 4+1, function() {
 
-  var that = this;
   $.postFormData($('#qunit_form2'), {
       callback: function (resp) {
             ok(typeof resp === 'object', 'response is object'); // 0th assert
@@ -137,7 +136,6 @@ asyncTest('$.postFornData test', 4+1, function() {
 // do SELECT query form way
 var testdiv = "<div id=\"qunit_div\"></div>";
 
-var setup_counter = 0;
 module('plugin display tests', {
   setup: function () {
     $.rdbHostConfig( {
@@ -169,7 +167,6 @@ test('$.datadump setup verification', function() {
 /* and $.fn.datadump.  */
 asyncTest('$.datadump test', 2+1, function() {
 
-  var that = this;
   $('#qunit_div').datadump('SELECT \'abc\' AS txt, 1 AS num');
 
   setTimeout(function () {
@@ -186,7 +183,6 @@ asyncTest('$.datadump test', 2+1, function() {
 /* $.fn.populateTable,  */
 asyncTest('$.populateTable test', 3+1, function() {
 
-  var that = this;
   ok($('#qunit_div').length > 0, 'qunit div is there');
   $('#qunit_div').populateTable('SELECT \'abc\' AS txt, 1 AS num');
 
@@ -238,7 +234,6 @@ test('$.populateForm setup verification', function() {
 /* $.fn.populateTable,  */
 asyncTest('$.populateForm test', 2+1, function() {
 
-  var that = this;
   $('#qunit_form').populateForm('SELECT \'abc\' AS txt, 1 AS num');
 
   setTimeout(function () {

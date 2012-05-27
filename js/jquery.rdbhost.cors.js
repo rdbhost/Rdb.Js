@@ -73,7 +73,7 @@ function SQLEngine(uName,authcode,domain)
 	this.format = 'json';
 	this.userName = uName;
 	this.authcode = authcode;
-	this.domain = domain || 'www.rdbhost.com'
+	this.domain = domain || 'www.rdbhost.com';
 	
 	this.getQueryUrl = function(altPath) {
 		var proto = window.location.protocol;
@@ -126,7 +126,7 @@ function SQLEngine(uName,authcode,domain)
 		}
 		// create data record
 		var data = { 'format' : format,
-			           'q' : query }
+			           'q' : query };
 	  if ( kw !== undefined && kw !== null )
 				data['kw'] = kw;
 		// iterate over arg and argtype lists, and add
@@ -335,15 +335,14 @@ SQLEngine.formnamectr = 0;
 	//  configuration setting function
 	//  saves defaults as attribute on the config function
 	//
-	var opts = { errback : errback,
-		         callback : dumper,
-				 eachrec : undefined,
-				 format : 'json-easy',
-				 userName : '',
-				 authcode : ''        };
-	var rdbHostConfig= function (parms) {
-		var options = $.extend({}, opts, parms||{});
-		rdbHostConfig.opts = options;
+	var opts = {  errback : errback,
+                callback : dumper,
+                eachrec : undefined,
+                format : 'json-easy',
+                userName : '',
+                authcode : ''        };
+	var rdbHostConfig = function (parms) {
+      rdbHostConfig.opts = $.extend( {}, opts, parms||{} );
 	};
 	$.rdbHostConfig = rdbHostConfig;  // makes it a plugin
 	
@@ -410,7 +409,7 @@ SQLEngine.formnamectr = 0;
 			$form.append($('<input type="hidden" id="kw" name="kw" >').val(inp.kw));
 		}
 		var sqlEngine = new SQLEngine(inp.userName, inp.authcode);
-		delete inp.userName; delete inp.authcode
+		delete inp.userName; delete inp.authcode;
 		sqlEngine.queryByForm(inp);
 		return false;
 	};
