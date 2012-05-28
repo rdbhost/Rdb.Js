@@ -81,7 +81,11 @@
               }
             }
 
-            LoginFunction(uid, host, 'container', openidForm, onLogin);
+            $.loginOpenId('container',
+                          {'identifier': openidForm,
+                           'userName' : "r0000000002",
+                           'domain' : 'dev.rdbhost.com',
+                           'callback':  onLogin })
         </script>
     </body>
 </html>

@@ -29,7 +29,7 @@ Some features of the service:
 
 
 ### The Plugin ###
-Included are four _functions_ (called on the jQuery object) and three _methods_ (called on selection sets).  All of them take option objects as their only or second parameter. 
+Included are five _functions_ (called on the jQuery object) and three _methods_ (called on selection sets).  All of them take option objects as their only or second parameter.
 
 ### Options ###
 Before we discuss the functions and methods themselves, let's go over the options.  Some are required, some optional (a _required_ _option_ ? yep).  A default can be set for each, via the $.rdbHostConfig function, or included in each function or method call.
@@ -105,6 +105,17 @@ It is also recommended to explicitly set 'enctype' and 'method' attributes on th
 * *$.withResults:* functionally identical to $.postData.
 
 * *$.eachRecord:* sends query to server, gets results, calls _errback_ if status is 'error', otherwise, calls _eachrec_ callback with each record.  By default, the _jsond-easy_ format is used, and each record is an object with named attribute for each record field.
+
+* *$.loginOpenId:* used to login a user using OpenId.  Passes result data from OpenId authorization sequence to the callback.  _identifier_ can be either raw html for a form, or a precomputed OpenId identifier url.
+
+          $.loginOpenId($('container'),
+                        {'identifier': html_form_or_identifier,
+                         'userName' : "r0000000002",
+                         'domain' : 'dev.rdbhost.com',
+                         'callback':  function(response) {...} })
+
+[see demo here](http://www.paginaswww.com/rdb/examples/openid-login.html)
+       
 
 ### Methods ###
 

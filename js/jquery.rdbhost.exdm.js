@@ -106,7 +106,7 @@ function createConnection(username,domain) {
 }
 
 function LoginFunction(uid, domain, container, start, onComplete) {
-  // remote rpc created for use by .queryByForm() method
+
   var REMOTE = 'https://'+domain;
   if (typeof(container) === 'string') {
     container = document.getElementById(container);
@@ -122,9 +122,9 @@ function LoginFunction(uid, domain, container, start, onComplete) {
   }
 
   var rpc = new easyXDM.Rpc({
-      remote: REMOTE + "/static/~/receiver_debug.html".replace('~',uid),
+      remote: REMOTE + "/static/0~/receiver_debug.html".replace('~',uid),
       swf: REMOTE + "/js/easyxdm/easyxdm.swf",
-      remoteHelper: REMOTE + "/static/~/easyxdm/name.html".replace('~',uid),
+      remoteHelper: REMOTE + "/static/0~/easyxdm/name.html".replace('~',uid),
       container: container,
       onReady: function () {
             var h = parseInt(container.attributes.height.value),
@@ -483,7 +483,8 @@ function SQLEngine(userName, authcode, domain)
 
 	/*
 	    postFormData should be called on a form BEFORE form is submitted.
-	
+
+	    that: id of form, or id of form element
 	    param q : query to post data
 	    param kw : query-keyword to post data
 	*/
@@ -526,6 +527,24 @@ function SQLEngine(userName, authcode, domain)
 		return true;
 	};
 	$.postData = postData;
+
+	/*
+	    loginOpenId - initiates OpenId login process, passes result to callback
+
+	    that: id of form, or id of form element
+
+	    param identifier : user provided identifier or login form with 'openidurl' param
+	    param callback : function to call with json data
+	    param errback : function to call in case of error
+	*/
+	var loginOpenId = function(that, parms) {
+		assert(arguments.length<=2, 'too many parms to loginOpenId');
+		var inp = $.extend({}, $.rdbHostConfig.opts, parms||{});
+    var uid = parseInt(inp.userName.substr(1))
+		delete inp.userName; delete inp.authcode; //delete inp.domain;
+    LoginFunction(uid,inp.domain,that,inp.identifier,inp.callback);
+	};
+	$.loginOpenId = loginOpenId;
 
 	/*
 	    populateTable creates an html table and inserts into  page
