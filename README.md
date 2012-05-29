@@ -2,7 +2,7 @@
 ## The Javascript Module for Accessing Rdbhost 
 ## jquery.rdbhost.js ##
 
-##Strongly Recommended: Use the [rdbhost.jquery.exdm.js](README.EXDM.md) module instead of this one.##
+##Strongly Recommended: Use the [rdbhost.jquery.exdm.js](/rdbhost/Rdb.Js/blob/master/README.EXDM.md) module instead of this one.##
 
 ### Dependencies ###
 This module requires jQuery.  Version 1.4 or greater is recommended.
