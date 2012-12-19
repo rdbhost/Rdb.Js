@@ -2,20 +2,20 @@
 <html>
     <head>
         <title>OpenID Login Demo</title>
-        <script src="http://dev.rdbhost.com/js/easyxdm/easyXDM.debug.js"></script>
+        <script src="http://www.rdbhost.com/js/easyxdm/easyXDM.debug.js"></script>
         <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.js"></script>
         <script src="/rdb/js/jquery.rdbhost.exdm.js"> </script>
     </head>
     <body>
         <script type="text/javascript">
-            document.write("Domain: " + location.host);
+            document.write("Domain: " + locatwion.host);
         </script>
         <div>
             This example shows how to use easyXDM to call regular ajax/cors services (no JSONP) from remote domains.
         </div>
         <div id="container" width="700" height="500"></div>
         <script type="text/javascript">
-            var host = 'dev.rdbhost.com';
+            var host = 'www.rdbhost.com';
             var openidForm = '<html><body>'+
                     '<form action="https://~host~/auth/openid/02/one" method="get">     '+
                     'OpenID Identifier URL<input name="openidurl" size="75"/>  <br/>    '+
@@ -84,7 +84,7 @@
             $.loginOpenId('container',
                           {'identifier': openidForm,
                            'userName' : "r0000000002",
-                           'domain' : 'dev.rdbhost.com',
+                           'domain' : 'www.rdbhost.com',
                            'callback':  onLogin })
         </script>
     </body>

@@ -1,48 +1,48 @@
 /*
- 
+
     jquery.rdbhost.js
-    
+
     A jquery plugin to access PostgreSQL databases on Rdbhost.com
-  
+
     requires a (free) account at www.rdbhost.com to be useful.
-    
+
     this module includes a class 'SQLEngine' for the database connection, and
       that class can be used by itself, aside from the plugins.  jQuery 1.4+
       is required, even when using the connection class without the plugin.
-      
-       
+
+
     the module adds four functions and three methods to the jQuery namespace.
-    
+
     The four functions are $.rdbHostConfig, $.withResults, $.eachRecord, and
       $.postFormData.  The three methods are $.fn.populateTable,
       $.fn.populateForm, and $.fn.datadump.  There is also a $.postData alias
       to $.withResults
-      
+
     $.rdbHostConfig takes an options object, and makes those options default for
       all subsequent functions and methods.
-      
+
     $.withResults sends a query to the server, receives the data, and calls
       a callback with the received data.
-      
+
     $.eachRecord is like $.withResults, in that it gets data from the server,
       but it extracts the rows from the data structure, and calls an eachrec
       callback for each record.  Each record is a javascript object, with a
       named attribute for each field.
-      
+
     $.postFormData takes a form as input, submits that form to the server,
       receives the data returned, and provides it to the callback.
       The form fields must conform to the rdbhost protocol.
-      
+
     Form fields
       The form *must* include either a 'q' or a 'kw' field.  It may also include
       'arg###', or 'argtype###' fields.  Argument fields are numbered like
       'arg000', 'arg001'... in order.  Argument type fields, 'argtype000'..
       must correspond to arg fields. Argument fields may be file fields.
-      
+
 	  The 'kw' field value allows you to invoke a query that is stored in the
 	  'lookup.queries' table on the  server.  See website documentation for
 	  details.
-      
+
     $.fn.populateTable sends a query to the server, receives the data, and populates
       an html table with it.  If the element provided is not a table, a new
       table is inserted in it; if the element is an empty table, it is expanded
@@ -52,16 +52,16 @@
       put its value in a table cell like '<td class="firstName">').  A cell
       can have multiple classes, so adding field-name classes should not interfere
       with styling.
-      
+
     $.fn.populateForm sends a query to the server, receives the data, selects the
       first record, and populates a form with it.  It attempts to match each field
       name to an input field with matching id, and then attempts to match an input
       field with matching class-name.
-      
+
     $.fn.datadump is a diagnostic-aid that puts a formatted json-string of
       the data into the selected html elements.  It allows you to verify the
       data retrieval functionality before doing (much) html work.
-      
+
 */
 
 
@@ -74,7 +74,7 @@ function consoleLog(msg) {
 
 
 // SQL Engine that uses form for input, and hidden iframe for response
-//   handles file fields 
+//   handles file fields
 //
 function SQLEngine(uName, authcode, subdomain)
 {
@@ -113,7 +113,7 @@ function SQLEngine(uName, authcode, subdomain)
 		return hparts.join('.');
 	};
 
-	this.query = function(parms) 
+	this.query = function(parms)
 	/* parms is object containing various options
 		callback : function to call with data from successful query
 		errback : function to call with error object from query failure
@@ -135,7 +135,7 @@ function SQLEngine(uName, authcode, subdomain)
     var namedArgs = parms.namedArgs || {};
 		var plainText = parms.plainTextJson;
 		var format = parms.format || this.format;
-		
+
 		var iframe_requested = false;
 		var that = this;
 		var formId = 'rdb_hidden_form_'+(SQLEngine.formnamectr+=1);
@@ -176,7 +176,7 @@ function SQLEngine(uName, authcode, subdomain)
 		}
 		// put query in hidden form
 		add_hidden_field($hiddenform,'q',query);
-    if (kw !== undefined && kw !== null) {
+    if (kw) {
   		add_hidden_field($hiddenform,'kw',kw);
     }
 		// if params are provided, convert to named form 'arg000', 'arg001'...
@@ -195,17 +195,18 @@ function SQLEngine(uName, authcode, subdomain)
 		$hiddenform.submit(function (ev) {
       ev.stopPropagation();
 			iframe_requested = true;
-			return that.queryByForm({ 'formId' : formId,
-                                'callback' : qCallback,
-                                'errback' : qErrback,
-                                'format' : format,
-                                'plainTextJson' : plainText });
+			var res = that.queryByForm({ 'formId' : formId,
+										  'callback' : qCallback,
+										  'errback' : qErrback,
+										  'format' : format,
+										  'plainTextJson' : plainText });
+			return res;
 		});
 		// submit the hidden form
 		$hiddenform.submit();
 	};
-	
-	
+
+
 	this.queryRows = function(parms)
 	/* parms is just like for query method, but callback gets row array and
 	   header array, not whole data structure.
@@ -220,7 +221,7 @@ function SQLEngine(uName, authcode, subdomain)
 			var status = json.status[0];
 			var header = json.records.header || [];
 			if (status === 'complete') {
-				callback(rows,header);				
+				callback(rows,header);
 			}
 			else if (status === 'incomplete') {
 				incomplete_callback(rows,header);
@@ -229,8 +230,8 @@ function SQLEngine(uName, authcode, subdomain)
 		parms.callback = cb;
 		this.query(parms);
 	};
-	
-	
+
+
 	this.queryByForm = function(parms)
 	/* parms is object containing various options
 		formId : the id of the form with the data
@@ -245,7 +246,7 @@ function SQLEngine(uName, authcode, subdomain)
 		var formId = parms.formId;
 		var plainTextJson = parms.plainTextJson;
 		var format = parms.format || this.format;
-		
+
 		var that = this;
 		var targettag = 'upload_target_'+formId+'_'+(SQLEngine.formnamectr+=1);
 		var target, action;
@@ -268,7 +269,7 @@ function SQLEngine(uName, authcode, subdomain)
       cleanup_submit(formId);
     }
 
-		// function to handle json when loaded		
+		// function to handle json when loaded
 		function results_loaded(callback,errback) {
 			//
 			var $fr = $(frames[targettag].document);
@@ -315,7 +316,7 @@ function SQLEngine(uName, authcode, subdomain)
 			remove_iframe(targettag)
 		}
 		// init vars
-		var dbUrl =  this.getQueryUrl(); 
+		var dbUrl =  this.getQueryUrl();
 		//dbUrl = "http://rdbhost.paginaswww.com/helloalert.html";
 		target = $form.attr('target'); // save vals
 		action = $form.attr('action');
@@ -355,7 +356,7 @@ function SQLEngine(uName, authcode, subdomain)
 		var errback = parms.errback;
 		var formId = parms.formId;
 		var plainTextJson = parms.plainTextJson;
-		
+
 		var that = this;
 		// get form, return if not found
 		var $form = $('#'+formId);
@@ -373,7 +374,7 @@ function SQLEngine(uName, authcode, subdomain)
 				alert(arg2.join(', '));
 			};
 		}
-		// function to handle json when loaded		
+		// function to handle json when loaded
 		function results_loaded(callback,errback) {
 			//
 			var $fr = $(frames[targettag].document);
@@ -420,7 +421,7 @@ function SQLEngine(uName, authcode, subdomain)
 			remove_iframe(targettag);
 		}
 		// init vars
-		var dbUrl =  this.getLoginUrl(); 
+		var dbUrl =  this.getLoginUrl();
 		// set format, action, and target
 		add_hidden_field($form,'format',this.format);
 		$form.attr('target',targettag);
@@ -440,18 +441,18 @@ function SQLEngine(uName, authcode, subdomain)
 		window.document.domain = this.getCommonDomain();
 		return true;
 	};
-	
+
 } // end of SQLEngine class
 SQLEngine.formnamectr = 0;
 
 
 /*
   following section defines some jQuery plugins
-  
+
 */
 
 (function ($,window) {
-	
+
 	// default generic callbacks
 	//
 	function errback(err,msg) {
@@ -461,22 +462,23 @@ SQLEngine.formnamectr = 0;
 		var str = JSON.stringify(json,null,4);
 		alert(str);
 	}
-	
+
 	//  configuration setting function
 	//  saves defaults as attribute on the config function
 	//
-	var opts = {  errback : errback,
-                callback : dumper,
-                eachrec : undefined,
-                subdomain : 'rdbhost',
-                format : 'jsond-easy',
-                userName : '',
-                authcode : ''        };
+	var opts = { errback : errback,
+		         callback : dumper,
+				 eachrec : undefined,
+				 subdomain : 'rdbhost',
+				 format : 'jsond-easy',
+				 userName : '',
+				 authcode : ''        };
 	var rdbHostConfig= function (parms) {
-    rdbHostConfig.opts = $.extend({}, opts, parms||{});
+		var options = $.extend({}, opts, parms||{});
+		rdbHostConfig.opts = options;
 	};
 	$.rdbHostConfig = rdbHostConfig;  // makes it a plugin
-	
+
 	/*
 	    withResults - calls callback with json result object
 	      or errback with error object
@@ -493,7 +495,7 @@ SQLEngine.formnamectr = 0;
 		sqlEngine.query(inp);
 	};
 	$.withResults = withResults;
-	
+
 	/*
 	    eachRecord - calls 'eachrec' callback with each record,
 	      or errback with error object
@@ -519,7 +521,7 @@ SQLEngine.formnamectr = 0;
 
 	/*
 	    postFormData should be used as a submit handler for a data entry form.
-	
+
 	    param q : query to post data
 	    param kw : query-keyword to post data
 	*/
@@ -575,17 +577,22 @@ SQLEngine.formnamectr = 0;
 		function populate_html_table($table,$row,recs) {
 			var rec, $newrow;
 			$table.find('tbody').empty();
-			for (var r in recs) {
-				rec = recs[r];
-				$newrow = $row.clone().show();
-				var ctr = 0, flds = [];
-				for (var fname in rec) {
-					$newrow.find('td.'+fname).html(rec[fname]);
-					ctr += $newrow.find('td.'+fname).length;
-					flds.push(fname);
-				}
-				assert(ctr,'no td elements found with field names! '+flds.join(', '));
-				$table.append($newrow);
+      if (recs === undefined || recs.length === 0) {
+        $newrow = $row.clone();
+        $table.append($newrow);
+      } else {
+        for (var r in recs) {
+          rec = recs[r];
+          $newrow = $row.clone().show();
+          var ctr = 0, flds = [];
+          for (var fname in rec) {
+            $newrow.find('td.'+fname).html(rec[fname]);
+            ctr += $newrow.find('td.'+fname).length;
+            flds.push(fname);
+          }
+          assert(ctr,'no td elements found with field names! '+flds.join(', '));
+          $table.append($newrow);
+        }
 			}
 		}
 		function generate_html_table($table,recs) {
@@ -616,7 +623,7 @@ SQLEngine.formnamectr = 0;
 					populate_html_table($table,$row,recs);
 				}
 				else {
-					generate_html_table($table,recs);					
+					generate_html_table($table,recs);
 				}
 			});
 		}
@@ -625,7 +632,7 @@ SQLEngine.formnamectr = 0;
 		return $selset;
 	};
 	$.fn.populateTable = populateTable;
-	
+
 	/*
 	    populateForm populates a form with a single record
 
@@ -664,7 +671,7 @@ SQLEngine.formnamectr = 0;
 		return $selset;
 	};
 	$.fn.populateForm = populateForm;
-	
+
 	/*
 	    datadump puts a <pre>-formatted json dump into the html
 
@@ -686,7 +693,7 @@ SQLEngine.formnamectr = 0;
 		return $selset;
 	};
 	$.fn.datadump = datadump;
-		
+
 }(jQuery,this));
 
 
