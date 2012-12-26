@@ -69,8 +69,8 @@ var CONNECTIONS = {};
 
 function createConnection(username,domain) {
 
-  var uid = username.substring(1);
-  var REMOTE = 'https://'+domain;
+  var uid = username.substring(1),
+      REMOTE = 'https://'+domain;
 
   assert(!CONNECTIONS[uid],'repeated namespace creation');
   CONNECTIONS[uid] = {};
@@ -80,7 +80,8 @@ function createConnection(username,domain) {
         local: "/static/~/easyxdm/name.html".replace('~',uid),
         swf: "/js/easyxdm/easyxdm.swf",
         remote: REMOTE + ("/static/~/easyxdm/cors/index.debug.html".replace('~',uid)),
-        remoteHelper: REMOTE + ("/static/~/easyxdm/name.html".replace('~',uid))
+        remoteHelper: REMOTE + ("/static/~/easyxdm/name.html".replace('~',uid)),
+        onReady: function () { CONNECTIONS[uid].ajaxRpcReady = true; }
     }, {
         remote: {
             request: {}
@@ -92,7 +93,8 @@ function createConnection(username,domain) {
   CONNECTIONS[uid].remoteRpc = new easyXDM.Rpc({
       remote: REMOTE + "/static/~/receiver_debug.html".replace('~',uid),
       swf: REMOTE + "/js/easyxdm/easyxdm.swf",
-      remoteHelper: REMOTE + "/static/~/easyxdm/name.html".replace('~',uid)
+      remoteHelper: REMOTE + "/static/~/easyxdm/name.html".replace('~',uid),
+      onReady: function () { CONNECTIONS[uid].remoteRpcReady = true; }
     }, {
       local: {
           returnResponse: function(response) {
@@ -105,7 +107,7 @@ function createConnection(username,domain) {
   return uid;
 }
 
-function LoginFunction(uid, domain, container, start, onComplete) {
+function LoginFunction(uid, domain, container, start, onComplete, onError) {
 
   assert(domain, 'domain falsy '+domain);
   assert(uid, 'uid falsy '+uid);
@@ -123,36 +125,41 @@ function LoginFunction(uid, domain, container, start, onComplete) {
     }
   }
 
-  /* create Rcp channel with the easyxdm library, to communicate with results
-    page loaded from another server.
-   */
-  var rpc = new easyXDM.Rpc({
-      remote: REMOTE + "/static/0~/receiver_debug.html".replace('~',uid),
-      swf: REMOTE + "/js/easyxdm/easyxdm.swf",
-      remoteHelper: REMOTE + "/static/0~/easyxdm/name.html".replace('~',uid),
-      container: container,
-      onReady: function () {
-            var h = parseInt(container.attributes.height.value),
-                w = parseInt(container.attributes.width.value);
-            var widgetFrame = container.getElementsByTagName('iframe')[0];
-            widgetFrame.height = h;
-            widgetFrame.width = w;
-            loadIFrame(rpc, start, h-25, w-25);
-          }
-    }, {
-      local: {
-          returnResponse: function(response) {
-              jsonResp = JSON.parse(response);
-              onComplete(jsonResp);
-              rpc.destroy();
+  try {
+    /* create Rcp channel with the easyxdm library, to communicate with results
+      page loaded from another server.
+     */
+    var rpc = new easyXDM.Rpc({
+        remote: REMOTE + "/static/0~/receiver_debug.html".replace('~',uid),
+        swf: REMOTE + "/js/easyxdm/easyxdm.swf",
+        remoteHelper: REMOTE + "/static/0~/easyxdm/name.html".replace('~',uid),
+        container: container,
+        onReady: function () {
+              var h = parseInt(container.attributes.height.value),
+                  w = parseInt(container.attributes.width.value);
+              var widgetFrame = container.getElementsByTagName('iframe')[0];
+              widgetFrame.height = h;
+              widgetFrame.width = w;
+              loadIFrame(rpc, start, h-25, w-25);
             }
-          },
-      remote: {
-          loadIFrame: {},
-          loadIFrameContent: {}
-        }
-    }
-  );
+      }, {
+        local: {
+            returnResponse: function(response) {
+                jsonResp = JSON.parse(response);
+                onComplete(jsonResp);
+                rpc.destroy();
+              }
+            },
+        remote: {
+            loadIFrame: {},
+            loadIFrameContent: {}
+          }
+      }
+    );
+  }
+  catch (e) {
+    onError(e.name, e.message);
+  }
 }
 
 
@@ -325,17 +332,21 @@ function SQLEngine(userName, authcode, domain)
           response = JSON.parse(response);
         }
         catch (e) {
+          delete CONNECTIONS[easyXDMAjaxHandle].handler;
           errback(e.name, e.message);
           return;
         }
         if (response.status[0] == 'error') {
+          delete CONNECTIONS[easyXDMAjaxHandle].handler;
           errback(response.error[0], response.error[1]);
         }
         else {
+          delete CONNECTIONS[easyXDMAjaxHandle].handler;
           callback(response);
         }
       }
       else {
+        delete CONNECTIONS[easyXDMAjaxHandle].handler;
         // plaintext response
         callback(response);
       }
@@ -372,6 +383,27 @@ function SQLEngine(userName, authcode, domain)
     return true;
   };
 
+  /*this.submit = function($form) {
+    *//* like .submit(), but waits for connection to be ready.   *//*
+    if ( CONNECTIONS.hasOwnProperty(easyXDMAjaxHandle) ) {
+      // if a connection (being) setup on this form, check that conn ready
+      if ( CONNECTIONS[easyXDMAjaxHandle].ajaxRpcReady ) {
+        // conn is ready, so submit
+        $form.submit();
+      }
+      else {
+        // conn not ready, so retry in 50 ms
+        setTimeout(function () {
+          $form.rdbhostSubmit();
+        }, 50)
+      }
+    }
+    else {
+      // nothing to wait for, just submit
+      $form.submit();
+    }
+  };
+*/
   this.loginByForm = function(parms)
   /* parms is object containing various options
     formId : the id of the form with the data
@@ -392,11 +424,13 @@ function SQLEngine(userName, authcode, domain)
       catch (e) {
         cleanup_form($form, target, action);
         errback(e.name, e.message);
+        delete CONNECTIONS[easyXDMAjaxHandle].handler;
         return;
       }
       callback(response);
       // cleanup form
       cleanup_form($form, target, action);
+      delete CONNECTIONS[easyXDMAjaxHandle].handler;
     }
     CONNECTIONS[easyXDMAjaxHandle].handler = cBack;
 
@@ -473,9 +507,14 @@ function SQLEngine(userName, authcode, domain)
   var withResults = function(parms) {
     assert(arguments.length<=1, 'too many parms to withResults');
     var inp = $.extend({}, $.rdbHostConfig.opts, parms||{});
-    var sqlEngine = new SQLEngine(inp.userName, inp.authcode, inp.domain);
-    //delete inp.userName; delete inp.authcode; delete inp.domain;
-    sqlEngine.query(inp);
+    try {
+      var sqlEngine = new SQLEngine(inp.userName, inp.authcode, inp.domain);
+      //delete inp.userName; delete inp.authcode; delete inp.domain;
+      sqlEngine.query(inp);
+    }
+    catch (e) {
+      inp.errback(e.name, e.message);
+    }
   };
   $.withResults = withResults;
 
@@ -525,9 +564,14 @@ function SQLEngine(userName, authcode, domain)
       $form.find('#q').remove();
       $form.append($('<input type="hidden" id="kw" name="kw" >').val(inp.kw));
     }
-    var sqlEngine = new SQLEngine(inp.userName, inp.authcode, inp.domain);
-    //delete inp.userName; delete inp.authcode; delete inp.domain;
-    sqlEngine.queryByForm(inp);
+    try {
+      var sqlEngine = new SQLEngine(inp.userName, inp.authcode, inp.domain);
+      //delete inp.userName; delete inp.authcode; delete inp.domain;
+      sqlEngine.queryByForm(inp);
+    }
+    catch (e) {
+      inp.errback(e.name, e.message);
+    }
     return true;
   };
   $.postFormData = postFormData;
@@ -542,9 +586,14 @@ function SQLEngine(userName, authcode, domain)
   var postData = function(parms) {
     assert(arguments.length<2, 'too many parms to postData');
     var inp = $.extend({}, $.rdbHostConfig.opts, parms||{});
-    var sqlEngine = new SQLEngine(inp.userName, inp.authcode, inp.domain);
-    //delete inp.userName; delete inp.authcode; delete inp.domain;
-    sqlEngine.query(inp);
+    try {
+      var sqlEngine = new SQLEngine(inp.userName, inp.authcode, inp.domain);
+      //delete inp.userName; delete inp.authcode; delete inp.domain;
+      sqlEngine.query(inp);
+    }
+    catch (e) {
+      inp.errback(e.name, e.message);
+    }
     return true;
   };
   $.postData = postData;
@@ -561,11 +610,41 @@ function SQLEngine(userName, authcode, domain)
   var loginOpenId = function(that, parms) {
     assert(arguments.length<=2, 'too many parms to loginOpenId');
     var inp = $.extend({}, $.rdbHostConfig.opts, parms||{});
-    var uid = parseInt(inp.userName.substr(1))
+    var uid = parseInt(inp.userName.substr(1));
     delete inp.userName; delete inp.authcode; //delete inp.domain;
     LoginFunction(uid,inp.domain,that,inp.identifier,inp.callback);
   };
   $.loginOpenId = loginOpenId;
+
+
+  /*
+    rdbhostSubmit is .submit() but waits for cross-domain socket to be ready
+
+    Use in lieu of $('#formid').submit(), where form has been prepared with
+    $.postFormData or $.loginByForm
+  */
+  var rdbhostSubmit = function() {
+    var $that = this,
+        targetName = $that.attr('target'),
+        reqPrefix = 'request_target_';
+    if (targetName && targetName.substr(0,reqPrefix.length) === reqPrefix ) {
+      var uid = targetName.substr(reqPrefix.length);
+      if ( CONNECTIONS[uid].remoteRpcReady ) {
+        $that.submit();
+      }
+      else {
+        setTimeout(function () {
+          $that.rdbhostSubmit();
+        }, 50);
+      }
+    }
+    else {
+      $that.submit();
+    }
+
+  };
+  $.fn.rdbhostSubmit = rdbhostSubmit;
+
 
   /*
       populateTable creates an html table and inserts into  page
