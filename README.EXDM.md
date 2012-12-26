@@ -29,7 +29,7 @@ Some features of the service:
 
 
 ### The Plugin ###
-Included are five _functions_ (called on the jQuery object) and three _methods_ (called on selection sets).  All of them take option objects as their only or second parameter.
+Included are five _functions_ (called on the jQuery object) and four _methods_ (called on selection sets).  Most of them take option objects as their only or second parameter.
 
 ### Options ###
 Before we discuss the functions and methods themselves, let's go over the options.  Some are required, some optional (a _required_ _option_ ? yep).  A default can be set for each, via the $.rdbHostConfig function, or included in each function or method call.
@@ -118,6 +118,10 @@ It is also recommended to explicitly set 'enctype' and 'method' attributes on th
        
 
 ### Methods ###
+
+* *$.fn.rdbhostSubmit:* waits for Connection to be ready, and submits form.  
+Only meaningful on submittable selection items such as forms, and should be used in preference to .submit() where the form has been prepared by $.postFormData, for submitting form data to Rdbhost.com.  
+Has no .rdbhostSubmit( function () {..} ) variant.
 
 * *$.fn.populateTable:* sends query to server, gets results, and populates an html table with the data, one row per record. 
 If called on an empty _table_, it will create rows to match the records.  
