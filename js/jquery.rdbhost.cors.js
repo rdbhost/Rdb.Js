@@ -443,22 +443,27 @@ SQLEngine.formnamectr = 0;
 		if (typeof(parms) === 'string') {
 			parms = { 'q' : parms };
 		}
-		function populate_html_table($table,$row,recs) {
-			var rec, $newrow;
-			$table.find('tbody').empty();
-			for (var r in recs) {
-				rec = recs[r];
-				$newrow = $row.clone().show();
-				var ctr = 0, flds = [];
-				for (var fname in rec) {
-					$newrow.find('td.'+fname).html(rec[fname]);
-					ctr += $newrow.find('td.'+fname).length;
-					flds.push(fname);
-				}
-				assert(ctr,'no td elements found with field names! '+flds.join(', '));
-				$table.append($newrow);
-			}
-		}
+    function populate_html_table($table,$row,recs) {
+      var rec, $newrow;
+      $table.find('tbody').empty();
+      if (recs === undefined || recs.length === 0) {
+        $newrow = $row.clone();
+        $table.append($newrow);
+      } else {
+        for (var r in recs) {
+          rec = recs[r];
+          $newrow = $row.clone().show();
+          var ctr = 0, flds = [];
+          for (var fname in rec) {
+            $newrow.find('td.'+fname).html(rec[fname]);
+            ctr += $newrow.find('td.'+fname).length;
+            flds.push(fname);
+          }
+          assert(ctr,'no td elements found with field names! '+flds.join(', '));
+          $table.append($newrow);
+        }
+      }
+    }
 		function generate_html_table($table,recs) {
 			var rec, $row, $td, fld;
 			for (var r in recs) {
