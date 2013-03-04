@@ -31,7 +31,15 @@
 
     $.postFormData takes a form as input, submits that form to the server,
       receives the data returned, and provides it to the callback.
-      The form fields must conform to the rdbhost protocol.
+      The form fields must be named arg000, arg001, etc
+
+    $.postData posts to the server, receives the data returned, and provides it
+      to the callback.  Roughly the same as ajax()
+
+    $.loginOpenId provides various services related to OpenID logins.  It will
+      prep the form prior to submission, and handles hash values and cookies
+      upon return from login process.  Call it in both the openId submit form,
+      and in the follow up form.
 
     Form fields
       The form *must* include either a 'q' or a 'kw' field.  It may also include
@@ -106,62 +114,6 @@ function createConnection(username,domain) {
 
   return uid;
 }
-
-function LoginFunction(uid, domain, container, start, onComplete, onError) {
-
-  assert(domain, 'domain falsy '+domain);
-  assert(uid, 'uid falsy '+uid);
-  var REMOTE = 'https://'+domain;
-  if (typeof(container) === 'string') {
-    container = document.getElementById(container);
-  }
-
-  function loadIFrame(remoteRpc, stuff, height, width) {
-    if (stuff.substr(0,4) === 'http') {
-      remoteRpc.loadIFrame(stuff, height, width);
-    }
-    else {
-      remoteRpc.loadIFrameContent(stuff, height, width);
-    }
-  }
-
-  try {
-    /* create Rcp channel with the easyxdm library, to communicate with results
-      page loaded from another server.
-     */
-    var rpc = new easyXDM.Rpc({
-        remote: REMOTE + "/static/0~/receiver_debug.html".replace('~',uid),
-        swf: REMOTE + "/js/easyxdm/easyxdm.swf",
-        remoteHelper: REMOTE + "/static/0~/easyxdm/name.html".replace('~',uid),
-        container: container,
-        onReady: function () {
-              var h = parseInt(container.attributes.height.value),
-                  w = parseInt(container.attributes.width.value);
-              var widgetFrame = container.getElementsByTagName('iframe')[0];
-              widgetFrame.height = h;
-              widgetFrame.width = w;
-              loadIFrame(rpc, start, h-25, w-25);
-            }
-      }, {
-        local: {
-            returnResponse: function(response) {
-                jsonResp = JSON.parse(response);
-                onComplete(jsonResp);
-                rpc.destroy();
-              }
-            },
-        remote: {
-            loadIFrame: {},
-            loadIFrameContent: {}
-          }
-      }
-    );
-  }
-  catch (e) {
-    onError(e.name, e.message);
-  }
-}
-
 
 // SQL Engine that uses form for input, and hidden iframe for response
 //   handles file fields
@@ -598,21 +550,179 @@ function SQLEngine(userName, authcode, domain)
   };
   $.postData = postData;
 
-  /*
-      loginOpenId - initiates OpenId login process, passes result to callback
 
-      that: id of form, or id of form element
+/*
+ * rdbhostLogin - handles login functionality, including processing auth info passed in
+ *   the hash string, or auth info in cookie named 'OPENID_KEY'.
+ *
+ *   Creates login cookie of client chosen name, with auth key returned from rdbhost server.
+ *   Calls the success function with (key, identifier), or failure function with (identifier).
+ *   The identifier and key are a pair in the table auth.openid, and the key can be submitted
+ *     with queries that join the auth.openid table for authentication of the query.
+ *
+ *   If provided a form#id, will prepare form with appropriate action line.
+ *     bases url on www.rdbhost.com if on localhost, else uses same domain
+ *
+ *   The function takes an options object with the following options:
+ *
+ *   acctNum: account number of Rdbhost account - MANDATORY
+ *
+ *   callback: function of sig funct(key, identifier) -- default uses alert
+ *   errback: function with sig funct(identifier)  -- default uses alert
+ *
+ *   cookieName: name of new cookie to receive key value  -- default LOGIN_KEY
+ *   ignoreHash: set true to ignore url#hash value, and rely only on OPENID_KEY cookie  -- default false
+ *
+ *   loginForm: id of form to prepare -- default 'openidForm'
+ *   returnPath: complete url or absolute path of page to end process at  -- default current page
+ *
+ */
+  var loginOpenId = function(inp) {
 
-      param identifier : user provided identifier or login form with 'openidurl' param
-      param callback : function to call with json data
-      param errback : function to call in case of error
-  */
-  var loginOpenId = function(that, parms) {
-    assert(arguments.length<=2, 'too many parms to loginOpenId');
-    var inp = $.extend({}, $.rdbHostConfig.opts, parms||{});
-    var uid = parseInt(inp.userName.substr(1));
-    delete inp.userName; delete inp.authcode; //delete inp.domain;
-    LoginFunction(uid,inp.domain,that,inp.identifier,inp.callback);
+      // minimal functions for success and failure handlers
+      var onSuccess = function() {
+          alert('success!');
+      };
+
+      var onFailure = function() {
+          alert('failure');
+      };
+
+      /*
+       * default values for each attribute
+       *
+       *   each can be overridden, only mandatory item is acctNum
+       */
+      var parms = {
+          'loginForm' : 'null',
+          'returnPath' : false,
+
+          'callback' : onSuccess,
+          'errback' : onFailure,
+
+          'cookieName' : 'LOGIN_KEY',
+          'ignoreHash' :  false
+      };
+
+      parms = $.extend({}, $.rdbHostConfig.opts, parms, inp);
+
+      // get cookie, if available
+      var loginCookie = $.cookie('OPENID_KEY');
+
+      var hp, kp, ident, key;
+
+      /*
+       * function prepare form, creating action attribute
+       */
+      function prepareForm($inputForm) {
+
+          if ( parms.returnPath === false ) {
+              parms.returnPath = window.location.pathname;
+              if ( parms.returnPath.substr(0,1) !== '/' )
+                  parms.returnPath = '/'+parms.returnPath;
+          }
+
+          if ( /localhost/i.test(window.location.hostname) ) {
+
+              parms.hostname = parms.domain;
+              parms.returnPath = window.location.origin+parms.returnPath;
+          }
+          else {
+              parms.hostname = window.location.hostname;
+          }
+
+          var acctNum = ('0000000000'+parms.userName);
+          acctNum = acctNum.substr(acctNum.length-10,10);
+
+          var action = 'https:'+'//'+parms.hostname+'/auth/openid/'+acctNum+'/one?'+parms.returnPath;
+          $inputForm.attr('action',action);
+      }
+
+      /*
+       *  function to extract ident and key from hash
+       */
+      function useHash() {
+
+          if ( window.location.hash ) {
+              var hash = window.location.hash;
+              window.location.hash = '';
+              hp = hash.split('&',2);
+              if ( hp.length >= 2 ) {
+                  ident = hp[0];
+                  key = hp[1];
+                  if ( ident.indexOf('#') === 0 )
+                      ident = ident.substr(1);
+                  $.cookie(parms.cookieName,key);
+                  return true;
+              }
+              else
+                  return false;
+          }
+          else
+              return false;
+      }
+
+      /*
+       * function to extract ident and key from temporary auth cookie
+       */
+      function useCookie() {
+
+          if ( loginCookie ) {
+              kp = loginCookie.split('&',2);
+              if ( kp.length >= 2 ) {
+                  ident = kp[0];
+                  key = kp[1];
+                  $.cookie(parms.cookieName,key);
+                  return true;
+              }
+              else {
+                  return false;
+              }
+          }
+          else
+              return false;
+      }
+
+      /*
+       *   start processing of available inputs
+       */
+      var loggedInSuccess = false;
+      if ( ! parms.ignoreHash ) {
+
+          var ckSuccess;
+          var hashSuccess = useHash();
+          if ( ! hashSuccess ) {
+              ckSuccess = useCookie();
+              if ( ! ckSuccess )
+                  parms.errback(ident);
+              else {
+                  parms.callback(key, ident);
+                  loggedInSuccess = true;
+              }
+          }
+          else {
+              parms.callback(key, ident);
+              loggedInSuccess = true;
+          }
+      }
+      else {
+          ckSuccess = useCookie();
+          if ( ! ckSuccess )
+              parms.errback(ident);
+          else {
+              parms.callback(key, ident);
+              loggedInSuccess = true;
+          }
+      }
+
+      // if not logged in, perhaps prepare form for login try
+      if ( !loggedInSuccess ) {
+          var $inputForm = $('#'+parms.loginForm);
+
+          if ( $inputForm.length ) {
+              prepareForm($inputForm);
+          }
+      }
   };
   $.loginOpenId = loginOpenId;
 
@@ -624,11 +734,15 @@ function SQLEngine(userName, authcode, domain)
     $.postFormData or $.loginByForm
   */
   var rdbhostSubmit = function() {
+
     var $that = this,
         targetName = $that.attr('target'),
         reqPrefix = 'request_target_';
+
     if (targetName && targetName.substr(0,reqPrefix.length) === reqPrefix ) {
+
       var uid = targetName.substr(reqPrefix.length);
+
       if ( CONNECTIONS[uid].remoteRpcReady ) {
         $that.submit();
       }
@@ -652,11 +766,14 @@ function SQLEngine(userName, authcode, domain)
       param q : query to get data
   */
   var populateTable = function(parms) {
+
     assert(arguments.length<=1, 'too many parms to populateTable');
     var $selset = this;
+
     if (typeof(parms) === 'string') {
       parms = { 'q' : parms };
     }
+
     function populate_html_table($table,$row,recs) {
       var rec, $newrow;
       $table.find('tbody').empty();
@@ -679,6 +796,7 @@ function SQLEngine(userName, authcode, domain)
         }
       }
     }
+
     function generate_html_table($table,recs) {
       var rec, $row, $td, fld;
       for (var r in recs) {
@@ -692,6 +810,7 @@ function SQLEngine(userName, authcode, domain)
         $table.append($row);
       }
     }
+
     function cback (json) {
       var recs = json.records.rows;
       $selset.each( function () {
@@ -711,10 +830,12 @@ function SQLEngine(userName, authcode, domain)
         }
       });
     }
+
     parms.callback = cback;
     $.withResults(parms);
     return $selset;
   };
+
   $.fn.populateTable = populateTable;
 
   /*
@@ -723,11 +844,14 @@ function SQLEngine(userName, authcode, domain)
       param q : query to get data
   */
   var populateForm = function(parms) {
+
     assert(arguments.length<=1, 'too many parms to populateForm');
     var $selset = this;
+
     if (typeof(parms) === 'string') {
       parms = { 'q' : parms };
     }
+
     function populate_form($form,rec) {
       for (var f in rec) {
         var $inp = $form.find('input#'+f);
@@ -740,6 +864,7 @@ function SQLEngine(userName, authcode, domain)
         }
       }
     }
+
     function cback (json) {
       if (json.records.rows.length) {
         var rec = json.records.rows[0];
@@ -750,6 +875,7 @@ function SQLEngine(userName, authcode, domain)
         });
       }
     }
+
     parms.callback = cback;
     $.withResults(parms);
     return $selset;
@@ -763,15 +889,19 @@ function SQLEngine(userName, authcode, domain)
       param kw : query-keyword to get data
   */
   var datadump = function(parms) {
+
     var $selset = this;
+
     if (typeof(parms) === 'string') {
       parms = { 'q' : parms };
     }
+
     function cback (json) {
       $selset.each( function () {
         $(this).html(JSON.stringify(json,null,4)); // 4 space indent
       });
     }
+
     parms.callback = cback;
     $.withResults(parms);
     return $selset;
