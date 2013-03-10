@@ -585,7 +585,7 @@ function SQLEngine(userName, authcode, domain)
       };
 
       var onFailure = function() {
-          alert('failure');
+          // default is to fail silently
       };
 
       /*
@@ -609,7 +609,7 @@ function SQLEngine(userName, authcode, domain)
       // get cookie, if available
       var loginCookie = $.cookie('OPENID_KEY');
 
-      var hp, kp, ident, key;
+      var ident, key;
 
       /*
        * function prepare form, creating action attribute
@@ -636,6 +636,26 @@ function SQLEngine(userName, authcode, domain)
 
           var action = 'https:'+'//'+parms.hostname+'/auth/openid/'+acctNum+'/one?'+parms.returnPath;
           $inputForm.attr('action',action);
+
+          /*
+           * add click handlers to host specific buttons
+           */
+          var $inputFld = $('[name="openidurl"]',$inputForm);
+          $('#google',$inputForm).click(function(ev) {
+
+              ev.stopPropagation();
+              $inputFld.val('https://www.google.com/accounts/o8/id');
+              $inputForm.submit();
+          });
+
+          $('#yahoo',$inputForm).click(function(ev) {
+
+              ev.stopPropagation();
+              $inputFld.val('https://me.yahoo.com');
+              $inputForm.submit();
+          });
+
+
       }
 
       /*
@@ -646,7 +666,8 @@ function SQLEngine(userName, authcode, domain)
           if ( window.location.hash ) {
               var hash = window.location.hash;
               window.location.hash = '';
-              hp = hash.split('&',2);
+              hash = decodeURIComponent(hash);
+              var hp = hash.split('&',2);
               if ( hp.length >= 2 ) {
                   ident = hp[0];
                   key = hp[1];
@@ -668,7 +689,7 @@ function SQLEngine(userName, authcode, domain)
       function useCookie() {
 
           if ( loginCookie ) {
-              kp = loginCookie.split('&',2);
+              var kp = loginCookie.split('&',2);
               if ( kp.length >= 2 ) {
                   ident = kp[0];
                   key = kp[1];
