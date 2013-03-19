@@ -75,6 +75,10 @@
 // isolate each easyXDM in its own namespace
 var CONNECTIONS = {};
 
+var indexName = easyXDM.Debug ? 'index.debug.html' : 'index.html',
+    receiverName = easyXDM.Debug ? 'receiver_debug.html' : 'receiver.html';
+
+
 function createConnection(username,domain) {
 
   var uid = username.substring(1),
@@ -87,7 +91,7 @@ function createConnection(username,domain) {
   CONNECTIONS[uid].ajaxRpc = new easyXDM.Rpc({
         local: "/static/~/easyxdm/name.html".replace('~',uid),
         swf: "/js/easyxdm/easyxdm.swf",
-        remote: REMOTE + ("/static/~/easyxdm/cors/index.debug.html".replace('~',uid)),
+        remote: REMOTE + ("/static/~1/easyxdm/cors/~2".replace('~1',uid).replace('~2',indexName)),
         remoteHelper: REMOTE + ("/static/~/easyxdm/name.html".replace('~',uid)),
         onReady: function () { CONNECTIONS[uid].ajaxRpcReady = true; }
     }, {
@@ -99,7 +103,7 @@ function createConnection(username,domain) {
 
   // remote rpc created for use by .queryByForm() method
   CONNECTIONS[uid].remoteRpc = new easyXDM.Rpc({
-      remote: REMOTE + "/static/~/receiver_debug.html".replace('~',uid),
+      remote: REMOTE + "/static/~1/~2".replace('~1',uid).replace('~2',receiverName),
       swf: REMOTE + "/js/easyxdm/easyxdm.swf",
       remoteHelper: REMOTE + "/static/~/easyxdm/name.html".replace('~',uid),
       onReady: function () { CONNECTIONS[uid].remoteRpcReady = true; }
