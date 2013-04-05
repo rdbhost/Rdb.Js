@@ -90,7 +90,7 @@ asyncTest('ajax SELECT error', 2, function() {
       format: 'json-easy',
       errback: function(err, resp) {
             ok(true, "errback was called");
-            equal(resp[0].length, 5, "errorval: "+resp[0]);
+            equal(err.length, 5, "errorval: "+err);
             start();
           },
       callback: function (resp) {
@@ -161,9 +161,10 @@ asyncTest('form SELECT', 4+1, function() {
               start();
             }
       });
-    $('#qunit_form').submit();
+    $('#qunit_form').rdbhostSubmit();
     }, 10);
 });
+
 
 
 asyncTest('form SELECT error', 2+1, function() {
@@ -178,14 +179,15 @@ asyncTest('form SELECT error', 2+1, function() {
         errback: function (err, resp) {
               console.log(err);
               console.log(resp);
-              ok(typeof resp === 'object', 'response is object'); // 0th assert
-              ok(resp[0].length === 5, 'error code not len 5: '+resp[0]); // 1st assert
+              ok(typeof resp === typeof 'o', 'response is string'); // 0th assert
+              ok(err.length === 5, 'error code not len 5: '+err); // 1st assert
               start();
             }
       });
-    $('#qunit_form').submit();
+    $('#qunit_form').rdbhostSubmit();
     }, 10);
 });
+
 
 
 
