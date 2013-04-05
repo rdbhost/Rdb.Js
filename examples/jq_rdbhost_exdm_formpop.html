@@ -11,9 +11,11 @@
     <script language="javascript" type="text/javascript" src="../js/json2.js"></script>
 		<script>
     $(document).ready(function () {
-		    $.rdbHostConfig({ 'userName' : "r0000000002",
-												  'authcode' : "-",
-													'subdomain' : 'rdbhost' });
+		    $.rdbHostConfig({
+          userName : "r0000000002",
+					authcode : "-",
+					domain : 'dev.rdbhost.com'
+        });
         var q = 'SELECT * FROM capitols';
 				$('#inform').populateForm({q : q});
     })
@@ -23,7 +25,7 @@
   <h3>jQuery.Rdbhost .populateForm Demo</h3>
 	<p>This form is populated from a database record.</p>
 	<p>This is a live demo, but is not interactive. </p>
-  
+
 	<div style="border-style:double; width:400px">
 		<form action='' method='post' id='inform' enctype="multipart/form-data" >
 			<table>

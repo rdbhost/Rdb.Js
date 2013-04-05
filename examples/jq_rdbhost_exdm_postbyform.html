@@ -14,17 +14,20 @@
         var q = 'SELECT * FROM capitols';
         $.rdbHostConfig({domain : 'dev.rdbhost.com'});
 				function repopulate() {
-					$('.targets').populateTable({q : q,
-																			 userName : 'r0000000002',
-																			 authcode : ''  });
+					$('.targets').populateTable({
+            q : q,
+						userName : 'r0000000002',
+						authcode : ''
+          });
 				}
 				repopulate();
 				//$('#demo-form').submit(function () {
 				//	return $.postFormData(this,
         $.postFormData( $('#demo-form'),
-                       { 'userName' : 'p0000000002',
-                         'authcode' : '-',
-                         'callback' : repopulate });
+           { 'userName' : 'p0000000002',
+             'authcode' : '-',
+             'callback' : repopulate
+         });
     })
     </script>
 </head>
@@ -35,9 +38,9 @@
 		server.</p>
 	<p>This is a live demo, so go ahead and submit an entry, see the table gain
 	  an entry.</p>
-  
+
 	<div class="targets"><pre id="target"></pre></div>
-	
+
 	<div style="border-style:double; width:400px">
 		<form action='' method='post' id='demo-form' enctype="multipart/form-data" target="request_target">
 			<table>

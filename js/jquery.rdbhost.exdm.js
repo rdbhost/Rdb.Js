@@ -174,7 +174,8 @@ function SQLEngine(userName, authcode, domain)
         errback = parms.errback,
         args = parms.args || [],
         namedParams = parms.namedParams || {},
-        argTypes = parms.argtypes || [];
+        argTypes = parms.argtypes || [],
+        nm;
 
     var data = {
       q : parms.q,
@@ -195,7 +196,7 @@ function SQLEngine(userName, authcode, domain)
     if (args !== undefined) {
       for ( var i=0; i<args.length; i+=1 ) {
         var num = '000'+i;
-        var nm = 'arg'+num.substr(num.length-3);
+        nm = 'arg'+num.substr(num.length-3);
         data[nm] = args[i];
       }
     }
@@ -203,7 +204,7 @@ function SQLEngine(userName, authcode, domain)
     if (namedParams !== undefined) {
       for(var kw in namedParams) {
           if(namedParams.hasOwnProperty(kw))
-            var nm = 'arg:'+kw;
+            nm = 'arg:'+kw;
             data[nm] = namedParams[kw];
       }
     }
@@ -237,7 +238,7 @@ function SQLEngine(userName, authcode, domain)
       },
       function(errObj) {
           // error handler
-          errback('exdm', errObj.message, errObj.data);
+          errback(errObj.message, errObj.data);
       }
     );
   };
