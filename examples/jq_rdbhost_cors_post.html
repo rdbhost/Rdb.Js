@@ -9,28 +9,41 @@
 				src="../js/jquery.rdbhost.cors.js"></script>
     <script language="javascript" type="text/javascript" src="../js/json2.js"></script>
 		<script>
+
     $(document).ready(function () {
-		    $.rdbHostConfig({ 'userName' : "r0000000002",
-												  'authcode' : "-",
-													'subdomain' : 'rdbhost' });
-        var q = 'SELECT * FROM capitols';
+
+      $.rdbHostConfig({
+        userName : "r0000000002",
+				authcode : "-",
+				domain   : 'dev.rdbhost.com'
+      });
+
+      var q = 'SELECT * FROM capitols';
+			$('.targets').populateTable({q : q});
+
+      function repopulate() {
 				$('.targets').populateTable({q : q});
-				function repopulate() {
-					$('.targets').populateTable({q : q});
-				}
-				$('#demo-form').submit(function () {
-					var $form = $('#demo-form');
-					var place = $form.find('#place').val().split(',');
-					var pop = $form.find('#population').val();
-					var args = [place[0], place[1]||'', pop];
-					$.postData( { 'userName' : 'p0000000002',
-												'authcode' : '-',
-												'kw'       : 'postcapitol',
-												'args'     : args,
-												'callback' : repopulate });
-					return false;
-				});
+			}
+
+      $('#demo-form').submit(function () {
+
+				var $form = $('#demo-form'),
+				    place = $form.find('#place').val().split(','),
+				    pop = $form.find('#population').val(),
+				    args = [place[0], place[1]||'', pop];
+
+				$.postData( {
+          'userName' : 'p0000000002',
+					'authcode' : '-',
+					'kw'       : 'postcapitol',
+					'args'     : args,
+					'callback' : repopulate
+        });
+
+				return false;
+			});
     })
+
     </script>
 </head>
 <body>
@@ -40,7 +53,7 @@
 		server.</p>
 	<p>This is a live demo, so go ahead and submit an entry, see the table gain
 	  an entry.</p>
-  
+
 	<table id="targettab" class="targets">
 		<thead>
 			<tr>
@@ -55,7 +68,7 @@
 			</tr>
 		</tbody>
 	</table>
-	
+
 	<div style="border-style:double; width:400px">
 		<form action='' method='post' id='demo-form' enctype="multipart/form-data" >
 			<table>

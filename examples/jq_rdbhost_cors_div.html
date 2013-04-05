@@ -11,8 +11,11 @@
 				src="../js/json2.js"></script>
 		<script>
     $(document).ready(function () {
-		    $.rdbHostConfig({ 'userName' : "r0000000002",
-												  'authcode' : "-" });
+		    $.rdbHostConfig({
+          'userName' : "r0000000002",
+					'authcode' : "-",
+          domain     : 'dev.rdbhost.com'
+        });
         var q = 'SELECT * FROM capitols';
 				$('.targets').populateTable({q : q});
     })

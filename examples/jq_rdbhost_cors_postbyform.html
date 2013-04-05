@@ -10,18 +10,27 @@
     <script language="javascript" type="text/javascript" src="../js/json2.js"></script>
 		<script>
     $(document).ready(function () {
+
         var q = 'SELECT * FROM capitols';
+
 				function repopulate() {
-					$('.targets').populateTable({q : q,
-																			 userName : 'r0000000002',
-																			 authcode : ''  });
+
+					$('.targets').populateTable({
+            q : q,
+						userName : 'r0000000002',
+						authcode : '',
+            domain   : 'dev.rdbhost.com'
+          });
 				}
+
 				repopulate();
+
 				$('#demo-form').submit(function () {
 					return $.postFormData(this,
-															 { 'userName' : 'p0000000002',
-															   'authcode' : '-',
-																 'callback' : repopulate });
+               { 'userName' : 'p0000000002',
+                 'authcode' : '-',
+                 domain     : 'dev.rdbhost.com',
+                 'callback' : repopulate });
 				});
     })
     </script>
@@ -33,9 +42,9 @@
 		server.</p>
 	<p>This is a live demo, so go ahead and submit an entry, see the table gain
 	  an entry.</p>
-  
+
 	<div class="targets"><pre id="target"></pre></div>
-	
+
 	<div style="border-style:double; width:400px">
 		<form action='' method='post' id='demo-form' enctype="multipart/form-data" >
 			<table>
