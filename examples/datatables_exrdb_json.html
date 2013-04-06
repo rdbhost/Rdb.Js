@@ -1,0 +1,91 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+
+  <title>DataTables example</title>
+  <style type="text/css" title="currentStyle">
+    @import "datatables/css/demo_page.css";
+    @import "datatables/css/demo_table.css";
+  </style>
+  <script language="javascript" type="text/javascript"
+          src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.js"></script>
+  <script type="text/javascript" language="javascript" src="datatables/js/jquery.dataTables.js"></script>
+  <script language="javascript" type="text/javascript"
+          src="http://dev.rdbhost.com/js/easyxdm/easyXDM.debug.js"></script>
+  <script language="javascript" type="text/javascript" src="../js/jquery.rdbhost.exdm.js"></script>
+  <script language="javascript" type="text/javascript" src="../js/json2.js"></script>
+  <script language="javascript" type="text/javascript">
+    function success(json) {
+      $('#example').dataTable( {
+        "aaData": json.records.rows,
+        "aoColumns": [
+          { "sTitle": "Engine" },
+          { "sTitle": "Browser" },
+          { "sTitle": "Platform" },
+          { "sTitle": "Version", "sClass": "center" },
+          { "sTitle": "Grade" }
+        ],
+        "bPaginate": false,
+        "bLengthChange": false
+      } );
+    }
+    $(document).ready(function () {
+      var rdb = new SQLEngine("r0000000002","-",'dev.rdbhost.com');
+      $('#dynamic').html( '<table cellpadding="0" cellspacing="0" border="0" '+
+          'class="display" id="example"><\/table>' );
+      var q = 'SELECT * FROM css_data';
+      var res = rdb.query({	'callback': success,
+        'q': q,
+        'format' : 'json' })
+    })
+  </script>
+</head>
+<body id="dt_example">
+<div id="container">
+  <div class="full_width big">
+    <i>DataTables</i> dynamic creation example
+  </div>
+
+  <h1>Preamble</h1>
+  <p>At times you will wish to be able to create a table from dynamic information passed directly to <i>DataTables</i>, rather than having it read from the document. This is achieved using the "aaData" array in the initialisation object. A table node must first be created before the initialiser is called (as shown in the code below). This is also useful for optimisation - if you are able to format the data as required, this method can save a lot of DOM parsing to create a table.</p>
+
+  <h1>Live example</h1>
+  <div id="dynamic"></div>
+  <div class="spacer"></div>
+
+  <h1>Initialisation code</h1>
+	    <pre>function success(json) {
+  $('#example').dataTable( {
+    "aaData": json.records.rows,
+    "aoColumns": [
+      { "sTitle": "Engine" },
+      { "sTitle": "Browser" },
+      { "sTitle": "Platform" },
+      { "sTitle": "Version", "sClass": "center" },
+      { "sTitle": "Grade", "sClass": "center" }
+    ],
+				"bPaginate": false,
+				"bLengthChange": false
+  } );
+}
+$(document).ready(function () {
+  var rdb = new SQLEngine("r0000000002","-",'rdbhost');
+  $('#dynamic').html( '&gt;table cellpadding="0" cellspacing="0" border="0" '+
+                      'class="display" id="example"><\/table>' );
+  var q = 'SELECT * FROM css_data';
+  var res = rdb.query({  'callback': success,
+                         'format' : 'json',
+                         'q': q	 })
+})
+</pre>
+
+  <p>Please refer to the <a href="http://www.datatables.net/"><i>DataTables</i> documentation</a> for full information about its API properties and methods.</p>
+
+
+  <div id="footer" style="text-align:center;">
+    <span style="font-size:10px;">DataTables &copy; Allan Jardine 2008-2010</span>
+  </div>
+</div>
+</body>
+</html>
