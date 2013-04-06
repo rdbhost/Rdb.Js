@@ -34,7 +34,7 @@
       The form fields must be named arg000, arg001, etc
 
     $.postData posts to the server, receives the data returned, and provides it
-      to the callback.  Roughly the same as ajax()
+      to the callback.  Similar to jQuery's $.ajax()
 
     $.loginOpenId provides various services related to OpenID logins.  It will
       prep the form prior to submission, and handles hash values and cookies
@@ -44,8 +44,9 @@
     Form fields
       The form *must* include either a 'q' or a 'kw' field.  It may also include
       'arg###', or 'argtype###' fields.  Argument fields are numbered like
-      'arg000', 'arg001'... in order.  Argument type fields, 'argtype000'..
-      must correspond to arg fields. Argument fields may be file fields.
+      'arg000', 'arg001'... in order.  Argument type fields, 'argtype000'.. ,
+      if provided, must correspond to arg fields. Argument fields may be file
+      fields.
 
     The 'kw' field value allows you to invoke a query that is stored in the
     'lookup.queries' table on the  server.  See website documentation for
@@ -149,10 +150,35 @@ function SQLEngine(userName, authcode, domain)
     $form.append(fld);
   }
 
+  /*
+    Return API type for data item.
+
+    return value is one of STRING, NUMBER, DATE, NONE, DATETIME, TIME
+   */
+  function apiType(d) {
+
+      switch (typeof d) {
+
+          case 'number':
+            return 'NUMBER';
+          case 'object':
+            if ( $.type(d) == 'date' )
+              return 'DATETIME';
+            else
+              return 'STRING';
+          case 'undefined':
+            return 'NONE';
+
+          default:
+            return 'STRING'
+      }
+  }
+
   this.getQueryUrl = function(altPath) {
     if (altPath === undefined) { altPath = '/db/'+userName; }
     return remote + altPath;
   };
+
   this.getLoginUrl = function() {
     return this.getQueryUrl('/mbr/jslogin');
   };
@@ -164,7 +190,8 @@ function SQLEngine(userName, authcode, domain)
     q : the query string itself
     args : array of arguments (optional), must correspond with %s tokens
         in query
-    argtypes : array of python DB API types, one per argument
+    namedParams : an object containing arguments, by name. Reference
+        in query with tokens like %(name)
     plainTextJson : true if JSON parsing to be skipped, instead
          returning the JSON plaintext
     format : 'json' or 'json-easy'
@@ -174,8 +201,7 @@ function SQLEngine(userName, authcode, domain)
         errback = parms.errback,
         args = parms.args || [],
         namedParams = parms.namedParams || {},
-        argTypes = parms.argtypes || [],
-        nm;
+        nm, typNm;
 
     var data = {
       q : parms.q,
@@ -192,29 +218,42 @@ function SQLEngine(userName, authcode, domain)
         alert(arg2.join(', '));
       };
     }
+
     // if params are provided, convert to named form 'arg000', 'arg001'...
     if (args !== undefined) {
       for ( var i=0; i<args.length; i+=1 ) {
-        var num = '000'+i;
+
+        var num = '000'+ i;
         nm = 'arg'+num.substr(num.length-3);
         data[nm] = args[i];
+        typNm = 'argtype'+num.substr(num.length-3);
+        data[typNm] = apiType(args[i]);
       }
     }
+
     // if keyword params are provided, convert to named form 'arg:name'.
     if (namedParams !== undefined) {
       for(var kw in namedParams) {
-          if(namedParams.hasOwnProperty(kw))
-            nm = 'arg:'+kw;
-            data[nm] = namedParams[kw];
+        if ( namedParams.hasOwnProperty(kw) ) {
+
+          nm = 'arg:'+kw;
+          data[nm] = namedParams[kw];
+          typNm = 'argtype:'+kw;
+          data[typNm] = apiType(namedParams[kw]);
+        }
       }
     }
 
     var url = this.getQueryUrl();
+
+    // make request using previously prepared connection
+    //
     CONNECTIONS[easyXDMAjaxHandle].ajaxRpc.request({
         url : url,
         method : "POST",
         data: data
       },
+
       function(resp){
         // success handler
         if ( !parms.plainTextJson ) {
@@ -236,6 +275,7 @@ function SQLEngine(userName, authcode, domain)
           callback(resp);
         }
       },
+
       function(errObj) {
           // error handler
           errback(errObj.message, errObj.data);
@@ -244,12 +284,12 @@ function SQLEngine(userName, authcode, domain)
   };
 
 
-  this.queryRows = function(parms)
   /* parms is just like for query method, but callback gets row array and
-     header array, not whole data structure.
-     an additional param is 'incomplete', a function that is called
-     (with rows and header) when data set is truncated by 100 record limit
-  */
+   header array, not whole data structure.
+   an additional param is 'incomplete', a function that is called
+   (with rows and header) when data set is truncated by 100 record limit
+   */
+  this.queryRows = function(parms)
   {
     var callback = parms.callback,
         incomplete_callback = parms.incomplete || callback;
@@ -268,15 +308,15 @@ function SQLEngine(userName, authcode, domain)
     this.query(parms);
   };
 
-  this.queryByForm = function(parms)
   /* parms is object containing various options
-      formId : the id of the form with the data
-      callback : function to call with data from successful query
-      errback : function to call with error object from query failure
-      plainTextJson : true if JSON parsing to be skipped, in lieu of
-         returning the JSON plaintext
-    call this prior to form click, not from click handler.
-  */
+   formId : the id of the form with the data
+   callback : function to call with data from successful query
+   errback : function to call with error object from query failure
+   plainTextJson : true if JSON parsing to be skipped, in lieu of
+   returning the JSON plaintext
+   call this prior to form click, not from click handler.
+   */
+  this.queryByForm = function(parms)
   {
     var callback = parms.callback,
         errback = parms.errback,
@@ -308,15 +348,18 @@ function SQLEngine(userName, authcode, domain)
         callback(response);
       }
     }
+
     CONNECTIONS[easyXDMAjaxHandle].handler = cBack;
 
     var format = 'json-exdm', // parms.format || format;
         targettag = 'request_target_'+userName.substring(1);
+
     // get form, return if not found
     var $form = $('#'+formId);
     if ($form.length<1) {
       return false;
     }
+
     // define default errback
     if (errback === undefined) {
       errback = function () {
@@ -327,48 +370,31 @@ function SQLEngine(userName, authcode, domain)
 
     // init vars
     var dbUrl =  this.getQueryUrl();
+
     // save vals
     var target = $form.attr('target'),
         action = $form.attr('action');
+
     // put password into form
     add_hidden_field($form,'authcode', authcode);
     // set format, action, and target
     add_hidden_field($form,'format',format);
+
     $form.attr('target',targettag);
     $form.attr('action',dbUrl);
 
     return true;
   };
 
-  /*this.submit = function($form) {
-    *//* like .submit(), but waits for connection to be ready.   *//*
-    if ( CONNECTIONS.hasOwnProperty(easyXDMAjaxHandle) ) {
-      // if a connection (being) setup on this form, check that conn ready
-      if ( CONNECTIONS[easyXDMAjaxHandle].ajaxRpcReady ) {
-        // conn is ready, so submit
-        $form.submit();
-      }
-      else {
-        // conn not ready, so retry in 50 ms
-        setTimeout(function () {
-          $form.rdbhostSubmit();
-        }, 50)
-      }
-    }
-    else {
-      // nothing to wait for, just submit
-      $form.submit();
-    }
-  };
-*/
-  this.loginByForm = function(parms)
+
   /* parms is object containing various options
-    formId : the id of the form with the data
-    callback : function to call with data from successfull query
-    errback : function to call with error object from query failure
-    plainTextJson : true if JSON parsing to be skipped, in lieu of
-         returning the JSON plaintext
-  */
+   formId : the id of the form with the data
+   callback : function to call with data from successfull query
+   errback : function to call with error object from query failure
+   plainTextJson : true if JSON parsing to be skipped, in lieu of
+   returning the JSON plaintext
+   */
+  this.loginByForm = function(parms)
   {
     var callback = parms.callback,
         errback = parms.errback,
@@ -506,31 +532,39 @@ function SQLEngine(userName, authcode, domain)
       param kw : query-keyword to post data
   */
   var postFormData = function(that,parms) {
+
     assert(arguments.length<=2, 'too many parms to postFormData');
-    var $form = $(that).closest('form');
-    var inp = $.extend({}, $.rdbHostConfig.opts, parms||{});
+    var $form = $(that).closest('form'),
+        inp = $.extend({}, $.rdbHostConfig.opts, parms||{});
+
     inp.formId = $form.attr('id');
     assert(inp.formId,'form must have a unique id attribute');
+
     if (inp.q) {
       $form.find('#kw').remove();
       $form.find('#q').remove();
       $form.append($('<input type="hidden" id="q" name="q" >').val(inp.q));
     }
+
     if (inp.kw) {
       $form.find('#kw').remove();
       $form.find('#q').remove();
       $form.append($('<input type="hidden" id="kw" name="kw" >').val(inp.kw));
     }
+
     try {
+
       var sqlEngine = new SQLEngine(inp.userName, inp.authcode, inp.domain);
       //delete inp.userName; delete inp.authcode; delete inp.domain;
       sqlEngine.queryByForm(inp);
     }
     catch (e) {
+
       inp.errback(e.name, e.message);
     }
     return true;
   };
+
   $.postFormData = postFormData;
 
   /*
@@ -541,18 +575,24 @@ function SQLEngine(userName, authcode, domain)
       param kw : query-keyword to post data
   */
   var postData = function(parms) {
+
     assert(arguments.length<2, 'too many parms to postData');
     var inp = $.extend({}, $.rdbHostConfig.opts, parms||{});
+
     try {
+
       var sqlEngine = new SQLEngine(inp.userName, inp.authcode, inp.domain);
       //delete inp.userName; delete inp.authcode; delete inp.domain;
       sqlEngine.query(inp);
     }
     catch (e) {
+
       inp.errback(e.name, e.message);
     }
+
     return true;
   };
+
   $.postData = postData;
 
 
@@ -750,6 +790,7 @@ function SQLEngine(userName, authcode, domain)
           }
       }
   };
+
   $.loginOpenId = loginOpenId;
 
 
@@ -801,22 +842,30 @@ function SQLEngine(userName, authcode, domain)
     }
 
     function populate_html_table($table,$row,recs) {
+
       var rec, $newrow;
       $table.find('tbody').empty();
+
       if (recs === undefined || recs.length === 0) {
+
         $newrow = $row.clone();
         $table.append($newrow);
       }
       else {
+
         for (var r in recs) {
+
           rec = recs[r];
           $newrow = $row.clone().show();
           var ctr = 0, flds = [];
+
           for (var fname in rec) {
+
             $newrow.find('td.'+fname).html(rec[fname]);
             ctr += $newrow.find('td.'+fname).length;
             flds.push(fname);
           }
+
           assert(ctr,'no td elements found with field names! '+flds.join(', '));
           $table.append($newrow);
         }
@@ -824,34 +873,46 @@ function SQLEngine(userName, authcode, domain)
     }
 
     function generate_html_table($table,recs) {
+
       var rec, $row, $td, fld;
       for (var r in recs) {
+
         rec = recs[r];
         $row = $('<tr>');
         for (var o in rec) {
+
           fld = rec[o];
           $td = $('<td>').html(fld);
           $row.append($td);
         }
+
         $table.append($row);
       }
     }
 
     function cback (json) {
+
       var recs = json.records.rows;
+
       $selset.each( function () {
+
         var $table = $(this);
         assert( !$table.is('form'), 'use .populateForm for forms' );
+
         if (!$table.is('table')) {
+
           $table.empty().append('<table><tbody></tbody></table>');
           $table = $table.find('table');
           generate_html_table($table,recs);
         }
+
         else if ( $table.find('tbody tr:first').length ) {
+
           var $row = $table.find('tbody tr:first').hide();
           populate_html_table($table,$row,recs);
         }
         else {
+
           generate_html_table($table,recs);
         }
       });
@@ -859,6 +920,7 @@ function SQLEngine(userName, authcode, domain)
 
     parms.callback = cback;
     $.withResults(parms);
+
     return $selset;
   };
 
@@ -906,6 +968,7 @@ function SQLEngine(userName, authcode, domain)
     $.withResults(parms);
     return $selset;
   };
+
   $.fn.populateForm = populateForm;
 
   /*
@@ -923,6 +986,7 @@ function SQLEngine(userName, authcode, domain)
     }
 
     function cback (json) {
+
       $selset.each( function () {
         $(this).html(JSON.stringify(json,null,4)); // 4 space indent
       });

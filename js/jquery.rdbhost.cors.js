@@ -308,18 +308,18 @@ function SQLEngine(uName,authcode,domain)
 
 		$.ajax({
 
-            type: "POST",
+      type: "POST",
 			url: jsloginUrl,
 			async: false,
 
 			data: {'password' : passwd,
-				   'email' : email },
+				     'email' : email },
 
 			dataType: "json",
 
-			success: function(d)
-			{
-				if (d === null || d === '' || d === undefined) {
+			success: function(d) {
+
+        if (d === null || d === '' || d === undefined) {
 					alert('login failed: timeout');
 					stat = false;
 				}
