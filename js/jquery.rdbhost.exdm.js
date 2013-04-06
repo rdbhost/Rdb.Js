@@ -621,6 +621,10 @@ function SQLEngine(userName, authcode, domain)
  *   loginForm: id of form to prepare -- default 'openidForm'
  *   returnPath: complete url or absolute path of page to end process at  -- default current page
  *
+ *   offsiteHosting: indicate to library that static pages not on rdbhost. Uses 'www.rdbhost.com' for openid
+ *      negotiation
+ *
+ *
  */
   var loginOpenId = function(inp) {
 
@@ -639,14 +643,17 @@ function SQLEngine(userName, authcode, domain)
        *   each can be overridden, only mandatory item is acctNum
        */
       var parms = {
-          'loginForm' : 'null',
-          'returnPath' : false,
 
-          'callback' : onSuccess,
-          'errback' : onFailure,
+          loginForm : 'null',
+          returnPath : false,
 
-          'cookieName' : 'LOGIN_KEY',
-          'ignoreHash' :  false
+          callback : onSuccess,
+          errback : onFailure,
+
+          cookieName : 'LOGIN_KEY',
+          ignoreHash :  false,
+
+          offsiteHosting : false
       };
 
       parms = $.extend({}, $.rdbHostConfig.opts, parms, inp);
@@ -659,7 +666,7 @@ function SQLEngine(userName, authcode, domain)
       /*
        * function prepare form, creating action attribute
        */
-      function prepareForm($inputForm) {
+      function prepareForm($inputForm, offsite) {
 
           if ( parms.returnPath === false ) {
               parms.returnPath = window.location.pathname;
@@ -667,7 +674,7 @@ function SQLEngine(userName, authcode, domain)
                   parms.returnPath = '/'+parms.returnPath;
           }
 
-          if ( /localhost/i.test(window.location.hostname) ) {
+          if ( /localhost/i.test(window.location.hostname) || offsite ) {
 
               parms.hostname = parms.domain;
               parms.returnPath = window.location.origin+parms.returnPath;
@@ -786,7 +793,7 @@ function SQLEngine(userName, authcode, domain)
           var $inputForm = $('#'+parms.loginForm);
 
           if ( $inputForm.length ) {
-              prepareForm($inputForm);
+              prepareForm($inputForm, parms.offsiteHosting);
           }
       }
   };
