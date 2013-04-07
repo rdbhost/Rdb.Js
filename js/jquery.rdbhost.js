@@ -563,11 +563,29 @@ SQLEngine.formnamectr = 0;
 	};
 	$.postData = postData;
 
-	/*
-	    populateTable creates an html table and inserts into  page
 
-	    param q : query to get data
-	*/
+  /*
+   rdbhostSubmit is .submit() but waits for cross-domain socket to be ready
+
+   Use in lieu of $('#formid').submit(), where form has been prepared with
+   $.postFormData or $.loginByForm
+
+   not necessary for this version of library, but included for completeness
+   */
+  var rdbhostSubmit = function() {
+
+    this.submit();
+  };
+
+  $.fn.rdbhostSubmit = rdbhostSubmit;
+
+
+
+  /*
+      populateTable creates an html table and inserts into  page
+
+      param q : query to get data
+  */
 	var populateTable = function(parms) {
 		assert(arguments.length<=1, 'too many parms to populateTable');
 		var $selset = this;

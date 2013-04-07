@@ -490,11 +490,25 @@ SQLEngine.formnamectr = 0;
 
 	$.postData = postData;
 
-	/*
-	    populateTable creates an html table and inserts into  page
 
-	    param q : query to get data
-	*/
+  /*
+   rdbhostSubmit is .submit() but waits for cross-domain socket to be ready
+
+   not valid in CORS library, as form submission methods are not supported.
+   */
+  var rdbhostSubmit = function() {
+
+    throw new Error('not implemented');
+  };
+  $.fn.rdbhostSubmit = rdbhostSubmit;
+
+
+
+  /*
+      populateTable creates an html table and inserts into  page
+
+      param q : query to get data
+  */
 	var populateTable = function(parms) {
 
 		assert(arguments.length<=1, 'too many parms to populateTable');
