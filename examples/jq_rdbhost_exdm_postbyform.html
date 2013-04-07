@@ -56,7 +56,9 @@
 				<tr>
 					<td colspan="2">
 						<input type="submit" value="go" />
-						<input type="hidden" name="kw" id="kw" value="postcapitol" />
+            <input type="hidden" name="q" id="q"
+                   value="INSERT INTO capitols (city, country, population) VALUES(%s, %s, %s);" />
+            <input type="hidden" name="kw" id="kw" value="postcapitol" />
 					</td>
 				</tr>
 			</table>

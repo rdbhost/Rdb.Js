@@ -27,10 +27,10 @@
 
 				$('#demo-form').submit(function () {
 					return $.postFormData(this,
-               { 'userName' : 'p0000000002',
-                 'authcode' : '-',
-                 domain     : 'dev.rdbhost.com',
-                 'callback' : repopulate });
+               { userName : 'p0000000002',
+                 authcode : '-',
+                 domain   : 'dev.rdbhost.com',
+                 callback : repopulate });
 				});
     })
     </script>
@@ -60,7 +60,8 @@
 				<tr>
 					<td colspan="2">
 						<input type="submit" value="go" />
-						<input type="hidden" name="kw" id="kw" value="postcapitol" />
+						<input type="hidden" name="q" id="q"
+                   value="INSERT INTO capitols (city, country, population) VALUES(%s, %s, %s);" />
 					</td>
 				</tr>
 			</table>
