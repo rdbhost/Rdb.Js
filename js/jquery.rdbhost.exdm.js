@@ -183,24 +183,25 @@ function SQLEngine(userName, authcode, domain)
     return this.getQueryUrl('/mbr/jslogin');
   };
 
-  this.query = function(parms)
+
   /* parms is object containing various options
-    callback : function to call with data from successful query
-    errback : function to call with error object from query failure
-    q : the query string itself
-    args : array of arguments (optional), must correspond with %s tokens
-        in query
-    namedParams : an object containing arguments, by name. Reference
-        in query with tokens like %(name)
-    plainTextJson : true if JSON parsing to be skipped, instead
-         returning the JSON plaintext
-    format : 'json' or 'json-easy'
-  */
+   callback : function to call with data from successful query
+   errback : function to call with error object from query failure
+   q : the query string itself
+   args : array of arguments (optional), must correspond with %s tokens
+       in query
+   namedParams : an object containing arguments, by name. Reference
+       in query with tokens like %(name)
+   plainTextJson : true if JSON parsing to be skipped, instead
+       returning the JSON plaintext
+   format : 'json' or 'json-easy'
+   */
+  this.query = function(parms)
   {
-    var callback = parms.callback,
-        errback = parms.errback,
+    var errback = parms.errback,
         args = parms.args || [],
         namedParams = parms.namedParams || {},
+        defer = $.Deferred(),
         nm, typNm;
 
     var data = {
@@ -218,6 +219,11 @@ function SQLEngine(userName, authcode, domain)
         alert(arg2.join(', '));
       };
     }
+
+    // attach provided handlers (if any) to deferred
+    //
+    defer.fail(errback);
+    if ( parms.callback ) defer.done(parms.callback);
 
     // if params are provided, convert to named form 'arg000', 'arg001'...
     if (args !== undefined) {
@@ -261,26 +267,30 @@ function SQLEngine(userName, authcode, domain)
             resp.data = JSON.parse(resp.data);
           }
           catch(e) {
-            errback(e.name, e.message);
+            defer.reject(e.name, e.message);
             return;
           }
           if (resp.data.status[0] == 'error') {
-            errback(resp.data.error[0], resp.data.error[1]);
+            defer.reject(resp.data.error[0], resp.data.error[1]);
           }
           else {
-            callback(resp.data);
+            defer.resolve(resp.data);
           }
         }
         else {
-          callback(resp);
+          defer.resolve(resp);
         }
       },
 
       function(errObj) {
           // error handler
-          errback(errObj.message, errObj.data);
+          defer.reject(errObj.message, errObj.data);
       }
     );
+
+    // return promise object from deferred, so client can add additional handlers
+    //  as necessary
+    return defer.promise();
   };
 
 
@@ -308,6 +318,7 @@ function SQLEngine(userName, authcode, domain)
     this.query(parms);
   };
 
+
   /* parms is object containing various options
    formId : the id of the form with the data
    callback : function to call with data from successful query
@@ -318,11 +329,16 @@ function SQLEngine(userName, authcode, domain)
    */
   this.queryByForm = function(parms)
   {
-    var callback = parms.callback,
-        errback = parms.errback,
+    var errback = parms.errback,
         formId = parms.formId,
-        plainTextJson = parms.plainTextJson;
+        plainTextJson = parms.plainTextJson,
+        defer = $.Deferred();
 
+    // attach callback, if provided, to defer
+    if ( parms.callback )
+      defer.done( parms.callback );
+
+    // internal callback function
     function cBack(response) {
       if ( !plainTextJson ) {
         try {
@@ -330,22 +346,22 @@ function SQLEngine(userName, authcode, domain)
         }
         catch (e) {
           delete CONNECTIONS[easyXDMAjaxHandle].handler;
-          errback(e.name, e.message);
+          defer.reject(e.name, e.message);
           return;
         }
         if (response.status[0] == 'error') {
           delete CONNECTIONS[easyXDMAjaxHandle].handler;
-          errback(response.error[0], response.error[1]);
+          defer.reject(response.error[0], response.error[1]);
         }
         else {
           delete CONNECTIONS[easyXDMAjaxHandle].handler;
-          callback(response);
+          defer.resolve(response);
         }
       }
       else {
         delete CONNECTIONS[easyXDMAjaxHandle].handler;
         // plaintext response
-        callback(response);
+        defer.resolve(response);
       }
     }
 
@@ -383,7 +399,9 @@ function SQLEngine(userName, authcode, domain)
     $form.attr('target',targettag);
     $form.attr('action',dbUrl);
 
-    return true;
+    // return promise, so client can add callbacks/errbacks as required
+    //
+    return defer.promise();
   };
 
 
@@ -396,21 +414,23 @@ function SQLEngine(userName, authcode, domain)
    */
   this.loginByForm = function(parms)
   {
-    var callback = parms.callback,
-        errback = parms.errback,
-        formId = parms.formId;
+    var errback = parms.errback,
+        formId = parms.formId,
+        defer = $.Deferred();
 
+    // internal callback function
+    //
     function cBack(response) {
       try {
         response = JSON.parse(response);
       }
       catch (e) {
         cleanup_form($form, target, action);
-        errback(e.name, e.message);
+        defer.reject(e.name, e.message);
         delete CONNECTIONS[easyXDMAjaxHandle].handler;
         return;
       }
-      callback(response);
+      defer.resolve(response);
       // cleanup form
       cleanup_form($form, target, action);
       delete CONNECTIONS[easyXDMAjaxHandle].handler;
@@ -423,6 +443,7 @@ function SQLEngine(userName, authcode, domain)
       alert('form '+formId+' not found');
       return false;
     }
+
     // define default errback
     if (errback === undefined) {
       errback = function () {
@@ -430,6 +451,12 @@ function SQLEngine(userName, authcode, domain)
         alert(arg2.join(', '));
       };
     }
+
+    // attach callback, if provided, to defer
+    if ( parms.callback )
+      defer.done( parms.callback );
+    defer.fail(errback);
+
     // init vars
     var dbUrl =  this.getLoginUrl();
     // save vals
@@ -440,7 +467,7 @@ function SQLEngine(userName, authcode, domain)
     $form.attr('target',targettag);
     $form.attr('action',dbUrl);
 
-    return true;
+    return defer.promise();
   };
 } // end of SQLEngine class
 
@@ -831,6 +858,7 @@ function SQLEngine(userName, authcode, domain)
     }
 
   };
+
   $.fn.rdbhostSubmit = rdbhostSubmit;
 
 

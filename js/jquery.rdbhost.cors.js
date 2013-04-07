@@ -67,20 +67,19 @@
 // SQL Engine that uses AJAX, and functions on browsers that support the
 //   CORS extension to HTTP
 //
-function SQLEngine(uName,authcode,domain)
+function SQLEngine(userName,authcode,domain)
 {
 
 	// store engine config info
-	this.format = 'json';
-	this.userName = uName;
-	this.authcode = authcode;
-	this.domain = domain || 'www.rdbhost.com';
+	var format = 'json';
+	if ( ! domain )
+    domain = 'www.rdbhost.com';
 
 	this.getQueryUrl = function(altPath) {
 
 		var proto = window.location.protocol;
-		if (!altPath) { altPath = '/db/'+this.userName; }
-		return proto+'//'+this.domain+altPath;
+		if (!altPath) { altPath = '/db/'+userName; }
+		return proto+'//'+domain+altPath;
 	};
 
 	this.getLoginUrl = function() {
@@ -101,18 +100,23 @@ function SQLEngine(uName,authcode,domain)
      */
 	this.query = function(parms)
 	{
-		var callback = parms.callback;
-		var errback = parms.errback;
-		var query = parms.q;
-		var kw = parms.kw;
-		var args = parms.args || [];
-		var argtypes = parms.argtypes || [];
-		var plainText = parms.plainTextJson;
-		var format = parms.format || this.format;
+		var errback = parms.errback,
+		    args = parms.args || [],
+        namedParams = parms.namedParams || {},
+        nm, typNm,
+        defer = $.Deferred();
 
 		var that = this;
 
-		// define default errback
+    var data = {
+      q : parms.q,
+      kw : parms.kw,
+      format : parms.format || format,
+      mode : parms.mode,
+      authcode : parms.authcode
+    };
+
+    // define default errback
 		if (errback === undefined) {
 			errback = function () {
 				var arg2 = Array.apply(null,arguments);
@@ -120,51 +124,66 @@ function SQLEngine(uName,authcode,domain)
 			};
 		}
 
-		// super callback that checks for server side errors, calls errback
+    // attach provided handlers (if any) to deferred
+    //
+    defer.fail(errback);
+    if ( parms.callback ) defer.done(parms.callback);
+
+    // super callback that checks for server side errors, calls errback
 		//  where appropriate
 		function qCallback(json) {
 
 			if ( json.status[0] === 'error' ) {
-				errback(json.status[1],json.error.toString());
+				defer.reject(json.status[1],json.error.toString());
 			}
 			else {
-				callback(json);
+				defer.resolve(json);
 			}
 		}
 
-		// create data record
-		var data = { 'format' : format,
-			           'q' : query };
-        if ( kw !== undefined && kw !== null )
-	    	data['kw'] = kw;
+    function qErrback(xhr, stat, exc) {
 
-		// iterate over arg and argtype lists, and add
+      defer.reject('ajax', stat);
+    }
+
+		// iterate over arg lists, and add
 		//  arg### values to data
-		var argn = '', argntype, istr;
+    for ( var i=0; i<args.length; i++ ) {
 
-        for ( var i=0; i<args.length; i++ ) {
-
-			istr = '00'+i;
-			argn = 'arg'+istr.substring(istr.length-3);
-			data[argn] = args[i];
-
-			if ( i<argtypes.length && argtypes[i] !== undefined ) {
-
-				argntype = 'argtype'+istr.substring(istr.length-3);
-				data[argntype] = argtypes[i];
-			}
+      var num = '000'+ i;
+      nm = 'arg'+num.substr(num.length-3);
+      data[nm] = args[i];
+      typNm = 'argtype'+num.substr(num.length-3);
+      data[typNm] = apiType(args[i]);
 		}
 
-		// use jQuery ajax call to submit to server
-        $.ajax({
-            type: "POST",
-            url: this.getQueryUrl(),
-            data: data,
-            dataType: 'json',
-            success: qCallback,
-            error: errback
-        });
+    // if keyword params are provided, convert to named form 'arg:name'.
+    if (namedParams !== undefined) {
+      for(var kw in namedParams) {
+        if ( namedParams.hasOwnProperty(kw) ) {
 
+          nm = 'arg:'+kw;
+          data[nm] = namedParams[kw];
+          typNm = 'argtype:'+kw;
+          data[typNm] = apiType(namedParams[kw]);
+        }
+      }
+    }
+
+    // use jQuery ajax call to submit to server
+    //
+     $.ajax({
+        type: "POST",
+        url: this.getQueryUrl(),
+        data: data,
+        dataType: 'json',
+        success: qCallback,
+        error: qErrback
+     });
+
+    // return promise, so client can attach handlers
+    //
+    return defer.promise();
 	};
 
 
@@ -197,102 +216,21 @@ function SQLEngine(uName,authcode,domain)
 	};
 
 
-    /* parms is object containing various options
-     formId : the id of the form with the data
-     callback : function to call with data from successfull query
-     errback : function to call with error object from query failure
-     plainTextJson : true if JSON parsing to be skipped, in lieu of
-     returning the JSON plaintext
-     */
+  /* parms is object containing various options
+
+   formId : the id of the form with the data
+
+   callback : function to call with data from successfull query
+   errback : function to call with error object from query failure
+
+   plainTextJson : true if JSON parsing to be skipped, in lieu of
+       returning the JSON plaintext
+   */
 	this.queryByForm = function(parms)
 	{
-		var callback = parms.callback;
-		var errback = parms.errback;
-		var formId = parms.formId;
-		var plainTextJson = parms.plainTextJson;
-		var format = parms.format || this.format;
+    throw new Error('not implemented');
+  };
 
-		var that = this;
-
-		// get form, return if not found
-		var $form = $('#'+formId);
-		if ($form.length<1) {
-			//alert('form '+formId+' not found');
-			return false;
-		}
-
-		// define default errback
-		if (errback === undefined) {
-			errback = function () {
-				var arg2 = Array.apply(null,arguments);
-				alert(arg2.join(', '));
-			};
-		}
-
-		// super callback that checks for server side errors, calls errback
-		//  where appropriate
-		function qCallback(json) {
-
-			if ( json.status[0] === 'error' ) {
-                errback(json.status[1],json.error.toString());
-			}
-			else {
-				callback(json);
-			}
-		}
-
-		// iterate over arg and argtype lists, and add
-		//  arg### values to data
-		var argn = '', argntype, istr, data = {}, fldnm;
-		var labels = ['q','kw','format'];
-
-		for (var i in labels) {
-
-          fldnm = labels[i];
-          if ($form.find('#'+fldnm).length) {
-            data[fldnm] = $form.find('#'+fldnm).val();
-          }
-		}
-
-		for ( var i=0; i<1000; i++ ) {
-
-			istr = '00'+i;
-			argn = 'arg'+istr.substring(istr.length-3);
-			fld = $form.find('#'+argn);
-
-			if (fld.length>0) {
-				data[argn] = fld.val();
-			}
-			else {
-				break;
-			}
-
-			argntyp = 'argtype'+istr.substring(istr.length-3);
-			fldtyp = $form.find('#'+argntyp);
-
-			if (fldtyp.length > 0) {
-				data[argntyp] = fldtyp.val();
-			}
-		}
-		// ensure data type requests
-		if (!data['format']) {
-			data['format'] = 'json';
-		}
-
-		// use jQuery ajax call to submit to server
-		var url = this.getQueryUrl();
-
-        $.ajax({
-            type: "POST",
-            url: url,
-            data: data,
-            dataType: 'json',
-            success: qCallback,
-            error: errback
-        });
-
-		return false;
-	};
 
 	/* loginAjax
 	   logs in with email and password.  If on www.rdbhost.com and user logged
@@ -302,15 +240,14 @@ function SQLEngine(uName,authcode,domain)
 	*/
 	this.loginAjax = function(email,passwd)
 	{
-		var stat;
-		var jsloginUrl = this.getLoginUrl();
-		alert('jsLogin url: '+jsloginUrl);
+		var jsloginUrl = this.getLoginUrl(),
+        stat,
+        defer = $.Deferred();
 
 		$.ajax({
 
       type: "POST",
 			url: jsloginUrl,
-			async: false,
 
 			data: {'password' : passwd,
 				     'email' : email },
@@ -320,31 +257,32 @@ function SQLEngine(uName,authcode,domain)
 			success: function(d) {
 
         if (d === null || d === '' || d === undefined) {
-					alert('login failed: timeout');
 					stat = false;
+          defer.reject('login failed: timeout');
 				}
 				else if (d.status[0] === 'error') {
-					alert('login db failed: '+d.status[1]);
 					stat = false;
+          defer.reject('login db failed: '+d.status[1]);
 				}
 				else if (d.status[0] === 'complete') {
 					stat = d.roles;
+          defer.resolve(d);
 				}
 				else {
-					alert('wonkers! status: '+d.status[0]);
 					stat = false;
+          defer.reject('err','you should not see')
 				}
 			},
 
 			error: function(xhr,errtype,exc)
 			{
 				// set page location elsewhere
-				alert('login connect failed: '+errtype);
+				defer.reject('login connect failed: '+errtype);
 				stat = false;
 			}
 		});
 
-		return stat;
+		return defer.promise;
 	};
 
 } // end of SQLEngine class
@@ -387,7 +325,7 @@ SQLEngine.formnamectr = 0;
       rdbHostConfig.opts = $.extend( {}, opts, parms||{} );
 	};
 
-    $.rdbHostConfig = rdbHostConfig;  // makes it a plugin
+  $.rdbHostConfig = rdbHostConfig;  // makes it a plugin
 
 	/*
 	    withResults - calls callback with json result object
@@ -442,30 +380,7 @@ SQLEngine.formnamectr = 0;
 	    param kw : query-keyword to post data
 	*/
 	var postFormData = function(that,parms) {
-
-		assert(arguments.length<=2, 'too many parms to postFormData');
-		var $form = $(that).closest('form');
-		var inp = $.extend({}, $.rdbHostConfig.opts, parms||{});
-		inp.formId = $form.attr('id');
-		assert(inp.formId,'form must have a unique id attribute');
-
-		if (inp.q) {
-			$form.find('#kw').remove();
-			$form.find('#q').remove();
-			$form.append($('<input type="hidden" id="q" name="q" >').val(inp.q));
-		}
-
-		if (inp.kw) {
-			$form.find('#kw').remove();
-			$form.find('#q').remove();
-			$form.append($('<input type="hidden" id="kw" name="kw" >').val(inp.kw));
-		}
-
-		var sqlEngine = new SQLEngine(inp.userName, inp.authcode, inp.domain);
-		delete inp.userName; delete inp.authcode;
-		sqlEngine.queryByForm(inp);
-
-		return false;
+    throw new Error('not implemented in CORS version');
 	};
 
 	$.postFormData = postFormData;
@@ -519,37 +434,37 @@ SQLEngine.formnamectr = 0;
 			parms = { 'q' : parms };
 		}
 
-        function populate_html_table($table,$row,recs) {
+    function populate_html_table($table,$row,recs) {
 
-          var rec, $newrow;
+      var rec, $newrow;
 
-          $table.find('tbody').empty();
+      $table.find('tbody').empty();
 
-          if (recs === undefined || recs.length === 0) {
+      if (recs === undefined || recs.length === 0) {
 
-            $newrow = $row.clone();
-            $table.append($newrow);
+        $newrow = $row.clone();
+        $table.append($newrow);
+      }
+      else {
+
+        for (var r in recs) {
+
+          rec = recs[r];
+          $newrow = $row.clone().show();
+          var ctr = 0, flds = [];
+
+          for (var fname in rec) {
+
+            $newrow.find('td.'+fname).html(rec[fname]);
+            ctr += $newrow.find('td.'+fname).length;
+            flds.push(fname);
           }
-          else {
 
-            for (var r in recs) {
-
-              rec = recs[r];
-              $newrow = $row.clone().show();
-              var ctr = 0, flds = [];
-
-              for (var fname in rec) {
-
-                $newrow.find('td.'+fname).html(rec[fname]);
-                ctr += $newrow.find('td.'+fname).length;
-                flds.push(fname);
-              }
-
-              assert(ctr,'no td elements found with field names! '+flds.join(', '));
-              $table.append($newrow);
-            }
-          }
+          assert(ctr,'no td elements found with field names! '+flds.join(', '));
+          $table.append($newrow);
         }
+      }
+    }
 
 		function generate_html_table($table,recs) {
 
