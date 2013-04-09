@@ -360,6 +360,9 @@ asyncTest('form SELECT error', 2+1, function() {
               ok(typeof resp === typeof 'o', 'response is string'); // 0th assert
               ok(err.length === 5, 'error code not len 5: '+err); // 1st assert
               start();
+            },
+        callback: function(resp) {
+              var a =1;
             }
       });
 

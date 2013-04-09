@@ -1,170 +1,198 @@
 /*
 
-    jquery.rdbhost.cors.js
+ jquery.rdbhost.cors.js
 
-    A jquery plugin to access PostgreSQL databases on Rdbhost.com
+ A jquery plugin to access PostgreSQL databases on Rdbhost.com
 
-    requires a (free) account at www.rdbhost.com to be useful.
+ requires a (free) account at www.rdbhost.com to be useful.
 
-    this module includes a class 'SQLEngine' for the database connection, and
-      that class can be used by itself, aside from the plugins.  jQuery 1.4+
-      is required, even when using the connection class without the plugin.
+ this module includes a class 'SQLEngine' for the database connection, and
+ that class can be used by itself, aside from the plugins.  jQuery 1.4+
+ is required, even when using the connection class without the plugin.
 
-    the module adds four functions and three methods to the jQuery namespace.
+ the module adds four functions and three methods to the jQuery namespace.
 
-    The four functions are $.rdbHostConfig, $.withResults, $.eachRecord, and
-      $.postFormData.  The three methods are $.fn.populateTable,
-      $.fn.populateForm, and $.fn.datadump.
+ The four functions are $.rdbHostConfig, $.withResults, $.eachRecord, and
+ $.postFormData.  The three methods are $.fn.populateTable,
+ $.fn.populateForm, and $.fn.datadump.
 
-    $.rdbHostConfig takes an options object, and makes those options default for
-      all subsequent functions and methods.
+ $.rdbHostConfig takes an options object, and makes those options default for
+ all subsequent functions and methods.
 
-    $.withResults sends a query to the server, receives the data, and calls
-      a callback with the received data.
+ $.withResults sends a query to the server, receives the data, and calls
+ a callback with the received data.
 
-    $.eachRecord is like $.withResults, in that it gets data from the server,
-      but it extracts the rows from the data structure, and calls an eachrec
-      callback for each record.  Each record is a javascript object, with a
-      named attribute for each field.
+ $.eachRecord is like $.withResults, in that it gets data from the server,
+ but it extracts the rows from the data structure, and calls an eachrec
+ callback for each record.  Each record is a javascript object, with a
+ named attribute for each field.
 
-    $.postFormData takes a form as input, submits that form to the server,
-      receives the data returned, and provides it to the callback.
-      The form fields must conform to the rdbhost protocol, that is, they
-      must have the names listed on the http:www.rdbhost.com/protocol.html page.
+ $.postFormData takes a form as input, submits that form to the server,
+ receives the data returned, and provides it to the callback.
+ The form fields must conform to the rdbhost protocol, that is, they
+ must have the names listed on the http:www.rdbhost.com/protocol.html page.
 
-    Form fields
-      The form *must* include either a 'q' or a 'kw' field.  It may also include
-      'arg###', or 'argtype###' fields.  Argument fields are numbered like
-      'arg000', 'arg001'... in order.  Argument type fields, 'argtype000'..
-      must correspond to arg fields.  Argument fields may NOT be file fields.
-      Use jquery.rdbhost.js if you need file fields or binary.
+ Form fields
+ The form *must* include either a 'q' or a 'kw' field.  It may also include
+ 'arg###', or 'argtype###' fields.  Argument fields are numbered like
+ 'arg000', 'arg001'... in order.  Argument type fields, 'argtype000'..
+ must correspond to arg fields.  Argument fields may NOT be file fields.
+ Use jquery.rdbhost.js if you need file fields or binary.
 
-	  The 'kw' field value allows you to invoke a query that is stored in the
-	  'lookup.queries' table on the  server.  See website documentation for
-	  details.
+ The 'kw' field value allows you to invoke a query that is stored in the
+ 'lookup.queries' table on the  server.  See website documentation for
+ details.
 
-    $.fn.populateTable sends a query to the server, receives the data, and populates
-      an html table with it.  If the element provided is not a table, a new
-      table is inserted in it; if the element is an empty table, it is expanded
-      with new rows, one per record, and if the table has a prototype row, that
-      row is duplicated once per record, and the record data is placed in
-      td elements based on class name matches. (a field named 'firstName' would
-      put its value in a table cell like '<td class="firstName">').  A cell
-      can have multiple classes, so adding field-name classes should not interfere
-      with styling.
+ $.fn.populateTable sends a query to the server, receives the data, and populates
+ an html table with it.  If the element provided is not a table, a new
+ table is inserted in it; if the element is an empty table, it is expanded
+ with new rows, one per record, and if the table has a prototype row, that
+ row is duplicated once per record, and the record data is placed in
+ td elements based on class name matches. (a field named 'firstName' would
+ put its value in a table cell like '<td class="firstName">').  A cell
+ can have multiple classes, so adding field-name classes should not interfere
+ with styling.
 
-    $.fn.populateForm sends a query to the server, receives the data, selects the
-      first field, and populates a form with it.  It attempts to match each field
-      name to an input field with matching id, and then attempts to match an input
-      field with matching class-name.
+ $.fn.populateForm sends a query to the server, receives the data, selects the
+ first field, and populates a form with it.  It attempts to match each field
+ name to an input field with matching id, and then attempts to match an input
+ field with matching class-name.
 
-    $.fn.datadump is a diagnostic-aid that puts a formatted json-string of
-      the data into the selected html elements.  It allows you to verify the
-      data retrieval functionality before doing (much) html work.
+ $.fn.datadump is a diagnostic-aid that puts a formatted json-string of
+ the data into the selected html elements.  It allows you to verify the
+ data retrieval functionality before doing (much) html work.
 
-*/
+ */
 
 // SQL Engine that uses AJAX, and functions on browsers that support the
 //   CORS extension to HTTP
 //
-function SQLEngine(userName,authcode,domain)
-{
+function SQLEngine(userName, authcode, domain) {
 
-	// store engine config info
-	var format = 'json';
-	if ( ! domain )
+  // store engine config info
+  var format = 'json';
+  if (!domain)
     domain = 'www.rdbhost.com';
 
-	this.getQueryUrl = function(altPath) {
+  /*
+   Return API type for data item.
 
-		var proto = window.location.protocol;
-		if (!altPath) { altPath = '/db/'+userName; }
-		return proto+'//'+domain+altPath;
-	};
+   return value is one of STRING, NUMBER, DATE, NONE, DATETIME, TIME
+   */
+  function apiType(d) {
 
-	this.getLoginUrl = function() {
+    switch (typeof d) {
 
-		return this.getQueryUrl('/mbr/jslogin');
-	};
+      case 'number':
+        return 'NUMBER';
+      case 'object':
+        if ($.type(d) == 'date')
+          return 'DATETIME';
+        else
+          return 'STRING';
+      case 'undefined':
+        return 'NONE';
 
-    /* parms is object containing various options
-     callback : function to call with data from successful query
-     errback : function to call with error object from query failure
-     q : the query string itself
-     args : array of arguments (optional), must correspond with %s tokens
-     in query
-     argtypes : array of python DB API types, one per argument
-     plainTextJson : true if JSON parsing to be skipped, in lieu of
-     returning the JSON plaintext
-     format : 'json' or 'json-easy'
-     */
-	this.query = function(parms)
-	{
-		var errback = parms.errback,
-		    args = parms.args || [],
+      default:
+        return 'STRING'
+    }
+  }
+
+  this.getQueryUrl = function (altPath) {
+
+    var proto = window.location.protocol;
+    if (!altPath) {
+      altPath = '/db/' + userName;
+    }
+
+    return proto + '//' + domain + altPath;
+  };
+
+  this.getLoginUrl = function () {
+
+    return this.getQueryUrl('/mbr/jslogin');
+  };
+
+
+  /*
+   parms is object containing various options
+
+   callback : function to call with data from successful query
+   errback : function to call with error object from query failure
+   q : the query string itself
+   args : array of arguments (optional), must correspond with %s tokens
+   in query
+   argtypes : array of python DB API types, one per argument
+   plainTextJson : true if JSON parsing to be skipped, in lieu of
+   returning the JSON plaintext
+   format : 'json' or 'json-easy'
+   */
+  this.query = function (parms) {
+    var errback = parms.errback,
+        args = parms.args || [],
         namedParams = parms.namedParams || {},
         nm, typNm,
         defer = $.Deferred();
 
-		var that = this;
+    var that = this;
 
     var data = {
-      q : parms.q,
-      kw : parms.kw,
-      format : parms.format || format,
-      mode : parms.mode,
-      authcode : parms.authcode
+      q: parms.q,
+      kw: parms.kw,
+      format: parms.format || format,
+      mode: parms.mode,
+      authcode: parms.authcode
     };
 
     // define default errback
-		if (errback === undefined) {
-			errback = function () {
-				var arg2 = Array.apply(null,arguments);
-				alert(arg2.join(', '));
-			};
-		}
+    if (errback === undefined) {
+      errback = function () {
+        var arg2 = Array.apply(null, arguments);
+        alert(arg2.join(', '));
+      };
+    }
 
     // attach provided handlers (if any) to deferred
     //
     defer.fail(errback);
-    if ( parms.callback ) defer.done(parms.callback);
+    if (parms.callback) defer.done(parms.callback);
 
     // super callback that checks for server side errors, calls errback
-		//  where appropriate
-		function qCallback(json) {
+    //  where appropriate
+    function qCallback(json) {
 
-			if ( json.status[0] === 'error' ) {
-				defer.reject(json.status[1],json.error.toString());
-			}
-			else {
-				defer.resolve(json);
-			}
-		}
+      if (json.status[0] === 'error') {
+        defer.reject(json.status[1], json.error.toString());
+      }
+      else {
+        defer.resolve(json);
+      }
+    }
 
     function qErrback(xhr, stat, exc) {
 
       defer.reject('ajax', stat);
     }
 
-		// iterate over arg lists, and add
-		//  arg### values to data
-    for ( var i=0; i<args.length; i++ ) {
+    // iterate over arg lists, and add
+    //  arg### values to data
+    for (var i = 0; i < args.length; i++) {
 
-      var num = '000'+ i;
-      nm = 'arg'+num.substr(num.length-3);
+      var num = '000' + i;
+      nm = 'arg' + num.substr(num.length - 3);
       data[nm] = args[i];
-      typNm = 'argtype'+num.substr(num.length-3);
+      typNm = 'argtype' + num.substr(num.length - 3);
       data[typNm] = apiType(args[i]);
-		}
+    }
 
     // if keyword params are provided, convert to named form 'arg:name'.
     if (namedParams !== undefined) {
-      for(var kw in namedParams) {
-        if ( namedParams.hasOwnProperty(kw) ) {
+      for (var kw in namedParams) {
+        if (namedParams.hasOwnProperty(kw)) {
 
-          nm = 'arg:'+kw;
+          nm = 'arg:' + kw;
           data[nm] = namedParams[kw];
-          typNm = 'argtype:'+kw;
+          typNm = 'argtype:' + kw;
           data[typNm] = apiType(namedParams[kw]);
         }
       }
@@ -172,48 +200,49 @@ function SQLEngine(userName,authcode,domain)
 
     // use jQuery ajax call to submit to server
     //
-     $.ajax({
-        type: "POST",
-        url: this.getQueryUrl(),
-        data: data,
-        dataType: 'json',
-        success: qCallback,
-        error: qErrback
-     });
+    $.ajax({
+      type: "POST",
+      url: this.getQueryUrl(),
+      data: data,
+      dataType: 'json',
+      success: qCallback,
+      error: qErrback
+    });
 
     // return promise, so client can attach handlers
     //
     return defer.promise();
-	};
+  };
 
 
-    /* parms is just like for query method, but callback gets row array and
-     header array, not whole data structure.
-     an additional param is 'incomplete', a function that is called
-     (with rows and header) when data set is truncated by 100 record limit
-     */
-	this.queryRows = function(parms)
-	{
-		var callback = parms.callback;
-		var incomplete_callback = parms.incomplete || callback;
+  /* parms is just like for query method, but callback gets row array and
+   header array, not whole data structure.
+   an additional param is 'incomplete', a function that is called
+   (with rows and header) when data set is truncated by 100 record limit
+   */
+  this.queryRows = function (parms) {
+    var callback = parms.callback;
+    var incomplete_callback = parms.incomplete || callback;
 
-		function cb(json) {
+    function cb(json) {
 
-			var rows = json.records.rows || [];
-			var status = json.status[0];
-			var header = json.records.header || [];
+      var rows = json.records.rows || [];
+      var status = json.status[0];
+      var header = json.records.header || [];
 
-			if (status === 'complete') {
-				callback(rows,header);
-			}
-			else if (status === 'incomplete') {
-				incomplete_callback(rows,header);
-			}
-		}
+      if (status === 'complete') {
+        callback(rows, header);
+      }
+      else if (status === 'incomplete') {
+        incomplete_callback(rows, header);
+      }
+    }
 
-		parms.callback = cb;
-		this.query(parms);
-	};
+    parms.callback = cb;
+    var promise = this.query(parms);
+
+    return promise;
+  };
 
 
   /* parms is object containing various options
@@ -224,186 +253,398 @@ function SQLEngine(userName,authcode,domain)
    errback : function to call with error object from query failure
 
    plainTextJson : true if JSON parsing to be skipped, in lieu of
-       returning the JSON plaintext
+   returning the JSON plaintext
    */
-	this.queryByForm = function(parms)
-	{
+  this.queryByForm = function (parms) {
     throw new Error('not implemented');
   };
 
 
-	/* loginAjax
-	   logs in with email and password.  If on www.rdbhost.com and user logged
-	   in to rdbhost account, email/password are optional.
+  /* loginAjax
+   logs in with email and password.  If on www.rdbhost.com and user logged
+   in to rdbhost account, email/password are optional.
 
-	   only works on rdbhost.com, at this point
-	*/
-	this.loginAjax = function(email,passwd)
-	{
-		var jsloginUrl = this.getLoginUrl(),
+   only works on rdbhost.com, at this point
+   */
+  this.loginAjax = function (email, passwd) {
+    var jsloginUrl = this.getLoginUrl(),
         stat,
         defer = $.Deferred();
 
-		$.ajax({
+    $.ajax({
 
       type: "POST",
-			url: jsloginUrl,
+      url: jsloginUrl,
 
-			data: {'password' : passwd,
-				     'email' : email },
+      data: {'password': passwd,
+        'email': email },
 
-			dataType: "json",
+      dataType: "json",
 
-			success: function(d) {
+      success: function (d) {
 
         if (d === null || d === '' || d === undefined) {
-					stat = false;
+          stat = false;
           defer.reject('login failed: timeout');
-				}
-				else if (d.status[0] === 'error') {
-					stat = false;
-          defer.reject('login db failed: '+d.status[1]);
-				}
-				else if (d.status[0] === 'complete') {
-					stat = d.roles;
+        }
+        else if (d.status[0] === 'error') {
+          stat = false;
+          defer.reject('login db failed: ' + d.status[1]);
+        }
+        else if (d.status[0] === 'complete') {
+          stat = d.roles;
           defer.resolve(d);
-				}
-				else {
-					stat = false;
-          defer.reject('err','you should not see')
-				}
-			},
+        }
+        else {
+          stat = false;
+          defer.reject('err', 'you should not see')
+        }
+      },
 
-			error: function(xhr,errtype,exc)
-			{
-				// set page location elsewhere
-				defer.reject('login connect failed: '+errtype);
-				stat = false;
-			}
-		});
+      error: function (xhr, errtype, exc) {
+        // set page location elsewhere
+        defer.reject('login connect failed: ' + errtype);
+        stat = false;
+      }
+    });
 
-		return defer.promise;
-	};
+    return defer.promise();
+  };
 
 } // end of SQLEngine class
 SQLEngine.formnamectr = 0;
 
 
 /*
-  following section defines some jQuery plugins
+ following section defines some jQuery plugins
 
-*/
+ */
 
-(function ($,window) {
+(function ($, window) {
 
-	// default generic callbacks
-	//
-	function errback(err,msg) {
+  // default generic callbacks
+  //
+  function errback(err, msg) {
 
-		alert('<pre>'+err.toString()+': '+msg+'</pre>');
-	}
+    alert('<pre>' + err.toString() + ': ' + msg + '</pre>');
+  }
 
-    function dumper(json) {
+  function dumper(json) {
 
-		var str = JSON.stringify(json,null,4);
-		alert(str);
-	}
+    var str = JSON.stringify(json, null, 4);
+    alert(str);
+  }
 
-	//  configuration setting function
-	//  saves defaults as attribute on the config function
-	//
-	var opts = {
-        errback : errback,
-        callback : dumper,
-        eachrec : undefined,
-        format : 'json-easy',
-        userName : '',
-        authcode : ''   };
+  //  configuration setting function
+  //  saves defaults as attribute on the config function
+  //
+  var opts = {
+    errback: errback,
+    callback: dumper,
+    eachrec: undefined,
+    format: 'json-easy',
+    userName: '',
+    authcode: ''   };
 
-	var rdbHostConfig = function (parms) {
+  var rdbHostConfig = function (parms) {
 
-      rdbHostConfig.opts = $.extend( {}, opts, parms||{} );
-	};
+    rdbHostConfig.opts = $.extend({}, opts, parms || {});
+  };
 
   $.rdbHostConfig = rdbHostConfig;  // makes it a plugin
 
-	/*
-	    withResults - calls callback with json result object
-	      or errback with error object
+  /*
+   withResults - calls callback with json result object
+   or errback with error object
 
-	    param q : query to get data
-	    param callback : function to call with json data
-	    param errback : function to call in case of error
-	*/
-	var withResults = function(parms) {
+   param q : query to get data
+   param callback : function to call with json data
+   param errback : function to call in case of error
+   */
+  var withResults = function (parms) {
 
-		assert(arguments.length<=1, 'too many parms to withResults');
-		var inp = $.extend({}, $.rdbHostConfig.opts, parms||{});
-		var sqlEngine = new SQLEngine(inp.userName, inp.authcode, inp.domain);
-		delete inp.userName; delete inp.authcode;
-		sqlEngine.query(inp);
-	};
+    assert(arguments.length <= 1, 'too many parms to withResults');
+    var inp = $.extend({}, $.rdbHostConfig.opts, parms || {});
 
-	$.withResults = withResults;
+    var sqlEngine = new SQLEngine(inp.userName, inp.authcode, inp.domain);
+    delete inp.userName;
+    delete inp.authcode;
 
-	/*
-	    eachRecord - calls 'eachrec' callback with each record,
-	      or errback with error object
+    var promise = sqlEngine.query(inp);
 
-	    param q : query to get data
-	    param eachrec : function to call with each record
-	    param errback : function to call in case of error
-	*/
-	var eachRecord = function(parms) {
+    return promise;
+  };
 
-		assert(arguments.length<=1, 'too many parms to eachRecord');
-		var eachrec = parms.eachrec;
-		delete parms.eachrec;
-		assert(eachrec, 'eachrec not provided');
+  $.withResults = withResults;
 
-		function cback (json) {
-			for (var r in json.records.rows) {
-				eachrec(json.records.rows[r]);
-			}
-		}
+  /*
+   eachRecord - calls 'eachrec' callback with each record,
+   or errback with error object
 
-		parms.callback = cback;
-		$.withResults(parms);
-	};
+   param q : query to get data
+   param eachrec : function to call with each record
+   param errback : function to call in case of error
+   */
+  var eachRecord = function (parms) {
 
-	$.eachRecord = eachRecord;
+    assert(arguments.length <= 1, 'too many parms to eachRecord');
+    var eachrec = parms.eachrec;
+    delete parms.eachrec;
+    assert(eachrec, 'eachrec not provided');
 
-	/*
-	    postFormData should be used as a submit handler for a data entry form.
+    function cback(json) {
+      for (var r in json.records.rows) {
+        eachrec(json.records.rows[r]);
+      }
+    }
 
-	    param q : query to post data
-	    param kw : query-keyword to post data
-	*/
-	var postFormData = function(that,parms) {
+    parms.callback = cback;
+    var promise = $.withResults(parms);
+
+    return promise;
+  };
+
+  $.eachRecord = eachRecord;
+
+
+  /*
+   postFormData should be used as a submit handler for a data entry form.
+
+   param q : query to post data
+   param kw : query-keyword to post data
+   */
+  var postFormData = function (that, parms) {
     throw new Error('not implemented in CORS version');
-	};
+  };
 
-	$.postFormData = postFormData;
+  $.postFormData = postFormData;
 
-	/*
-	    postData submits some data (in the options object) to the server
-	      and provides the response to callback.
 
-	    param q : query to post data
-	    param kw : query-keyword to post data
-	*/
-	var postData = function(parms) {
+  /*
+   postData submits some data (in the options object) to the server
+   and provides the response to callback.
 
-		assert(arguments.length<2, 'too many parms to postData');
-		var inp = $.extend({}, $.rdbHostConfig.opts, parms||{});
-		var sqlEngine = new SQLEngine(inp.userName, inp.authcode, inp.domain);
-		delete inp.userName; delete inp.authcode;
-		sqlEngine.query(inp);
+   param q : query to post data
+   param kw : query-keyword to post data
+   */
+  var postData = function (parms) {
 
-		return true;
-	};
+    assert(arguments.length < 2, 'too many parms to postData');
+    var inp = $.extend({}, $.rdbHostConfig.opts, parms || {});
 
-	$.postData = postData;
+    var sqlEngine = new SQLEngine(inp.userName, inp.authcode, inp.domain);
+    delete inp.userName;
+    delete inp.authcode;
+
+    var promise = sqlEngine.query(inp);
+
+    return promise;
+  };
+
+  $.postData = postData;
+
+
+  /*
+   * loginOpenId - handles login functionality, including processing auth info passed in
+   *   the hash string, or auth info in cookie named 'OPENID_KEY'.
+   *
+   *   Creates login cookie of client chosen name, with auth key returned from rdbhost server.
+   *   Calls the success function with (key, identifier), or failure function with (identifier).
+   *   The identifier and key are a pair in the table auth.openid, and the key can be submitted
+   *     with queries that join the auth.openid table for authentication of the query.
+   *
+   *   If provided a form#id, will prepare form with appropriate action line.
+   *     bases url on www.rdbhost.com if on localhost, else uses same domain
+   *
+   *   The function takes an options object with the following options:
+   *
+   *   acctNum: account number of Rdbhost account - MANDATORY
+   *
+   *   callback: function of sig funct(key, identifier) -- default uses alert
+   *   errback: function with sig funct(identifier)  -- default uses alert
+   *
+   *   cookieName: name of new cookie to receive key value  -- default LOGIN_KEY
+   *   ignoreHash: set true to ignore url#hash value, and rely only on OPENID_KEY cookie  -- default false
+   *
+   *   loginForm: id of form to prepare -- default 'openidForm'
+   *   returnPath: complete url or absolute path of page to end process at  -- default current page
+   *
+   *   offsiteHosting: indicate to library that static pages not on rdbhost. Uses 'www.rdbhost.com' for openid
+   *      negotiation
+   *
+   *
+   */
+  var loginOpenId = function (inp) {
+
+    // minimal functions for success and failure handlers
+    var onSuccess = function () {
+      alert('success!');
+    };
+
+    var onFailure = function () {
+      // default is to fail silently
+    };
+
+    /*
+     * default values for each attribute
+     *
+     *   each can be overridden, only mandatory item is acctNum
+     */
+    var parms = {
+
+      loginForm: 'null',
+      returnPath: false,
+
+      callback: onSuccess,
+      errback: onFailure,
+
+      cookieName: 'LOGIN_KEY',
+      ignoreHash: false,
+
+      offsiteHosting: false
+    };
+
+    parms = $.extend({}, $.rdbHostConfig.opts, parms, inp);
+
+    // get cookie, if available
+    var loginCookie = $.cookie('OPENID_KEY');
+
+    var ident, key;
+
+    /*
+     * function prepare form, creating action attribute
+     */
+    function prepareForm($inputForm, offsite) {
+
+      if (parms.returnPath === false) {
+        parms.returnPath = window.location.pathname;
+        if (parms.returnPath.substr(0, 1) !== '/')
+          parms.returnPath = '/' + parms.returnPath;
+      }
+
+      if (/localhost/i.test(window.location.hostname) || offsite) {
+
+        parms.hostname = parms.domain;
+        parms.returnPath = window.location.origin + parms.returnPath;
+      }
+      else {
+        parms.hostname = window.location.hostname;
+      }
+
+      var acctNum = ('0000000000' + parms.userName);
+      acctNum = acctNum.substr(acctNum.length - 10, 10);
+
+      var action = 'https:' + '//' + parms.hostname + '/auth/openid/' + acctNum + '/one?' + parms.returnPath;
+      $inputForm.attr('action', action);
+
+      /*
+       * add click handlers to host specific buttons
+       */
+      var $inputFld = $('[name="openidurl"]', $inputForm);
+      $('#google', $inputForm).click(function (ev) {
+
+        ev.stopPropagation();
+        $inputFld.val('https://www.google.com/accounts/o8/id');
+        $inputForm.submit();
+      });
+
+      $('#yahoo', $inputForm).click(function (ev) {
+
+        ev.stopPropagation();
+        $inputFld.val('https://me.yahoo.com');
+        $inputForm.submit();
+      });
+    }
+
+    /*
+     *  function to extract ident and key from hash
+     */
+    function useHash() {
+
+      if (window.location.hash) {
+        var hash = window.location.hash;
+        window.location.hash = '';
+        hash = decodeURIComponent(hash);
+        var hp = hash.split('&', 2);
+        if (hp.length >= 2) {
+          ident = hp[0];
+          key = hp[1];
+          if (ident.indexOf('#') === 0)
+            ident = ident.substr(1);
+          $.cookie(parms.cookieName, key);
+          return true;
+        }
+        else
+          return false;
+      }
+      else
+        return false;
+    }
+
+    /*
+     * function to extract ident and key from temporary auth cookie
+     */
+    function useCookie() {
+
+      if (loginCookie) {
+        var kp = loginCookie.split('&', 2);
+        if (kp.length >= 2) {
+          ident = kp[0];
+          key = kp[1];
+          $.cookie(parms.cookieName, key);
+          return true;
+        }
+        else {
+          return false;
+        }
+      }
+      else
+        return false;
+    }
+
+    /*
+     *   start processing of available inputs
+     */
+    var loggedInSuccess = false;
+    if (!parms.ignoreHash) {
+
+      var ckSuccess;
+      var hashSuccess = useHash();
+      if (!hashSuccess) {
+        ckSuccess = useCookie();
+        if (!ckSuccess)
+          parms.errback(ident);
+        else {
+          parms.callback(key, ident);
+          loggedInSuccess = true;
+        }
+      }
+      else {
+        parms.callback(key, ident);
+        loggedInSuccess = true;
+      }
+    }
+    else {
+      ckSuccess = useCookie();
+      if (!ckSuccess)
+        parms.errback(ident);
+      else {
+        parms.callback(key, ident);
+        loggedInSuccess = true;
+      }
+    }
+
+    // if not logged in, perhaps prepare form for login try
+    if (!loggedInSuccess) {
+      var $inputForm = $('#' + parms.loginForm);
+
+      if ($inputForm.length) {
+        prepareForm($inputForm, parms.offsiteHosting);
+      }
+    }
+  };
+
+  $.loginOpenId = loginOpenId;
 
 
   /*
@@ -411,30 +652,29 @@ SQLEngine.formnamectr = 0;
 
    not valid in CORS library, as form submission methods are not supported.
    */
-  var rdbhostSubmit = function() {
+  var rdbhostSubmit = function () {
 
     throw new Error('not implemented');
   };
   $.fn.rdbhostSubmit = rdbhostSubmit;
 
 
-
   /*
-      populateTable creates an html table and inserts into  page
+   populateTable creates an html table and inserts into  page
 
-      param q : query to get data
-  */
-	var populateTable = function(parms) {
+   param q : query to get data
+   */
+  var populateTable = function (parms) {
 
-		assert(arguments.length<=1, 'too many parms to populateTable');
-		var $selset = this;
+    assert(arguments.length <= 1, 'too many parms to populateTable');
+    var $selset = this;
 
-		if (typeof(parms) === 'string') {
+    if (typeof(parms) === 'string') {
 
-			parms = { 'q' : parms };
-		}
+      parms = { 'q': parms };
+    }
 
-    function populate_html_table($table,$row,recs) {
+    function populate_html_table($table, $row, recs) {
 
       var rec, $newrow;
 
@@ -455,167 +695,169 @@ SQLEngine.formnamectr = 0;
 
           for (var fname in rec) {
 
-            $newrow.find('td.'+fname).html(rec[fname]);
-            ctr += $newrow.find('td.'+fname).length;
+            $newrow.find('td.' + fname).html(rec[fname]);
+            ctr += $newrow.find('td.' + fname).length;
             flds.push(fname);
           }
 
-          assert(ctr,'no td elements found with field names! '+flds.join(', '));
+          assert(ctr, 'no td elements found with field names! ' + flds.join(', '));
           $table.append($newrow);
         }
       }
     }
 
-		function generate_html_table($table,recs) {
+    function generate_html_table($table, recs) {
 
-			var rec, $row, $td, fld;
+      var rec, $row, $td, fld;
 
-			for (var r in recs) {
+      for (var r in recs) {
 
-				rec = recs[r];
-				$row = $('<tr>');
+        rec = recs[r];
+        $row = $('<tr>');
 
-				for (var o in rec) {
+        for (var o in rec) {
 
-					fld = rec[o];
-					$td = $('<td>').html(fld);
-					$row.append($td);
-				}
+          fld = rec[o];
+          $td = $('<td>').html(fld);
+          $row.append($td);
+        }
 
-				$table.append($row);
-			}
-		}
+        $table.append($row);
+      }
+    }
 
-		function cback (json) {
+    function cback(json) {
 
-			var recs = json.records.rows;
+      var recs = json.records.rows;
 
-			$selset.each( function () {
+      $selset.each(function () {
 
-				var $table = $(this);
-				assert( !$table.is('form'), 'use .populateForm for forms' );
+        var $table = $(this);
+        assert(!$table.is('form'), 'use .populateForm for forms');
 
-				if (!$table.is('table')) {
+        if (!$table.is('table')) {
 
-					$table.empty().append('<table><tbody></tbody></table>');
-					$table = $table.find('table');
-					generate_html_table($table,recs);
-				}
-				else if ( $table.find('tbody tr:first').length ) {
+          $table.empty().append('<table><tbody></tbody></table>');
+          $table = $table.find('table');
+          generate_html_table($table, recs);
+        }
+        else if ($table.find('tbody tr:first').length) {
 
-					var $row = $table.find('tbody tr:first').hide();
-					populate_html_table($table,$row,recs);
-				}
-				else {
+          var $row = $table.find('tbody tr:first').hide();
+          populate_html_table($table, $row, recs);
+        }
+        else {
 
-					generate_html_table($table,recs);
-				}
-			});
-		}
+          generate_html_table($table, recs);
+        }
+      });
+    }
 
-		parms.callback = cback;
-		$.withResults(parms);
+    parms.callback = cback;
+    $.withResults(parms);
 
-		return $selset;
-	};
+    return $selset;
+  };
 
-	$.fn.populateTable = populateTable;
+  $.fn.populateTable = populateTable;
 
-	/*
-	    populateForm populates a form with a single record
+  /*
+   populateForm populates a form with a single record
 
-	    param q : query to get data
-	*/
-	var populateForm = function(parms) {
+   param q : query to get data
+   */
+  var populateForm = function (parms) {
 
-		assert(arguments.length<=1, 'too many parms to populateForm');
-		var $selset = this;
+    assert(arguments.length <= 1, 'too many parms to populateForm');
+    var $selset = this;
 
-		if (typeof(parms) === 'string') {
+    if (typeof(parms) === 'string') {
 
-			parms = { 'q' : parms };
-		}
+      parms = { 'q': parms };
+    }
 
-		function populate_form($form,rec) {
+    function populate_form($form, rec) {
 
-			for (var f in rec) {
+      for (var f in rec) {
 
-				var $inp = $form.find('input#'+f);
+        var $inp = $form.find('input#' + f);
 
-				if ($inp.length) {
+        if ($inp.length) {
 
-					$inp.val(rec[f]);
-				}
-				else {
+          $inp.val(rec[f]);
+        }
+        else {
 
-					$inp = $form.find('input.'+f);
-					$inp.val(rec[f]);
-				}
-			}
-		}
+          $inp = $form.find('input.' + f);
+          $inp.val(rec[f]);
+        }
+      }
+    }
 
-		function cback (json) {
+    function cback(json) {
 
-			if (json.records.rows.length) {
+      if (json.records.rows.length) {
 
-				var rec = json.records.rows[0];
+        var rec = json.records.rows[0];
 
-				$selset.each( function () {
+        $selset.each(function () {
 
-					var $form = $(this);
-					assert( $form.is('form'), 'use .populateForm on a form' );
-					populate_form($form,rec);
-				});
-			}
-		}
+          var $form = $(this);
+          assert($form.is('form'), 'use .populateForm on a form');
+          populate_form($form, rec);
+        });
+      }
+    }
 
-		parms.callback = cback;
-		$.withResults(parms);
+    parms.callback = cback;
+    $.withResults(parms);
 
-		return $selset;
-	};
+    return $selset;
+  };
 
-	$.fn.populateForm = populateForm;
+  $.fn.populateForm = populateForm;
 
-	/*
-	    datadump puts a <pre>-formatted json dump into the html
+  /*
+   datadump puts a <pre>-formatted json dump into the html
 
-	    param q : query to get data
-	    param kw : query-keyword to get data
-	*/
-	var datadump = function(parms) {
+   param q : query to get data
+   param kw : query-keyword to get data
+   */
+  var datadump = function (parms) {
 
-		var $selset = this;
+    var $selset = this;
 
-		if (typeof(parms) === 'string') {
+    if (typeof(parms) === 'string') {
 
-			parms = { 'q' : parms };
-		}
+      parms = { 'q': parms };
+    }
 
-		function cback (json) {
+    function cback(json) {
 
-			$selset.each( function () {
-				$(this).html(JSON.stringify(json,null,4)); // 4 space indent
-			});
-		}
+      $selset.each(function () {
+        $(this).html(JSON.stringify(json, null, 4)); // 4 space indent
+      });
+    }
 
-		parms.callback = cback;
-		$.withResults(parms);
+    parms.callback = cback;
+    $.withResults(parms);
 
-		return $selset;
-	};
+    return $selset;
+  };
 
-	$.fn.datadump = datadump;
+  $.fn.datadump = datadump;
 
-}(jQuery,this));
+}(jQuery, this));
 
 
 /* create assert function
-  example : assert( obj === null, 'object was not null!' );
-  error message appears in javascript console, if any.
-  credit to: Ayman Hourieh http://aymanh.com/
-*/
-function AssertException(message) { this.message = message; }
+ example : assert( obj === null, 'object was not null!' );
+ error message appears in javascript console, if any.
+ credit to: Ayman Hourieh http://aymanh.com/
+ */
+function AssertException(message) {
+  this.message = message;
+}
 AssertException.prototype.toString = function () {
   return 'AssertException: ' + this.message;
 };
