@@ -141,7 +141,7 @@ function SQLEngine(userName, authcode, domain) {
 
   // function to clean up entry forms - used by .queryByForm method
   function cleanup_form($form, target, action) {
-    
+
     $form.find('.to-remove-later').remove();
     $form.attr('target', target);
     $form.attr('action', action);
@@ -191,19 +191,22 @@ function SQLEngine(userName, authcode, domain) {
   };
 
 
-  /* parms is object containing various options
+  /*
+  parms is object containing various options
+
    callback : function to call with data from successful query
    errback : function to call with error object from query failure
    q : the query string itself
    args : array of arguments (optional), must correspond with %s tokens
-   in query
+      in query
    namedParams : an object containing arguments, by name. Reference
-   in query with tokens like %(name)
+      in query with tokens like %(name)
    plainTextJson : true if JSON parsing to be skipped, instead
-   returning the JSON plaintext
+      returning the JSON plaintext
    format : 'json' or 'json-easy'
    */
   this.query = function (parms) {
+
     var errback = parms.errback,
         args = parms.args || [],
         namedParams = parms.namedParams || {},
@@ -299,11 +302,11 @@ function SQLEngine(userName, authcode, domain) {
     return defer.promise();
   };
 
-
-  /* parms is just like for query method, but callback gets row array and
-   header array, not whole data structure.
-   an additional param is 'incomplete', a function that is called
-   (with rows and header) when data set is truncated by 100 record limit
+  /*
+   parms is just like for query method, but callback gets row array and
+     header array, not whole data structure.
+     an additional param is 'incomplete', a function that is called
+     (with rows and header) when data set is truncated by 100 record limit
    */
   this.queryRows = function (parms) {
     var callback = parms.callback,
@@ -322,7 +325,9 @@ function SQLEngine(userName, authcode, domain) {
     }
 
     parms.callback = cb;
-    this.query(parms);
+    var promise = this.query(parms);
+
+    return promise;
   };
 
 

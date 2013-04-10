@@ -1,6 +1,5 @@
 
 
-var domain = 'dev.rdbhost.com';
 
 /*
 *
@@ -8,13 +7,13 @@ var domain = 'dev.rdbhost.com';
 *
 */
 
-var domain = 'dev.rdbhost.com';
+var domain = 'dev.paginaswww.com';
 
 module('rdbhost plugin pre-test', {
   setup: function () {
       $.rdbHostConfig( {
         'domain': domain,
-        'format': 'json-easy',
+        'format': 'jsond-easy',
         'userName': demo_r_role,
         'authcode': '-'
       })
@@ -41,10 +40,10 @@ asyncTest('verify setup', 1, function() {
           start();
         },
     'errback': function(json) {
-          ok(false);
+          ok(false,'should not see');
           start();
         }
-  });
+  })
 });
 
 
@@ -74,16 +73,12 @@ asyncTest('verify setup - promise', 2, function() {
 
 /* $.eachRecord, */
 asyncTest('$.eachRecord', 2, function() {
-
   $.eachRecord({
-
     'q': 'SELECT 1 AS one UNION SELECT 2',
-
     'eachrec' : function(jsonRow) {
           ok(jsonRow['one']===1 || jsonRow['one']===2, 'row has value 1');
           start();
         },
-
     'errback': function(json) {
           ok(false);
           start();
@@ -91,9 +86,8 @@ asyncTest('$.eachRecord', 2, function() {
   })
 });
 
-
 /* $.eachRecord w/ promise */
-asyncTest('$.eachRecord', 3, function() {
+asyncTest('$.eachRecord promise', 3, function() {
 
   var p = $.eachRecord({
 
@@ -132,8 +126,9 @@ asyncTest('$.eachRecord err', 1, function() {
 });
 
 
+
 // $.eachRecord err w/ promise
-asyncTest('$.eachRecord err', 2, function() {
+asyncTest('$.eachRecord err promise', 2, function() {
   var p = $.eachRecord({
 
     'q': 'SELECTY 1 AS one UNION SELECT 2',
@@ -155,8 +150,8 @@ asyncTest('$.eachRecord err', 2, function() {
 
 
 
-
 /* $.postFormData.  */
+
 
 // do SELECT query form way
 var form = "<form id=\"qunit_form2\" method='post' enctype=\"multipart/form-data\">"+
@@ -164,18 +159,16 @@ var form = "<form id=\"qunit_form2\" method='post' enctype=\"multipart/form-data
            "</form>";
 
 module('$.postFormData tests', {
-
   setup: function () {
     $.rdbHostConfig( {
       'domain': domain,
-      'format': 'json-easy',
+      'format': 'jsond-easy',
       'userName': demo_r_role,
       'authcode': '-'
     });
     $('#qunit_form2').remove();
     $('body').append(form);
   },
-
   teardown: function () {
     $.rdbHostConfig( {
       'domain': undefined,
@@ -183,7 +176,6 @@ module('$.postFormData tests', {
       'userName': undefined,
       'authcode': '-'
     });
-
     $('#qunit_form2').remove();
     equal($('#qunit_form2').length, 0, 'test form not cleaned up');
   }
@@ -195,7 +187,6 @@ test('$.postFormData setup verification', function() {
 });
 
 
-// $.postFormData test
 asyncTest('$.postFornData test', 4+1, function() {
 
   $.postFormData($('#qunit_form2'), {
@@ -203,7 +194,7 @@ asyncTest('$.postFornData test', 4+1, function() {
             ok(typeof resp === 'object', 'response is object'); // 0th assert
             ok(resp.status[1].toLowerCase() == 'ok', 'status is not ok: '+resp.status[1]); // 1st assert
             ok(resp.row_count[0] > 0, 'data row found');
-            ok(resp.records.rows[0][0] === 199, 'data is not 99: '+resp.records.rows[0]['col']);
+            ok(resp.records.rows[0]['col'] === 199, 'data is not 199: '+resp.records.rows[0]['col']);
             start();
           }
     });
@@ -214,56 +205,57 @@ asyncTest('$.postFornData test', 4+1, function() {
     }, 1000);
 });
 
+ // $.postFormData fail w/ promise
+ asyncTest('$.postFornData test fail promise', 2+1, function() {
 
-// $.postFormData fail w/ promise
-asyncTest('$.postFornData test fail promise', 2+1, function() {
+   var p = $.postFormData($('#qunit_form2'), {
 
-  var p = $.postFormData($('#qunit_form2'), {
+     errback: function(resp) {
+       ok(resp,'errback called');
+     },
 
-    errback: function(resp) {
-      ok(resp,'errback called');
-    },
+     callback: function (resp) {
+       ok(typeof resp === 'object', 'response is object'); // 0th assert
+     }
+   });
+
+   setTimeout(function () {
+   $('#qunit_form2 input:text').val('SELECTY');
+     // timeout allows for rpc iframes to be setup.
+     $('#qunit_form2').submit();
+   }, 1000);
+
+   p.fail(function(m) {
+     ok(m,'promise fail called');
+     start();
+   });
+ });
+
+
+ // $.postFormData test w/ promise
+ asyncTest('$.postFornData test promise', 5+1, function() {
+
+ var p = $.postFormData($('#qunit_form2'), {
 
     callback: function (resp) {
-      ok(typeof resp === 'object', 'response is object'); // 0th assert
-    }
-  });
+         ok(typeof resp === 'object', 'response is object'); // 0th assert
+         ok(resp.status[1].toLowerCase() == 'ok', 'status is not ok: '+resp.status[1]); // 1st assert
+         ok(resp.row_count[0] > 0, 'data row found');
+         ok(resp.records.rows[0]['col'] === 199, 'data is not 199: '+resp.records.rows[0]['col']);
+      }
+ });
 
-  setTimeout(function () {
-    $('#qunit_form2 input:text').val('SELECTY');
-    // timeout allows for rpc iframes to be setup.
-    $('#qunit_form2').submit();
-  }, 1000);
+ setTimeout(function () {
+  // timeout allows for rpc iframes to be setup.
+  $('#qunit_form2').submit();
+ }, 1000);
 
-  p.fail(function(m) {
-    ok(m,'promise fail called');
-    start();
-  });
-});
+ p.done(function(m) {
+      ok(m,'promise done called');
+      start();
+    });
+ });
 
-
-// $.postFormData test w/ promise
-asyncTest('$.postFornData test promise', 5+1, function() {
-
-  var p = $.postFormData($('#qunit_form2'), {
-    callback: function (resp) {
-      ok(typeof resp === 'object', 'response is object'); // 0th assert
-      ok(resp.status[1].toLowerCase() == 'ok', 'status is not ok: '+resp.status[1]); // 1st assert
-      ok(resp.row_count[0] > 0, 'data row found');
-      ok(resp.records.rows[0][0] === 199, 'data is not 99: '+resp.records.rows[0]['col']);
-    }
-  });
-
-  setTimeout(function () {
-    // timeout allows for rpc iframes to be setup.
-    $('#qunit_form2').submit();
-  }, 1000);
-
-  p.done(function(m) {
-    ok(m,'promise done called');
-    start();
-  });
-});
 
 
 // do SELECT query form way
@@ -273,7 +265,7 @@ module('plugin display tests', {
   setup: function () {
     $.rdbHostConfig( {
       'domain': domain,
-      'format': 'json-easy',
+      'format': 'jsond-easy',
       'userName': demo_r_role,
       'authcode': '-'
     });
@@ -340,7 +332,7 @@ module('$.populateForm tests', {
   setup: function () {
     $.rdbHostConfig( {
       'domain': domain,
-      'format': 'json-easy',
+      'format': 'jsond-easy',
       'userName': demo_r_role,
       'authcode': '-'
     });

@@ -49,6 +49,29 @@ asyncTest('ajax SELECT', 4, function() {
     });
 });
 
+asyncTest('ajax SELECT promise', 5, function() {
+
+  var p = this.e.query({
+
+    q: "SELECT 1 as one",
+    format: 'json-easy',
+
+    callback: function (resp) {
+
+      ok(typeof resp === 'object', 'response is object'); // 0th assert
+      ok(resp.status[1].toLowerCase() == 'ok', 'status is not ok: '+resp.status[1]); // 1st assert
+      ok(resp.row_count[0] > 0, 'data row found');
+      ok(resp.records.rows[0]['one'] === 1, 'data is '+resp.records.rows[0]['one']);
+      start();
+    }
+  });
+
+  p.done(function () {
+    ok(true, 'promise resolved');
+  });
+
+});
+
 asyncTest('ajax multi SELECT', 12, function() {
 
   this.e.query({
@@ -119,6 +142,32 @@ asyncTest('ajax SELECT error', 2, function() {
 });
 
 
+// test that error calls errback - with promise
+asyncTest('ajax SELECT error - promise', 3, function() {
+
+  var p = this.e.query({
+
+    q: "SELECTY 1 as one",
+    format: 'json-easy',
+
+    errback: function(err, resp) {
+
+      ok(true, "errback was called");
+      equal(err.length, 5, "errorval: "+err);
+      start();
+    },
+
+    callback: function (resp) {
+      start();
+    }
+  });
+
+  p.fail( function(a) {
+    ok(a,'promise fail called')
+  });
+});
+
+
 // do SELECT query by rows
 asyncTest('ajax SELECT', 5, function() {
 
@@ -137,6 +186,31 @@ asyncTest('ajax SELECT', 5, function() {
           start();
         }
     });
+});
+
+
+// do SELECT query by rows - with promise
+asyncTest('ajax SELECT promise', 6, function() {
+
+  var p = this.e.queryRows({
+
+    q: "SELECT 1 as one UNION SELECT 2",
+    format: 'json-easy',
+
+    callback: function (rows, hdr) {
+
+      ok(typeof hdr === 'object', 'hdr param is object'); // 0th assert
+      ok(typeof rows === 'object', 'hdr param is object'); // 0th assert
+      ok(rows.length > 1, 'mutliple rows not found');
+      ok(rows[0]['one'] === 1, 'data is '+rows[0]['one']);
+      ok(rows[1]['one'] === 2, 'data is '+rows[1]['one']);
+      start();
+    }
+  });
+
+  p.done(function(a) {
+    ok(a,'promise done called');
+  });
 });
 
 
@@ -314,7 +388,7 @@ test('SQLEngine form setup verification', function() {
   equal($('#qunit_form').length, 1, 'test form appended '+$('#qunit_form').length);
 });
 
-
+// form select
 asyncTest('form SELECT', 4+1, function() {
 
   var that = this;
@@ -341,6 +415,37 @@ asyncTest('form SELECT', 4+1, function() {
 
 
 
+// form select with promise
+asyncTest('form SELECT promise', 5+1, function() {
+
+  var that = this;
+  setTimeout(function () {
+    // timeout allows for rpc iframes to be setup.
+
+    var p = that.e.queryByForm({
+
+      "formId": "qunit_form",
+
+      callback: function (resp) {
+
+        ok(typeof resp === 'object', 'response is object'); // 0th assert
+        ok(resp.status[1].toLowerCase() == 'ok', 'status is not ok: '+resp.status[1]); // 1st assert
+        ok(resp.row_count[0] > 0, 'data row found');
+        ok(resp.records.rows[0][0] === 99, 'data is not 99: '+resp.records.rows[0]['col']);
+        start();
+      }
+    });
+
+    p.done(function(a) {
+      ok(a, 'promise done called');
+    });
+
+    $('#qunit_form').rdbhostSubmit();
+  }, 10);
+});
+
+
+// form select with error
 asyncTest('form SELECT error', 2+1, function() {
 
   var that = this;
@@ -369,6 +474,43 @@ asyncTest('form SELECT error', 2+1, function() {
     $('#qunit_form').rdbhostSubmit();
     }, 10);
 });
+
+
+
+// form select with error w/ promise
+asyncTest('form SELECT error - promise', 3+1, function() {
+
+  var that = this;
+  setTimeout(function () {
+    // timeout allows for rpc iframes to be setup.
+
+    $('#qunit_form input').val('SELECTY 1');
+
+    var p = that.e.queryByForm({
+
+      "formId": "qunit_form",
+
+      errback: function (err, resp) {
+
+        console.log(err);
+        console.log(resp);
+        ok(typeof resp === typeof 'o', 'response is string'); // 0th assert
+        ok(err.length === 5, 'error code not len 5: '+err); // 1st assert
+        start();
+      },
+      callback: function(resp) {
+        var a =1;
+      }
+    });
+
+    p.fail(function(m) {
+      ok(m,'promise fail called');
+    });
+
+    $('#qunit_form').rdbhostSubmit();
+  }, 10);
+});
+
 
 
 

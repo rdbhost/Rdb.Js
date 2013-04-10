@@ -31,7 +31,9 @@ module('rdbhost plugin pre-test', {
 
 // verify setup
 asyncTest('verify setup', 1, function() {
+
   $.withResults({
+
     'q': 'SELECT 1 AS one',
     'callback' : function(json) {
           console.log(json);
@@ -43,6 +45,30 @@ asyncTest('verify setup', 1, function() {
           start();
         }
   })
+});
+
+
+// verify setup promise
+asyncTest('verify setup - promise', 2, function() {
+
+  var p = $.withResults({
+
+    'q': 'SELECT 1 AS one',
+    'callback' : function(json) {
+      console.log(json);
+      equal(json.status[1],'OK', 'json has data');
+    },
+
+    'errback': function(json) {
+      ok(false);
+      start();
+    }
+  });
+
+  p.done(function(m) {
+    ok(m,'promise done called');
+    start();
+  });
 });
 
 
@@ -61,6 +87,31 @@ asyncTest('$.eachRecord', 2, function() {
   })
 });
 
+/* $.eachRecord w/ promise */
+asyncTest('$.eachRecord promise', 3, function() {
+
+  var p = $.eachRecord({
+
+    'q': 'SELECT 1 AS one UNION SELECT 2',
+
+    'eachrec' : function(jsonRow) {
+      ok(jsonRow['one']===1 || jsonRow['one']===2, 'row has value 1');
+    },
+
+    'errback': function(json) {
+      ok(false);
+      start();
+    }
+  });
+
+  p.done(function(m) {
+    ok(m,'promise done called');
+    start();
+  })
+});
+
+
+// $.eachRecord
 asyncTest('$.eachRecord err', 1, function() {
   $.eachRecord({
     'q': 'SELECTY 1 AS one UNION SELECT 2',
@@ -77,9 +128,29 @@ asyncTest('$.eachRecord err', 1, function() {
 
 
 
-/*
+// $.eachRecord err w/ promise
+asyncTest('$.eachRecord err promise', 2, function() {
+  var p = $.eachRecord({
 
-*/
+    'q': 'SELECTY 1 AS one UNION SELECT 2',
+
+    'eachrec' : function(jsonRow) {
+      //ok(jsonRow['one']===1 || jsonRow['one']===2, 'row has value 1');
+      start();
+    },
+    'errback': function(json) {
+      ok(true,'errback called');
+    }
+  });
+
+  p.fail(function(m) {
+    ok(m,'promise fail called');
+    start();
+  })
+});
+
+
+
 /* $.postFormData.  *//*
 
 
@@ -134,6 +205,56 @@ asyncTest('$.postFornData test', 4+1, function() {
       $('#qunit_form2').submit();
     }, 1000);
 });
+
+ // $.postFormData fail w/ promise
+ asyncTest('$.postFornData test fail promise', 2+1, function() {
+
+ var p = $.postFormData($('#qunit_form2'), {
+
+ errback: function(resp) {
+ ok(resp,'errback called');
+ },
+
+ callback: function (resp) {
+ ok(typeof resp === 'object', 'response is object'); // 0th assert
+ }
+ });
+
+ setTimeout(function () {
+ $('#qunit_form2 input:text').val('SELECTY');
+ // timeout allows for rpc iframes to be setup.
+ $('#qunit_form2').submit();
+ }, 1000);
+
+ p.fail(function(m) {
+ ok(m,'promise fail called');
+ start();
+ });
+ });
+
+
+ // $.postFormData test w/ promise
+ asyncTest('$.postFornData test promise', 5+1, function() {
+
+ var p = $.postFormData($('#qunit_form2'), {
+ callback: function (resp) {
+ ok(typeof resp === 'object', 'response is object'); // 0th assert
+ ok(resp.status[1].toLowerCase() == 'ok', 'status is not ok: '+resp.status[1]); // 1st assert
+ ok(resp.row_count[0] > 0, 'data row found');
+ ok(resp.records.rows[0][0] === 199, 'data is not 99: '+resp.records.rows[0]['col']);
+ }
+ });
+
+ setTimeout(function () {
+ // timeout allows for rpc iframes to be setup.
+ $('#qunit_form2').submit();
+ }, 1000);
+
+ p.done(function(m) {
+ ok(m,'promise done called');
+ start();
+ });
+ });
 */
 
 

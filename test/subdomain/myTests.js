@@ -6,12 +6,12 @@
 *
 */
 module('SQLEngine pre-test');
-var domain = 'dev.rdbhost.com';
+var domain = 'dev.paginaswww.com';
 
 // create engine
 test('createEngine', function() {
 
-  var e = new SQLEngine(demo_r_role,'-',domain);
+  var e = new SQLEngine(demo_r_role, '-', domain);
   ok(e, 'SQLEngine created');
   ok(e.query, 'engine has query method ');
   ok(typeof e.query === 'function', 'e.query is type: '+(typeof e.query));
@@ -20,7 +20,7 @@ test('createEngine', function() {
 module('SQLEngine AJAX tests', {
 
   setup: function () {
-    this.e = new SQLEngine(demo_r_role,'-',domain);
+    this.e = new SQLEngine(demo_r_role, '-', domain);
   }
 });
 
@@ -36,7 +36,7 @@ asyncTest('ajax SELECT', 4, function() {
   this.e.query({
 
       q: "SELECT 1 as one",
-      format: 'json-easy',
+      format: 'jsond-easy',
 
       callback: function (resp) {
 
@@ -55,7 +55,7 @@ asyncTest('ajax SELECT promise', 5, function() {
   var p = this.e.query({
 
     q: "SELECT 1 as one",
-    format: 'json-easy',
+    format: 'jsond-easy',
 
     callback: function (resp) {
 
@@ -63,22 +63,23 @@ asyncTest('ajax SELECT promise', 5, function() {
       ok(resp.status[1].toLowerCase() == 'ok', 'status is not ok: '+resp.status[1]); // 1st assert
       ok(resp.row_count[0] > 0, 'data row found');
       ok(resp.records.rows[0]['one'] === 1, 'data is '+resp.records.rows[0]['one']);
-      start();
     }
   });
 
   p.done(function () {
     ok(true, 'promise resolved');
+    start();
   });
 
 });
+
 
 asyncTest('ajax multi SELECT', 12, function() {
 
   this.e.query({
 
       q: "SELECT 1 as one",
-      format: 'json-easy',
+      format: 'jsond-easy',
 
       callback: function (resp) {
 
@@ -91,7 +92,7 @@ asyncTest('ajax multi SELECT', 12, function() {
   this.e.query({
 
       q: "SELECT 2 as two",
-      format: 'json-easy',
+      format: 'jsond-easy',
 
       callback: function (resp) {
 
@@ -104,7 +105,7 @@ asyncTest('ajax multi SELECT', 12, function() {
   this.e.query({
 
       q: "SELECT 3 as three",
-      format: 'json-easy',
+      format: 'jsond-easy',
 
       callback: function (resp) {
 
@@ -121,13 +122,14 @@ asyncTest('ajax multi SELECT', 12, function() {
     }, 2000);
 });
 
+
 // test that error calls errback
 asyncTest('ajax SELECT error', 1+0+1, function() {
 
   this.e.query({
 
       q: "SELECTY 1 as one",
-      format: 'json-easy',
+      format: 'jsond-easy',
 
       errback: function(err, resp) {
 
@@ -149,13 +151,12 @@ asyncTest('ajax SELECT error - promise', 3, function() {
   var p = this.e.query({
 
     q: "SELECTY 1 as one",
-    format: 'json-easy',
+    format: 'jsond-easy',
 
     errback: function(err, resp) {
 
       ok(true, "errback was called");
       equal(err.length, 16, "errorval: "+err);
-      start();
     },
 
     callback: function (resp) {
@@ -165,6 +166,7 @@ asyncTest('ajax SELECT error - promise', 3, function() {
 
   p.fail( function(a) {
     ok(a,'promise fail called')
+    start();
   });
 });
 
@@ -175,7 +177,7 @@ asyncTest('ajax SELECT', 5, function() {
   this.e.queryRows({
 
       q: "SELECT 1 as one UNION SELECT 2",
-      format: 'json-easy',
+      format: 'jsond-easy',
 
       callback: function (rows, hdr) {
 
@@ -196,21 +198,21 @@ asyncTest('ajax SELECT promise', 6, function() {
   var p = this.e.queryRows({
 
     q: "SELECT 1 as one UNION SELECT 2",
-    format: 'json-easy',
+    format: 'jsond-easy',
 
     callback: function (rows, hdr) {
 
       ok(typeof hdr === 'object', 'hdr param is object'); // 0th assert
       ok(typeof rows === 'object', 'hdr param is object'); // 0th assert
-      ok(rows.length > 1, 'mutliple rows not found');
+      ok(rows.length > 1, 'multiple rows found');
       ok(rows[0]['one'] === 1, 'data is '+rows[0]['one']);
       ok(rows[1]['one'] === 2, 'data is '+rows[1]['one']);
-      start();
     }
   });
 
   p.done(function(a) {
     ok(a,'promise done called');
+    start();
   });
 });
 
@@ -222,7 +224,7 @@ asyncTest('use args 1', 4, function () {
   this.e.query({
 
     q : 'SELECT %s as one',
-    format: 'json-easy',
+    format: 'jsond-easy',
     args: [1],
 
     callback: function (resp) {
@@ -257,7 +259,7 @@ asyncTest('use args 2', 5, function () {
   this.e.query({
 
     q : 'SELECT %s as one, %s as two',
-    format: 'json-easy',
+    format: 'jsond-easy',
     args: [1, 'dos'],
 
     callback: function (resp) {
@@ -293,7 +295,7 @@ asyncTest('use namedParams', 5, function () {
   this.e.query({
 
     q : 'SELECT %(un) as one, %(der) as two',
-    format: 'json-easy',
+    format: 'jsond-easy',
     namedParams: {'un':1, 'der':'dos'},
 
     callback: function (resp) {
@@ -332,7 +334,7 @@ asyncTest('use namedParams Date', 3, function () {
   this.e.query({
 
     q : q,
-    format: 'json-easy',
+    format: 'jsond-easy',
     namedParams: { 'ts': dt },
 
     callback: function (resp) {
@@ -391,7 +393,7 @@ test('SQLEngine form setup verification', function() {
 });
 
 
-/*
+
 asyncTest('form SELECT', 4+1, function() {
 
   var that = this;
@@ -415,11 +417,11 @@ asyncTest('form SELECT', 4+1, function() {
     $('#qunit_form').rdbhostSubmit();
     }, 10);
 });
-*/
 
 
 
-/*// form select with promise
+
+// form select with promise
 asyncTest('form SELECT promise', 5+1, function() {
 
   var that = this;
@@ -436,20 +438,20 @@ asyncTest('form SELECT promise', 5+1, function() {
         ok(resp.status[1].toLowerCase() == 'ok', 'status is not ok: '+resp.status[1]); // 1st assert
         ok(resp.row_count[0] > 0, 'data row found');
         ok(resp.records.rows[0][0] === 99, 'data is not 99: '+resp.records.rows[0]['col']);
-        start();
       }
     });
 
     p.done(function(a) {
       ok(a, 'promise done called');
+      start();
     });
 
     $('#qunit_form').rdbhostSubmit();
   }, 10);
-});*/
+});
 
 
-/*
+
 asyncTest('form SELECT error', 2+1, function() {
 
   var that = this;
@@ -467,7 +469,7 @@ asyncTest('form SELECT error', 2+1, function() {
               console.log(err);
               console.log(resp);
               ok(typeof resp === typeof 'o', 'response is string'); // 0th assert
-              ok(err.length === 5, 'error code not len 5: '+err); // 1st assert
+              ok(err.length === 16, 'error code not len 5: '+err); // 1st assert
               start();
             },
         callback: function(resp) {
@@ -479,7 +481,7 @@ asyncTest('form SELECT error', 2+1, function() {
     }, 10);
 });
 
-*/
+
 
 
 
