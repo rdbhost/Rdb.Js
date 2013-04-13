@@ -1,7 +1,5 @@
 
 
-var domain = 'dev.rdbhost.com';
-
 /*
 *
 * tests for the jQuery addin
@@ -369,6 +367,47 @@ asyncTest('$.populateForm test', 2+1, function() {
       equal(txtin,'abc',"txt field has correct value");
       start();
     }, 2000);
+});
+
+
+
+module('$.loginAjax tests', {
+  setup: function () {
+    $.rdbHostConfig( {
+      'domain': domain,
+      'format': 'jsond-easy',
+      'userName': demo_r_role,
+      'authcode': '-'
+    });
+  },
+  teardown: function () {
+    $.rdbHostConfig( {
+      'domain': undefined,
+      'format': undefined,
+      'userName': undefined,
+      'authcode': '-'
+    });
+  }
+});
+
+
+// $.loginByForm test w/ promise
+asyncTest('$.loginAjax test w/ promise ', 2+0, function() {
+
+  var p = $.loginAjax({
+
+    errback: function(resp) {
+
+      ok(resp,'loginAjax');
+      start();
+    }
+  });
+
+  p.fail(function (m) {
+
+    ok(m,'fail handler called');
+  });
+
 });
 
 

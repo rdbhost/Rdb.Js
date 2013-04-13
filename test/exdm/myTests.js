@@ -392,25 +392,22 @@ test('SQLEngine form setup verification', function() {
 asyncTest('form SELECT', 4+1, function() {
 
   var that = this;
-  setTimeout(function () {
-    // timeout allows for rpc iframes to be setup.
 
-    that.e.queryByForm({
+  that.e.queryByForm({
 
-        "formId": "qunit_form",
+      "formId": "qunit_form",
 
-        callback: function (resp) {
+      callback: function (resp) {
 
-              ok(typeof resp === 'object', 'response is object'); // 0th assert
-              ok(resp.status[1].toLowerCase() == 'ok', 'status is not ok: '+resp.status[1]); // 1st assert
-              ok(resp.row_count[0] > 0, 'data row found');
-              ok(resp.records.rows[0][0] === 99, 'data is not 99: '+resp.records.rows[0]['col']);
-              start();
-            }
-      });
+            ok(typeof resp === 'object', 'response is object'); // 0th assert
+            ok(resp.status[1].toLowerCase() == 'ok', 'status is not ok: '+resp.status[1]); // 1st assert
+            ok(resp.row_count[0] > 0, 'data row found');
+            ok(resp.records.rows[0][0] === 99, 'data is not 99: '+resp.records.rows[0]['col']);
+            start();
+          }
+    });
 
-    $('#qunit_form').rdbhostSubmit();
-    }, 10);
+  $('#qunit_form').rdbhostSubmit();
 });
 
 
@@ -419,29 +416,26 @@ asyncTest('form SELECT', 4+1, function() {
 asyncTest('form SELECT promise', 5+1, function() {
 
   var that = this;
-  setTimeout(function () {
-    // timeout allows for rpc iframes to be setup.
 
-    var p = that.e.queryByForm({
+  var p = that.e.queryByForm({
 
-      "formId": "qunit_form",
+    "formId": "qunit_form",
 
-      callback: function (resp) {
+    callback: function (resp) {
 
-        ok(typeof resp === 'object', 'response is object'); // 0th assert
-        ok(resp.status[1].toLowerCase() == 'ok', 'status is not ok: '+resp.status[1]); // 1st assert
-        ok(resp.row_count[0] > 0, 'data row found');
-        ok(resp.records.rows[0][0] === 99, 'data is not 99: '+resp.records.rows[0]['col']);
-        start();
-      }
-    });
+      ok(typeof resp === 'object', 'response is object'); // 0th assert
+      ok(resp.status[1].toLowerCase() == 'ok', 'status is not ok: '+resp.status[1]); // 1st assert
+      ok(resp.row_count[0] > 0, 'data row found');
+      ok(resp.records.rows[0][0] === 99, 'data is not 99: '+resp.records.rows[0]['col']);
+      start();
+    }
+  });
 
-    p.done(function(a) {
-      ok(a, 'promise done called');
-    });
+  p.done(function(a) {
+    ok(a, 'promise done called');
+  });
 
-    $('#qunit_form').rdbhostSubmit();
-  }, 10);
+  $('#qunit_form').rdbhostSubmit();
 });
 
 
@@ -449,30 +443,27 @@ asyncTest('form SELECT promise', 5+1, function() {
 asyncTest('form SELECT error', 2+1, function() {
 
   var that = this;
-  setTimeout(function () {
-    // timeout allows for rpc iframes to be setup.
 
-    $('#qunit_form input').val('SELECTY 1');
+  $('#qunit_form input').val('SELECTY 1');
 
-    that.e.queryByForm({
+  that.e.queryByForm({
 
-        "formId": "qunit_form",
+      "formId": "qunit_form",
 
-        errback: function (err, resp) {
+      errback: function (err, resp) {
 
-              console.log(err);
-              console.log(resp);
-              ok(typeof resp === typeof 'o', 'response is string'); // 0th assert
-              ok(err.length === 5, 'error code not len 5: '+err); // 1st assert
-              start();
-            },
-        callback: function(resp) {
-              var a =1;
-            }
-      });
+            console.log(err);
+            console.log(resp);
+            ok(typeof resp === typeof 'o', 'response is string'); // 0th assert
+            ok(err.length === 5, 'error code not len 5: '+err); // 1st assert
+            start();
+          },
+      callback: function(resp) {
+            var a =1;
+          }
+    });
 
-    $('#qunit_form').rdbhostSubmit();
-    }, 10);
+  $('#qunit_form').rdbhostSubmit();
 });
 
 
@@ -481,34 +472,70 @@ asyncTest('form SELECT error', 2+1, function() {
 asyncTest('form SELECT error - promise', 3+1, function() {
 
   var that = this;
-  setTimeout(function () {
-    // timeout allows for rpc iframes to be setup.
 
-    $('#qunit_form input').val('SELECTY 1');
+  $('#qunit_form input').val('SELECTY 1');
 
-    var p = that.e.queryByForm({
+  var p = that.e.queryByForm({
 
-      "formId": "qunit_form",
+    "formId": "qunit_form",
 
-      errback: function (err, resp) {
+    errback: function (err, resp) {
 
-        console.log(err);
-        console.log(resp);
-        ok(typeof resp === typeof 'o', 'response is string'); // 0th assert
-        ok(err.length === 5, 'error code not len 5: '+err); // 1st assert
-        start();
-      },
-      callback: function(resp) {
-        var a =1;
-      }
-    });
+      console.log(err);
+      console.log(resp);
+      ok(typeof resp === typeof 'o', 'response is string'); // 0th assert
+      ok(err.length === 5, 'error code not len 5: '+err); // 1st assert
+      start();
+    },
+    callback: function(resp) {
+      var a =1;
+    }
+  });
 
-    p.fail(function(m) {
-      ok(m,'promise fail called');
-    });
+  p.fail(function(m) {
+    ok(m,'promise fail called');
+  });
 
-    $('#qunit_form').rdbhostSubmit();
-  }, 10);
+  $('#qunit_form').rdbhostSubmit();
+});
+
+
+
+module('Login tests', {
+
+  setup: function () {
+
+    this.e = new SQLEngine(demo_r_role, '-', domain);
+  },
+
+  teardown: function () {
+
+    this.e = null;
+  }
+});
+
+
+asyncTest('login ajax', 2+0, function() {
+
+  this.e.loginAjax({
+
+    'email': 'abc',
+    'password': 'def',
+
+    errback: function (err, resp) {
+
+      console.log(err);
+      console.log(resp);
+      ok(typeof resp === typeof 'o', 'response is string'); // 0th assert
+      ok(err.length, 'error code: '+err); // 1st assert
+      start();
+    },
+
+    callback: function(resp) {
+      ok(false,'should not happen');
+    }
+  });
+
 });
 
 

@@ -110,7 +110,7 @@ function SQLEngine(userName, authcode, domain) {
 
   this.getLoginUrl = function () {
 
-    return this.getQueryUrl('/mbr/jslogin');
+    return this.getQueryUrl('/accountlogin/'+userName.substring(1));
   };
 
 
@@ -119,15 +119,24 @@ function SQLEngine(userName, authcode, domain) {
 
    callback : function to call with data from successful query
    errback : function to call with error object from query failure
+
    q : the query string itself
    args : array of arguments (optional), must correspond with %s tokens
-   in query
-   argtypes : array of python DB API types, one per argument
-   plainTextJson : true if JSON parsing to be skipped, in lieu of
-   returning the JSON plaintext
+      in query
+   namedParams: object of name value pairs, params are referenced in
+      sql like '%(paramName)  with parenthesis
+   plainTextJson : true if JSON parsing to be skipped, instead
+     returning the JSON plaintext
    format : 'json' or 'json-easy'
    */
   this.query = function (parms) {
+
+    var that = this;
+    return this._query(parms, function () { return that.getQueryUrl() } );
+  };
+
+  this._query = function(parms, urlFunc) {
+
     var errback = parms.errback,
         args = parms.args || [],
         namedParams = parms.namedParams || {},
@@ -198,11 +207,13 @@ function SQLEngine(userName, authcode, domain) {
       }
     }
 
+    var url = urlFunc();
+
     // use jQuery ajax call to submit to server
     //
     $.ajax({
       type: "POST",
-      url: this.getQueryUrl(),
+      url: url,
       data: data,
       dataType: 'json',
       success: qCallback,
@@ -221,6 +232,7 @@ function SQLEngine(userName, authcode, domain) {
    (with rows and header) when data set is truncated by 100 record limit
    */
   this.queryRows = function (parms) {
+
     var callback = parms.callback;
     var incomplete_callback = parms.incomplete || callback;
 
@@ -261,54 +273,29 @@ function SQLEngine(userName, authcode, domain) {
 
 
   /* loginAjax
-   logs in with email and password.  If on www.rdbhost.com and user logged
-   in to rdbhost account, email/password are optional.
 
-   only works on rdbhost.com, at this point
+   parms is object containing various options
+
+   email :
+   password :
+
+   callback : function to call with data from successfull query
+   errback : function to call with error object from query failure
+
+   plainTextJson : true if JSON parsing to be skipped, instead
+   returning the JSON plaintext
    */
-  this.loginAjax = function (email, passwd) {
-    var jsloginUrl = this.getLoginUrl(),
-        stat,
-        defer = $.Deferred();
+  this.loginAjax =  function (parms) {
 
-    $.ajax({
+    var email = parms.email,
+        password = parms.password,
+        that = this;
+    delete parms.email; delete parms.password;
+    parms.namedParams = { email: email,  password: password };
+    if ( ! parms.format )
+      parms.format = 'json-easy';
 
-      type: "POST",
-      url: jsloginUrl,
-
-      data: {'password': passwd,
-        'email': email },
-
-      dataType: "json",
-
-      success: function (d) {
-
-        if (d === null || d === '' || d === undefined) {
-          stat = false;
-          defer.reject('login failed: timeout');
-        }
-        else if (d.status[0] === 'error') {
-          stat = false;
-          defer.reject('login db failed: ' + d.status[1]);
-        }
-        else if (d.status[0] === 'complete') {
-          stat = d.roles;
-          defer.resolve(d);
-        }
-        else {
-          stat = false;
-          defer.reject('err', 'you should not see')
-        }
-      },
-
-      error: function (xhr, errtype, exc) {
-        // set page location elsewhere
-        defer.reject('login connect failed: ' + errtype);
-        stat = false;
-      }
-    });
-
-    return defer.promise();
+    return this._query( parms, function() { return that.getLoginUrl() } );
   };
 
 } // end of SQLEngine class
@@ -346,12 +333,11 @@ SQLEngine.formnamectr = 0;
     userName: '',
     authcode: ''   };
 
-  var rdbHostConfig = function (parms) {
+  $.rdbHostConfig = function (parms) {
 
-    rdbHostConfig.opts = $.extend({}, opts, parms || {});
+    $.rdbHostConfig.opts = $.extend({}, opts, parms || {});
   };
 
-  $.rdbHostConfig = rdbHostConfig;  // makes it a plugin
 
   /*
    withResults - calls callback with json result object
@@ -361,7 +347,7 @@ SQLEngine.formnamectr = 0;
    param callback : function to call with json data
    param errback : function to call in case of error
    */
-  var withResults = function (parms) {
+  $.withResults = function (parms) {
 
     assert(arguments.length <= 1, 'too many parms to withResults');
     var inp = $.extend({}, $.rdbHostConfig.opts, parms || {});
@@ -370,12 +356,9 @@ SQLEngine.formnamectr = 0;
     delete inp.userName;
     delete inp.authcode;
 
-    var promise = sqlEngine.query(inp);
-
-    return promise;
+    return sqlEngine.query(inp);
   };
 
-  $.withResults = withResults;
 
   /*
    eachRecord - calls 'eachrec' callback with each record,
@@ -385,7 +368,7 @@ SQLEngine.formnamectr = 0;
    param eachrec : function to call with each record
    param errback : function to call in case of error
    */
-  var eachRecord = function (parms) {
+  $.eachRecord = function (parms) {
 
     assert(arguments.length <= 1, 'too many parms to eachRecord');
     var eachrec = parms.eachrec;
@@ -399,12 +382,8 @@ SQLEngine.formnamectr = 0;
     }
 
     parms.callback = cback;
-    var promise = $.withResults(parms);
-
-    return promise;
+    return $.withResults(parms);
   };
-
-  $.eachRecord = eachRecord;
 
 
   /*
@@ -413,11 +392,10 @@ SQLEngine.formnamectr = 0;
    param q : query to post data
    param kw : query-keyword to post data
    */
-  var postFormData = function (that, parms) {
+  $.postFormData = function (that, parms) {
     throw new Error('not implemented in CORS version');
   };
 
-  $.postFormData = postFormData;
 
 
   /*
@@ -427,7 +405,7 @@ SQLEngine.formnamectr = 0;
    param q : query to post data
    param kw : query-keyword to post data
    */
-  var postData = function (parms) {
+  $.postData = function (parms) {
 
     assert(arguments.length < 2, 'too many parms to postData');
     var inp = $.extend({}, $.rdbHostConfig.opts, parms || {});
@@ -436,12 +414,9 @@ SQLEngine.formnamectr = 0;
     delete inp.userName;
     delete inp.authcode;
 
-    var promise = sqlEngine.query(inp);
-
-    return promise;
+    return sqlEngine.query(inp);
   };
 
-  $.postData = postData;
 
 
   /*
@@ -474,7 +449,7 @@ SQLEngine.formnamectr = 0;
    *
    *
    */
-  var loginOpenId = function (inp) {
+  $.loginOpenId = function (inp) {
 
     // minimal functions for success and failure handlers
     var onSuccess = function () {
@@ -644,7 +619,20 @@ SQLEngine.formnamectr = 0;
     }
   };
 
-  $.loginOpenId = loginOpenId;
+
+  /*
+   loginAjax submits login info, gets list of roles/authcodes
+
+   */
+  $.loginAjax = function(parms) {
+
+    var inp = $.extend({}, $.rdbHostConfig.opts, parms||{});
+
+    var sqlEngine = new SQLEngine(inp.userName, inp.authcode, inp.domain);
+    delete inp.userName; delete inp.authcode; delete inp.domain;
+
+    return sqlEngine.loginAjax(inp);
+  };
 
 
   /*
@@ -652,11 +640,10 @@ SQLEngine.formnamectr = 0;
 
    not valid in CORS library, as form submission methods are not supported.
    */
-  var rdbhostSubmit = function () {
+  $.fn.rdbhostSubmit = function () {
 
     throw new Error('not implemented');
   };
-  $.fn.rdbhostSubmit = rdbhostSubmit;
 
 
   /*
@@ -664,7 +651,7 @@ SQLEngine.formnamectr = 0;
 
    param q : query to get data
    */
-  var populateTable = function (parms) {
+  $.fn.populateTable = function (parms) {
 
     assert(arguments.length <= 1, 'too many parms to populateTable');
     var $selset = this;
@@ -759,14 +746,13 @@ SQLEngine.formnamectr = 0;
     return $selset;
   };
 
-  $.fn.populateTable = populateTable;
 
   /*
    populateForm populates a form with a single record
 
    param q : query to get data
    */
-  var populateForm = function (parms) {
+  $.fn.populateForm = function (parms) {
 
     assert(arguments.length <= 1, 'too many parms to populateForm');
     var $selset = this;
@@ -815,7 +801,6 @@ SQLEngine.formnamectr = 0;
     return $selset;
   };
 
-  $.fn.populateForm = populateForm;
 
   /*
    datadump puts a <pre>-formatted json dump into the html
@@ -823,7 +808,7 @@ SQLEngine.formnamectr = 0;
    param q : query to get data
    param kw : query-keyword to get data
    */
-  var datadump = function (parms) {
+  $.fn.datadump = function (parms) {
 
     var $selset = this;
 
@@ -845,7 +830,6 @@ SQLEngine.formnamectr = 0;
     return $selset;
   };
 
-  $.fn.datadump = datadump;
 
 }(jQuery, this));
 

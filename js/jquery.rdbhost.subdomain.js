@@ -52,24 +52,24 @@
 	   'lookup.queries' table on the  server.  See website documentation for
 	   details.
 
-    $.fn.populateTable sends a query to the server, receives the data, and populates
-      an html table with it.  If the element provided is not a table, a new
-      table is inserted in it; if the element is an empty table, it is expanded
-      with new rows, one per record, and if the table has a prototype row, that
-      row is duplicated once per record, and the record data is placed in
-      td elements based on class name matches. (a field named 'firstName' would
-      put its value in a table cell like '<td class="firstName">').  A cell
-      can have multiple classes, so adding field-name classes should not interfere
-      with styling.
+  $.fn.populateTable sends a query to the server, receives the data, and populates
+    an html table with it.  If the element provided is not a table, a new
+    table is inserted in it; if the element is an empty table, it is expanded
+    with new rows, one per record, and if the table has a prototype row, that
+    row is duplicated once per record, and the record data is placed in
+    td elements based on class name matches. (a field named 'firstName' would
+    put its value in a table cell like '<td class="firstName">').  A cell
+    can have multiple classes, so adding field-name classes should not interfere
+    with styling.
 
-    $.fn.populateForm sends a query to the server, receives the data, selects the
-      first record, and populates a form with it.  It attempts to match each field
-      name to an input field with matching id, and then attempts to match an input
-      field with matching class-name.
+  $.fn.populateForm sends a query to the server, receives the data, selects the
+    first record, and populates a form with it.  It attempts to match each field
+    name to an input field with matching id, and then attempts to match an input
+    field with matching class-name.
 
-    $.fn.datadump is a diagnostic-aid that puts a formatted json-string of
-      the data into the selected html elements.  It allows you to verify the
-      data retrieval functionality before doing (much) html work.
+  $.fn.datadump is a diagnostic-aid that puts a formatted json-string of
+    the data into the selected html elements.  It allows you to verify the
+    data retrieval functionality before doing (much) html work.
 
 */
 
@@ -140,7 +140,7 @@ function SQLEngine(userName, authcode, domain)
 
   this.getLoginUrl = function() {
 
-		return this.getQueryUrl('/mbr/jslogin');
+		return this.getQueryUrl('/accountlogin/'+userName.substring(1));
 	};
 
 	this.getCommonDomain = function() {
@@ -165,6 +165,12 @@ function SQLEngine(userName, authcode, domain)
    format : 'jsond' or 'jsond-easy'
    */
 	this.query = function(parms) {
+
+    var that = this;
+    return this._query(parms, function() { return that.getQueryUrl(); });
+  }
+
+  this._query = function(parms, urlFunc) {
 
     parms.format = parms.format || format;
     parms.args = parms.args || [];
@@ -266,13 +272,13 @@ function SQLEngine(userName, authcode, domain)
       ev.stopPropagation();
       iframe_requested = true;
 
-      var defr = that.queryByForm({
+      var defr = that._queryByForm({
         'formId' : formId,
         'callback' : qCallback,
         'errback' : qErrback,
         'format' : parms.format,
         'plainTextJson' : parms.plainTextJson
-      });
+      }, urlFunc);
 
       defr.done(defer.resolve);
       defr.fail(defer.fail);
@@ -281,7 +287,7 @@ function SQLEngine(userName, authcode, domain)
     // submit the hidden form
 		$hiddenform.submit();
 
-    return defer;
+    return defer.promise();
 	};
 
 
@@ -318,7 +324,23 @@ function SQLEngine(userName, authcode, domain)
 	};
 
 
- 	this._queryByForm = function(parms, dbUrl) 	{
+  /*
+   parms is object containing various options
+
+   formId : the id of the form with the data
+   callback : function to call with data from successfull query
+   errback : function to call with error object from query failure
+   plainTextJson : true if JSON parsing to be skipped, instead
+   returning the JSON plaintext
+   */
+  this.queryByForm = function(parms) {
+
+    var that = this;
+    return this._queryByForm(parms, that.getQueryUrl);
+  };
+
+
+  this._queryByForm = function(parms, urlFunc) 	{
 
     format = parms.format ? parms.format : format;
 		var errback = parms.errback,
@@ -417,9 +439,10 @@ function SQLEngine(userName, authcode, domain)
 		add_hidden_field($form,'authcode', authcode);
 
 		// set format, action, and target
+    var url = urlFunc();
 		add_hidden_field($form,'format',format);
 		$form.attr('target',targetTag);
-		$form.attr('action',dbUrl);
+		$form.attr('action',url);
 
 		// add hidden iframe to end of body
 		var iframeTxt = '<iframe id="~tt~" name="~tt~" src="" style="display:none;" ></iframe>';
@@ -448,36 +471,20 @@ function SQLEngine(userName, authcode, domain)
 		return defer.promise();
 	};
 
+
   /*
-   parms is object containing various options
+  parms is object containing various options
+
    formId : the id of the form with the data
    callback : function to call with data from successfull query
    errback : function to call with error object from query failure
    plainTextJson : true if JSON parsing to be skipped, in lieu of
-   returning the JSON plaintext
+      returning the JSON plaintext
    */
-  this.queryByForm = function(parms) {
+	this.loginAjax = function(parms) {
 
-    var dbUrl = this.getQueryUrl();
-    return this._queryByForm(parms, dbUrl);
-  };
-
-
-  /* parms is object containing various options
-   formId : the id of the form with the data
-   callback : function to call with data from successfull query
-   errback : function to call with error object from query failure
-   plainTextJson : true if JSON parsing to be skipped, in lieu of
-   returning the JSON plaintext
-   */
-	this.loginByForm = function(parms) {
-
-    var dbUrl = this.getLoginUrl();
-    return this._queryByForm(parms, dbUrl);
-
-		var target = $form.attr('target'); // save vals
-		var action = $form.attr('action');
-		var targetTag = 'upload_target'+formId;
+    var that = this;
+    return this._query(parms, function() { return that.getLoginUrl(); });
   }
 
 } // end of SQLEngine class
@@ -513,13 +520,12 @@ SQLEngine.formnamectr = 0;
     userName : '',
     authcode : ''        };
 
-	var rdbHostConfig= function (parms) {
+  $.rdbHostConfig= function (parms) {
 
 		var options = $.extend({}, opts, parms||{});
-		rdbHostConfig.opts = options;
+    $.rdbHostConfig.opts = options;
 	};
 
-	$.rdbHostConfig = rdbHostConfig;  // makes it a plugin
 
 
 	/*
@@ -530,7 +536,7 @@ SQLEngine.formnamectr = 0;
 	    param callback : function to call with json data
 	    param errback : function to call in case of error
 	*/
-	var withResults = function(parms) {
+  $.withResults =  function(parms) {
 
 		assert(arguments.length<=1, 'too many parms to withResults');
 		var inp = $.extend({}, $.rdbHostConfig.opts, parms||{});
@@ -539,7 +545,6 @@ SQLEngine.formnamectr = 0;
 		return sqlEngine.query(inp);
 	};
 
-	$.withResults = withResults;
 
 	/*
 	    eachRecord - calls 'eachrec' callback with each record,
@@ -549,7 +554,7 @@ SQLEngine.formnamectr = 0;
 	    param eachrec : function to call with each record
 	    param errback : function to call in case of error
 	*/
-	var eachRecord = function(parms) {
+  $.eachRecord =  function(parms) {
 
 		assert(arguments.length<=1, 'too many parms to eachRecord');
 		var eachrec = parms.eachrec;
@@ -567,7 +572,6 @@ SQLEngine.formnamectr = 0;
 		return $.withResults(parms);
 	};
 
-	$.eachRecord = eachRecord;
 
 	/*
 	    postFormData should be used as a submit handler for a data entry form.
@@ -575,7 +579,7 @@ SQLEngine.formnamectr = 0;
 	    param q : query to post data
 	    param kw : query-keyword to post data
 	*/
-	var postFormData = function(that,parms) {
+  $.postFormData = function(that,parms) {
 
 		assert(arguments.length<=2, 'too many parms to postFormData');
 		var $form = $(that).closest('form');
@@ -597,7 +601,6 @@ SQLEngine.formnamectr = 0;
     return sqlEngine.queryByForm(inp);
 	};
 
-	$.postFormData = postFormData;
 
 	/*
 	    postData submits some data (in the options object) to the server
@@ -606,7 +609,7 @@ SQLEngine.formnamectr = 0;
 	    param q : query to post data
 	    param kw : query-keyword to post data
 	*/
-	var postData = function(parms) {
+  $.postData = function(parms) {
 
 		assert(arguments.length<2, 'too many parms to postData');
 		var inp = $.extend({}, $.rdbHostConfig.opts, parms||{});
@@ -617,7 +620,21 @@ SQLEngine.formnamectr = 0;
 		return sqlEngine.query(inp);
 	};
 
-	$.postData = postData;
+
+  /*
+   loginAjax submits your login data
+
+   */
+  $.loginAjax = function(parms) {
+
+    var inp = $.extend({}, $.rdbHostConfig.opts, parms||{});
+
+    var sqlEngine = new SQLEngine(inp.userName, inp.authcode, inp.domain);
+    delete inp.userName; delete inp.authcode; delete inp.domain;
+
+    return sqlEngine.loginAjax(inp);
+  };
+
 
 
   /*
@@ -628,12 +645,10 @@ SQLEngine.formnamectr = 0;
 
    not necessary for this version of library, but included for completeness
    */
-  var rdbhostSubmit = function() {
+  $.fn.rdbhostSubmit = function() {
 
     this.submit();
   };
-
-  $.fn.rdbhostSubmit = rdbhostSubmit;
 
 
 
@@ -642,7 +657,7 @@ SQLEngine.formnamectr = 0;
 
       param q : query to get data
   */
-	var populateTable = function(parms) {
+  $.fn.populateTable =  function(parms) {
 
 		assert(arguments.length<=1, 'too many parms to populateTable');
 		var $selset = this;
@@ -733,14 +748,13 @@ SQLEngine.formnamectr = 0;
 		return $selset;
 	};
 
-	$.fn.populateTable = populateTable;
 
 	/*
 	    populateForm populates a form with a single record
 
 	    param q : query to get data
 	*/
-	var populateForm = function(parms) {
+  $.fn.populateForm = function(parms) {
 
 		assert(arguments.length<=1, 'too many parms to populateForm');
 		var $selset = this;
@@ -785,7 +799,6 @@ SQLEngine.formnamectr = 0;
 		return $selset;
 	};
 
-	$.fn.populateForm = populateForm;
 
 	/*
 	    datadump puts a <pre>-formatted json dump into the html
@@ -793,7 +806,7 @@ SQLEngine.formnamectr = 0;
 	    param q : query to get data
 	    param kw : query-keyword to get data
 	*/
-	var datadump = function(parms) {
+  $.fn.datadump = function(parms) {
 
 		var $selset = this;
 
@@ -814,7 +827,6 @@ SQLEngine.formnamectr = 0;
 		return $selset;
 	};
 
-	$.fn.datadump = datadump;
 
 }(jQuery,this));
 

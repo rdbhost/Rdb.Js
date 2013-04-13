@@ -1,6 +1,5 @@
 
 
-var domain = 'dev.rdbhost.com';
 
 /*
 *
@@ -264,6 +263,47 @@ asyncTest('$.postFornData test promise', 5+1, function() {
     start();
   });
 });
+
+
+module('$.loginAjax tests', {
+  setup: function () {
+    $.rdbHostConfig( {
+      'domain': domain,
+      'format': 'jsond-easy',
+      'userName': demo_r_role,
+      'authcode': '-'
+    });
+  },
+  teardown: function () {
+    $.rdbHostConfig( {
+      'domain': undefined,
+      'format': undefined,
+      'userName': undefined,
+      'authcode': '-'
+    });
+  }
+});
+
+
+// $.loginByForm test w/ promise
+asyncTest('$.loginAjax test w/ promise ', 2+0, function() {
+
+  var p = $.loginAjax({
+
+    errback: function(resp) {
+
+      ok(resp,'loginAjax');
+      start();
+    }
+  });
+
+  p.fail(function (m) {
+
+    ok(m,'fail handler called');
+  });
+
+});
+
 
 
 // do SELECT query form way

@@ -1,6 +1,5 @@
 
 
-
 /*
 *
 * tests for the jQuery addin
@@ -199,10 +198,7 @@ asyncTest('$.postFornData test', 4+1, function() {
           }
     });
 
-  setTimeout(function () {
-    // timeout allows for rpc iframes to be setup.
-      $('#qunit_form2').submit();
-    }, 1000);
+  $('#qunit_form2').rdbhostSubmit();
 });
 
  // $.postFormData fail w/ promise
@@ -219,42 +215,77 @@ asyncTest('$.postFornData test', 4+1, function() {
      }
    });
 
-   setTimeout(function () {
-   $('#qunit_form2 input:text').val('SELECTY');
-     // timeout allows for rpc iframes to be setup.
-     $('#qunit_form2').submit();
-   }, 1000);
-
    p.fail(function(m) {
      ok(m,'promise fail called');
      start();
    });
+
+   $('#qunit_form2 input:text').val('SELECTY');
+   $('#qunit_form2').rdbhostSubmit();
+
  });
 
 
  // $.postFormData test w/ promise
  asyncTest('$.postFornData test promise', 5+1, function() {
 
- var p = $.postFormData($('#qunit_form2'), {
+   var p = $.postFormData($('#qunit_form2'), {
 
-    callback: function (resp) {
-         ok(typeof resp === 'object', 'response is object'); // 0th assert
-         ok(resp.status[1].toLowerCase() == 'ok', 'status is not ok: '+resp.status[1]); // 1st assert
-         ok(resp.row_count[0] > 0, 'data row found');
-         ok(resp.records.rows[0]['col'] === 199, 'data is not 199: '+resp.records.rows[0]['col']);
-      }
- });
+      callback: function (resp) {
+           ok(typeof resp === 'object', 'response is object'); // 0th assert
+           ok(resp.status[1].toLowerCase() == 'ok', 'status is not ok: '+resp.status[1]); // 1st assert
+           ok(resp.row_count[0] > 0, 'data row found');
+           ok(resp.records.rows[0]['col'] === 199, 'data is not 199: '+resp.records.rows[0]['col']);
+        }
+   });
 
- setTimeout(function () {
-  // timeout allows for rpc iframes to be setup.
-  $('#qunit_form2').submit();
- }, 1000);
 
- p.done(function(m) {
+  p.done(function(m) {
       ok(m,'promise done called');
       start();
     });
+
+   $('#qunit_form2').rdbhostSubmit();
  });
+
+
+
+module('$.loginAjax tests', {
+  setup: function () {
+    $.rdbHostConfig( {
+      'domain': domain,
+      'format': 'jsond-easy',
+      'userName': demo_r_role,
+      'authcode': '-'
+    });
+  },
+  teardown: function () {
+    $.rdbHostConfig( {
+      'domain': undefined,
+      'format': undefined,
+      'userName': undefined,
+      'authcode': '-'
+    });
+  }
+});
+
+
+// $.loginAjax test w/ promise
+asyncTest('$.loginAjax test w promise ', 2+0, function() {
+
+  var p = $.loginAjax({
+
+    errback: function(resp) {
+
+      ok(resp,'loginByform');
+      start();
+    }
+  });
+
+  p.fail(function(m) {
+    ok(m,'login failed')
+  })
+});
 
 
 
@@ -320,8 +351,6 @@ asyncTest('$.populateTable test', 3+1, function() {
       start();
     }, 1000);
 });
-
-
 
 
 /*  $.fn.populateForm, */
