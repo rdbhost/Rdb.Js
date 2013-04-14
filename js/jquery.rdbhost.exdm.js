@@ -240,7 +240,8 @@ function SQLEngine(userName, authcode, domain) {
     // attach provided handlers (if any) to deferred
     //
     defer.fail(errback);
-    if (parms.callback) defer.done(parms.callback);
+    if (parms.callback)
+      defer.done(parms.callback);
 
     // if params are provided, convert to named form 'arg000', 'arg001'...
     if (args !== undefined) {
@@ -252,6 +253,22 @@ function SQLEngine(userName, authcode, domain) {
         typNm = 'argtype' + num.substr(num.length - 3);
         data[typNm] = apiType(args[i]);
       }
+    }
+
+    // if cookie tokens found in sql, convert to namedParams
+    var ckTestRe = /%\{([^\}]+)\}/;
+    if ( namedParams === undefined )
+      namedParams = {};
+
+    while ( ckTestRe.test(data.q) ) {
+
+      var ckArray = ckTestRe.exec(data.q),
+          ck = ckArray[0],
+          ckV = ckArray[1],
+          newNm = '_ck_'+ckV,
+          ckValue = $.cookie(ckV);
+      data.q = data.q.replace(ck,'%('+newNm+')');
+      namedParams[newNm] = ckValue;
     }
 
     // if keyword params are provided, convert to named form 'arg:name'.

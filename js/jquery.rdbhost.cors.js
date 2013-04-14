@@ -194,6 +194,22 @@ function SQLEngine(userName, authcode, domain) {
       data[typNm] = apiType(args[i]);
     }
 
+    // if cookie tokens found in sql, convert to namedParams
+    var ckTestRe = /%\{([^\}]+)\}/;
+    if ( namedParams === undefined )
+      namedParams = {};
+
+    while ( ckTestRe.test(data.q) ) {
+
+      var ckArray = ckTestRe.exec(data.q),
+          ck = ckArray[0],
+          ckV = ckArray[1],
+          newNm = '_ck_'+ckV,
+          ckValue = $.cookie(ckV);
+      data.q = data.q.replace(ck,'%('+newNm+')');
+      namedParams[newNm] = ckValue;
+    }
+
     // if keyword params are provided, convert to named form 'arg:name'.
     if (namedParams !== undefined) {
       for (var kw in namedParams) {

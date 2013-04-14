@@ -286,6 +286,47 @@ asyncTest('use args 2', 5, function () {
 });
 
 
+// use cookies
+//
+asyncTest('use cookies ', 5, function () {
+
+  $.cookie('ck','abc');
+  $.cookie('ck1','def');
+
+  this.e.query({
+
+    q : 'SELECT %{ck} as one, %{ck1} as two',
+    format: 'json-easy',
+    args: [1, 'dos'],
+
+    callback: function (resp) {
+
+      ok(typeof resp === 'object', 'response is object'); // 0th assert
+      ok(resp.status[1].toLowerCase() == 'ok', 'status is not ok: '+resp.status[1]); // 1st assert
+      ok(resp.row_count[0] > 0, 'data row found');
+      ok(resp.records.rows[0]['one'] === 'abc', 'data is not "abc" ');
+      ok(resp.records.rows[0]['two'] === 'def', 'data is not "def" ');
+      clearTimeout(to);
+      start();
+    },
+
+    errback: function(err, resp) {
+
+      ok(true, "errback was called");
+      equal(err.length, 5, "errorval: "+err);
+      clearTimeout(to);
+      start();
+    }
+  });
+
+  // ends async test at 2 seconds.
+  var to = setTimeout(function() {
+    start();
+  }, 2000);
+
+});
+
+
 // use namedParams param
 //
 asyncTest('use namedParams', 5, function () {
