@@ -501,7 +501,14 @@ function SQLEngine(userName, authcode, domain) {
    */
   this.loginAjax = function (parms) {
 
-    var that = this;
+    var email = parms.email,
+        password = parms.password,
+        that = this;
+    delete parms.email; delete parms.password;
+    parms.namedParams = { email: email,  password: password };
+    if ( ! parms.format )
+      parms.format = 'json-easy';
+
     return this._query(parms, function () {
       return that.getLoginUrl();
     });

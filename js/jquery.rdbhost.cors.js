@@ -311,7 +311,9 @@ function SQLEngine(userName, authcode, domain) {
     if ( ! parms.format )
       parms.format = 'json-easy';
 
-    return this._query( parms, function() { return that.getLoginUrl() } );
+    return this._query( parms, function() {
+      return that.getLoginUrl()
+    });
   };
 
 } // end of SQLEngine class

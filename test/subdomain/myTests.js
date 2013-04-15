@@ -540,6 +540,8 @@ asyncTest('login ', 2+0, function() {
 
   this.e.loginAjax({
 
+    email: 'd',
+    password: 'e',
 
     errback: function (err, resp) {
 
