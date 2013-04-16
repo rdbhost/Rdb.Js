@@ -86,9 +86,17 @@ function consoleLog(msg) {
 //   handles file fields
 //
 function SQLEngine(userName, authcode, domain) {
+
   // store engine config info
   var remote = 'http://' + domain,
       format = 'jsond';
+
+  // for setting auth info later
+  function set_userAuthentication(uName, aCode) {
+
+    userName = uName;
+    authcode = aCode;
+  }
 
   // to add hidden field to form
   function add_hidden_field($form, nm, val) {

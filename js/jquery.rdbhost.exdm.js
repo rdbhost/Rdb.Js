@@ -16,30 +16,30 @@
  The four functions are $.rdbHostConfig, $.withResults, $.eachRecord, and
  $.postFormData.  The three methods are $.fn.populateTable,
  $.fn.populateForm, and $.fn.datadump.  There is also a $.postData alias
- to $.withResults
+   to $.withResults
 
  $.rdbHostConfig takes an options object, and makes those options default for
- all subsequent functions and methods.
+   all subsequent functions and methods.
 
  $.withResults sends a query to the server, receives the data, and calls
- a callback with the received data.
+   a callback with the received data.
 
  $.eachRecord is like $.withResults, in that it gets data from the server,
- but it extracts the rows from the data structure, and calls an eachrec
- callback for each record.  Each record is a javascript object, with a
- named attribute for each field.
+   but it extracts the rows from the data structure, and calls an eachrec
+   callback for each record.  Each record is a javascript object, with a
+   named attribute for each field.
 
  $.postFormData takes a form as input, submits that form to the server,
- receives the data returned, and provides it to the callback.
- The form fields must be named arg000, arg001, etc
+   receives the data returned, and provides it to the callback.
+   The form fields must be named arg000, arg001, etc
 
  $.postData posts to the server, receives the data returned, and provides it
- to the callback.  Similar to jQuery's $.ajax()
+   to the callback.  Similar to jQuery's $.ajax()
 
  $.loginOpenId provides various services related to OpenID logins.  It will
- prep the form prior to submission, and handles hash values and cookies
- upon return from login process.  Call it in both the openId submit form,
- and in the follow up form.
+   prep the form prior to submission, and handles hash values and cookies
+    upon return from login process.  Call it in both the openId submit form,
+   and in the follow up form.
 
  Form fields
  The form *must* include either a 'q' or a 'kw' field.  It may also include
@@ -155,6 +155,13 @@ function SQLEngine(userName, authcode, domain) {
     var fld = $('<input type="hidden" class="to-remove-later" />');
     fld.attr('name', nm).val(val);
     $form.append(fld);
+  }
+
+  // for setting auth info later
+  function set_userAuthentication(uName, aCode) {
+
+    userName = uName;
+    authcode = aCode;
   }
 
   /*

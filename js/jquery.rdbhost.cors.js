@@ -74,6 +74,13 @@ function SQLEngine(userName, authcode, domain) {
   if (!domain)
     domain = 'www.rdbhost.com';
 
+  // for setting auth info later
+  function set_userAuthentication(uName, aCode) {
+
+    userName = uName;
+    authcode = aCode;
+  }
+
   /*
    Return API type for data item.
 
