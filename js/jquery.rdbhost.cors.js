@@ -75,11 +75,16 @@ function SQLEngine(userName, authcode, domain) {
     domain = 'www.rdbhost.com';
 
   // for setting auth info later
-  function set_userAuthentication(uName, aCode) {
+  this.setUserAuthentication = function(uName, aCode) {
 
     userName = uName;
     authcode = aCode;
-  }
+  };
+
+  this.hasUserAuthentication = function() {
+
+    return userName && userName.length;
+  };
 
   /*
    Return API type for data item.
@@ -315,8 +320,7 @@ function SQLEngine(userName, authcode, domain) {
         that = this;
     delete parms.email; delete parms.password;
     parms.namedParams = { email: email,  password: password };
-    if ( ! parms.format )
-      parms.format = 'json-easy';
+    parms.format = 'json-easy';
 
     return this._query( parms, function() {
       return that.getLoginUrl()

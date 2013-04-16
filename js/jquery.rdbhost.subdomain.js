@@ -92,11 +92,16 @@ function SQLEngine(userName, authcode, domain) {
       format = 'jsond';
 
   // for setting auth info later
-  function set_userAuthentication(uName, aCode) {
+  this.setUserAuthentication = function(uName, aCode) {
 
     userName = uName;
     authcode = aCode;
-  }
+  };
+
+  this.hasUserAuthentication = function() {
+
+    return userName && userName.length;
+  };
 
   // to add hidden field to form
   function add_hidden_field($form, nm, val) {
@@ -368,7 +373,7 @@ function SQLEngine(userName, authcode, domain) {
 
   this._queryByForm = function (parms, urlFunc) {
 
-    format = parms.format ? parms.format : format;
+    parms.format = parms.format ? parms.format : format;
     var errback = parms.errback,
         targetTag = 'upload_target_' + parms.formId + '_' + (SQLEngine.formnamectr += 1),
         target, action,
@@ -466,7 +471,7 @@ function SQLEngine(userName, authcode, domain) {
 
     // set format, action, and target
     var url = urlFunc();
-    add_hidden_field($form, 'format', format);
+    add_hidden_field($form, 'format', parms.format);
     $form.attr('target', targetTag);
     $form.attr('action', url);
 
@@ -514,8 +519,7 @@ function SQLEngine(userName, authcode, domain) {
         that = this;
     delete parms.email; delete parms.password;
     parms.namedParams = { email: email,  password: password };
-    if ( ! parms.format )
-      parms.format = 'json-easy';
+    parms.format = 'jsond-easy';
 
     return this._query(parms, function () {
       return that.getLoginUrl();

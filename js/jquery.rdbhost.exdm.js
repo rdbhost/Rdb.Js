@@ -158,11 +158,16 @@ function SQLEngine(userName, authcode, domain) {
   }
 
   // for setting auth info later
-  function set_userAuthentication(uName, aCode) {
+  this.setUserAuthentication = function(uName, aCode) {
 
     userName = uName;
     authcode = aCode;
-  }
+  };
+
+  this.hasUserAuthentication = function() {
+
+    return userName && userName.length;
+  };
 
   /*
    Return API type for data item.
@@ -449,7 +454,7 @@ function SQLEngine(userName, authcode, domain) {
     // put password into form
     add_hidden_field($form, 'authcode', authcode);
     // set format, action, and target
-    add_hidden_field($form, 'format', format);
+    add_hidden_field($form, 'format', parms.format);
 
     $form.attr('target', targettag);
     $form.attr('action', dbUrl);
@@ -479,8 +484,7 @@ function SQLEngine(userName, authcode, domain) {
         that = this;
     delete parms.email; delete parms.password;
     parms.namedParams = { email: email,  password: password };
-    if ( ! parms.format )
-      parms.format = 'json-easy';
+    parms.format = 'json-easy';
 
     return that._query(parms, function() { return that.getLoginUrl(); });
   }
