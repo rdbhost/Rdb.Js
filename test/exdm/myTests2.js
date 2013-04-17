@@ -205,12 +205,9 @@ asyncTest('$.postFornData test', 4+1, function() {
             ok(resp.records.rows[0][0] === 199, 'data is not 99: '+resp.records.rows[0]['col']);
             start();
           }
-    });
+  });
 
-  setTimeout(function () {
-    // timeout allows for rpc iframes to be setup.
-      $('#qunit_form2').submit();
-    }, 1000);
+  $('#qunit_form2').rdbhostSubmit();
 });
 
 
@@ -228,11 +225,8 @@ asyncTest('$.postFornData test fail promise', 2+1, function() {
     }
   });
 
-  setTimeout(function () {
-    $('#qunit_form2 input:text').val('SELECTY');
-    // timeout allows for rpc iframes to be setup.
-    $('#qunit_form2').submit();
-  }, 1000);
+  $('#qunit_form2 input:text').val('SELECTY');
+  $('#qunit_form2').rdbhostSubmit();
 
   p.fail(function(m) {
     ok(m,'promise fail called');
@@ -253,10 +247,7 @@ asyncTest('$.postFornData test promise', 5+1, function() {
     }
   });
 
-  setTimeout(function () {
-    // timeout allows for rpc iframes to be setup.
-    $('#qunit_form2').submit();
-  }, 1000);
+  $('#qunit_form2').rdbhostSubmit();
 
   p.done(function(m) {
     ok(m,'promise done called');

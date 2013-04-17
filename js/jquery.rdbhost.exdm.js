@@ -193,14 +193,20 @@ function SQLEngine(userName, authcode, domain) {
     }
   }
 
+  // return appropriate /db/ url for action attribute in form
   this.getQueryUrl = function (altPath) {
     if (altPath === undefined) {
+      assert(userName,'no username in sqlEngine');
+      assert(userName.length,'username is null in sqlEngine');
       altPath = '/db/' + userName;
     }
     return remote + altPath;
   };
 
+  // return appropriate /accountlogin/ url for action attribute in form
   this.getLoginUrl = function () {
+    assert(userName,'no username in sqlEngine');
+    assert(userName.length > 1,'username is too short in sqlEngine');
     return this.getQueryUrl('/accountlogin/'+userName.substring(1));
   };
 
@@ -424,8 +430,9 @@ function SQLEngine(userName, authcode, domain) {
 
     CONNECTIONS[easyXDMAjaxHandle].handler = cBack;
 
-    var format = 'json-exdm', // parms.format || format;
-        targettag = 'request_target_' + userName.substring(1);
+    var targettag = 'request_target_' + userName.substring(1);
+    parms.format = parms.format || format;
+    assert(~parms.format.indexOf('xdm'),'bad format '+parms.format);
 
     // get form, return if not found
     var $form = $('#' + formId);
@@ -502,7 +509,12 @@ function SQLEngine(userName, authcode, domain) {
   // default generic callbacks
   //
   function errback(err, msg) {
-    alert('<pre>' + err.toString() + ': ' + msg + '</pre>');
+    var errCode = '-';
+
+    try { errCode = err.toString() }
+    catch (e) {}
+
+    alert('<pre>' + errCode + ': ' + msg + '</pre>');
   }
 
   function dumper(json) {
@@ -596,7 +608,7 @@ function SQLEngine(userName, authcode, domain) {
 
     assert(arguments.length <= 2, 'too many parms to postFormData');
     var $form = $(that).closest('form'),
-        inp = $.extend({}, $.rdbHostConfig.opts, parms || {});
+        inp = $.extend({}, $.rdbHostConfig.opts, {format:'json-exdm'}, parms || {});
 
     inp.formId = $form.attr('id');
     assert(inp.formId, 'form must have a unique id attribute');
@@ -641,7 +653,7 @@ function SQLEngine(userName, authcode, domain) {
   $.postData = function (parms) {
 
     assert(arguments.length < 2, 'too many parms to postData');
-    var inp = $.extend({}, $.rdbHostConfig.opts, parms || {});
+    var inp = $.extend({}, $.rdbHostConfig.opts, {format:'json-exdm'}, parms || {});
 
     try {
 
@@ -1096,6 +1108,7 @@ AssertException.prototype.toString = function () {
 function assert(exp, message) {
   if (!exp) {
     throw new AssertException(message);
+    debugger;
   }
 }
 

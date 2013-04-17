@@ -70,9 +70,10 @@
 function SQLEngine(userName, authcode, domain) {
 
   // store engine config info
-  var format = 'json';
   if (!domain)
     domain = 'www.rdbhost.com';
+  var format = 'json',
+      remote = document.location.protocol + '//' +  domain;
 
   // for setting auth info later
   this.setUserAuthentication = function(uName, aCode) {
@@ -110,18 +111,20 @@ function SQLEngine(userName, authcode, domain) {
     }
   }
 
+  // return appropriate /db/ url for action attribute in form
   this.getQueryUrl = function (altPath) {
-
-    var proto = window.location.protocol;
-    if (!altPath) {
+    if (altPath === undefined) {
+      assert(userName,'no username in sqlEngine');
+      assert(userName.length,'username is null in sqlEngine');
       altPath = '/db/' + userName;
     }
-
-    return proto + '//' + domain + altPath;
+    return remote + altPath;
   };
 
+  // return appropriate /accountlogin/ url for action attribute in form
   this.getLoginUrl = function () {
-
+    assert(userName,'no username in sqlEngine');
+    assert(userName.length > 1,'username is too short in sqlEngine');
     return this.getQueryUrl('/accountlogin/'+userName.substring(1));
   };
 
@@ -341,8 +344,12 @@ SQLEngine.formnamectr = 0;
   // default generic callbacks
   //
   function errback(err, msg) {
+    var errCode = '-';
 
-    alert('<pre>' + err.toString() + ': ' + msg + '</pre>');
+    try { errCode = err.toString() }
+    catch (e) {}
+
+    alert('<pre>' + errCode + ': ' + msg + '</pre>');
   }
 
   function dumper(json) {

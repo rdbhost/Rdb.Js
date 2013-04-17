@@ -145,17 +145,23 @@ function SQLEngine(userName, authcode, domain) {
   }
 
 
+  // return appropriate /db/ url for action attribute in form
   this.getQueryUrl = function (altPath) {
     if (altPath === undefined) {
+      assert(userName,'no username in sqlEngine');
+      assert(userName.length,'username is null in sqlEngine');
       altPath = '/db/' + userName;
     }
     return remote + altPath;
   };
 
+  // return appropriate /accountlogin/ url for action attribute in form
   this.getLoginUrl = function () {
-
-    return this.getQueryUrl('/accountlogin/' + userName.substring(1));
+    assert(userName,'no username in sqlEngine');
+    assert(userName.length > 1,'username is too short in sqlEngine');
+    return this.getQueryUrl('/accountlogin/'+userName.substring(1));
   };
+
 
   this.getCommonDomain = function () {
 
@@ -184,7 +190,7 @@ function SQLEngine(userName, authcode, domain) {
     return this._query(parms, function () {
       return that.getQueryUrl();
     });
-  }
+  };
 
   this._query = function (parms, urlFunc) {
 
@@ -540,7 +546,12 @@ SQLEngine.formnamectr = 0;
   // default generic callbacks
   //
   function errback(err, msg) {
-    alert('<pre>' + err.toString() + ': ' + msg + '</pre>');
+    var errCode = '-';
+
+    try { errCode = err.toString() }
+    catch (e) {}
+
+    alert('<pre>' + errCode + ': ' + msg + '</pre>');
   }
 
   function dumper(json) {
