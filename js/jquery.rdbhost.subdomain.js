@@ -88,7 +88,8 @@ function consoleLog(msg) {
 function SQLEngine(userName, authcode, domain) {
 
   // store engine config info
-  var remote = 'http://' + domain,
+  var proto = window.document.location.protocol,
+      remote = proto + '//' + domain,
       format = 'jsond';
 
   // for setting auth info later

@@ -74,6 +74,7 @@ function SQLEngine(userName, authcode, domain) {
     domain = 'www.rdbhost.com';
   var format = 'json',
       remote = document.location.protocol + '//' +  domain;
+  remote = remote.replace('http//','http://').replace('https//','https://');
 
   // for setting auth info later
   this.setUserAuthentication = function(uName, aCode) {
