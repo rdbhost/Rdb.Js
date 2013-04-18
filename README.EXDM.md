@@ -23,8 +23,7 @@ Some features of the service:
 
 * binary uploads
 * raw binary downloads
-* json
-* xml
+* json or xml
 * deferred queries with higher time limits
 
 
@@ -105,13 +104,11 @@ It is also recommended to explicitly set 'enctype' and 'method' attributes on th
 
 * *$.eachRecord:* sends query to server, gets results, calls _errback_ if status is 'error', otherwise, calls _eachrec_ callback with each record.  By default, the _jsond-easy_ format is used, and each record is an object with named attribute for each record field.
 
-* *$.loginOpenId:* used to login a user using OpenId.  Passes result data from OpenId authorization sequence to the callback.  _identifier_ can be either raw html for a form, or a precomputed OpenId identifier url.
+* *$.loginAjax:* sends email and password to server, gets list of roles and authcodes
 
-          $.loginOpenId($('container'),
-                        {'identifier': html_form_or_identifier,
-                         'userName' : "r0000000002",
-                         'domain' : 'dev.rdbhost.com',
-                         'callback':  function(response) {...} })
+* *$.loginOpenId enables logging users in via OpenID logins.  This handles your users logging in to your app, not you
+  logging in to your account.
+
 
 [see demo here](http://www.paginaswww.com/rdb/examples/openid-login.html)
 

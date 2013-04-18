@@ -25,8 +25,7 @@ Some features of the service:
 
 * binary uploads
 * raw binary downloads
-* json
-* xml
+* json or xml
 * deferred queries with higher time limits
 
 
@@ -109,6 +108,13 @@ It is also recommended to explicitly set 'enctype' and 'method' attributes on th
 * *$.withResults:* functionally identical to $.postData.
 
 * *$.eachRecord:* sends query to server, gets results, calls _errback_ if status is 'error', otherwise, calls _eachrec_ callback with each record.  By default, the _jsond-easy_ format is used, and each record is an object with named attribute for each record field.
+
+* *$.loginAjax:* sends email and password to server, gets list of roles and authcodes
+
+* *$.loginOpenId enables logging users in via OpenID logins.  This handles your users logging in to your app, not you
+  logging in to your account.
+
+
 
 ### Methods ###
 

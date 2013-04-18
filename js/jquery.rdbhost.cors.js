@@ -64,283 +64,284 @@
 
  */
 
-// SQL Engine that uses AJAX, and functions on browsers that support the
-//   CORS extension to HTTP
-//
-function SQLEngine(userName, authcode, domain) {
+(function ($, window) {
 
-  // store engine config info
-  if (!domain)
-    domain = 'www.rdbhost.com';
-  var format = 'json',
-      remote = document.location.protocol + '//' +  domain;
-  remote = remote.replace('http//','http://').replace('https//','https://');
+  // SQL Engine that uses AJAX, and functions on browsers that support the
+  //   CORS extension to HTTP
+  //
+  function SQLEngine(userName, authcode, domain) {
 
-  // for setting auth info later
-  this.setUserAuthentication = function(uName, aCode) {
+    // store engine config info
+    if (!domain)
+      domain = 'www.rdbhost.com';
+    var format = 'json',
+        remote = document.location.protocol + '//' +  domain;
+    remote = remote.replace('http//','http://').replace('https//','https://');
 
-    userName = uName;
-    authcode = aCode;
-  };
+    // for setting auth info later
+    this.setUserAuthentication = function(uName, aCode) {
 
-  this.hasUserAuthentication = function() {
-
-    return userName && userName.length;
-  };
-
-  /*
-   Return API type for data item.
-
-   return value is one of STRING, NUMBER, DATE, NONE, DATETIME, TIME
-   */
-  function apiType(d) {
-
-    switch (typeof d) {
-
-      case 'number':
-        return 'NUMBER';
-      case 'object':
-        if ($.type(d) == 'date')
-          return 'DATETIME';
-        else
-          return 'STRING';
-      case 'undefined':
-        return 'NONE';
-
-      default:
-        return 'STRING'
-    }
-  }
-
-  // return appropriate /db/ url for action attribute in form
-  this.getQueryUrl = function (altPath) {
-    if (altPath === undefined) {
-      assert(userName,'no username in sqlEngine');
-      assert(userName.length,'username is null in sqlEngine');
-      altPath = '/db/' + userName;
-    }
-    return remote + altPath;
-  };
-
-  // return appropriate /accountlogin/ url for action attribute in form
-  this.getLoginUrl = function () {
-    assert(userName,'no username in sqlEngine');
-    assert(userName.length > 1,'username is too short in sqlEngine');
-    return this.getQueryUrl('/accountlogin/'+userName.substring(1));
-  };
-
-
-  /*
-   parms is object containing various options
-
-   callback : function to call with data from successful query
-   errback : function to call with error object from query failure
-
-   q : the query string itself
-   args : array of arguments (optional), must correspond with %s tokens
-      in query
-   namedParams: object of name value pairs, params are referenced in
-      sql like '%(paramName)  with parenthesis
-   plainTextJson : true if JSON parsing to be skipped, instead
-     returning the JSON plaintext
-   format : 'json' or 'json-easy'
-   */
-  this.query = function (parms) {
-
-    var that = this;
-    return this._query(parms, function () { return that.getQueryUrl() } );
-  };
-
-  this._query = function(parms, urlFunc) {
-
-    var errback = parms.errback,
-        args = parms.args || [],
-        namedParams = parms.namedParams || {},
-        nm, typNm,
-        defer = $.Deferred();
-
-    var that = this;
-
-    var data = {
-      q: parms.q,
-      kw: parms.kw,
-      format: parms.format || format,
-      mode: parms.mode,
-      authcode: parms.authcode
+      userName = uName;
+      authcode = aCode;
     };
 
-    // define default errback
-    if (errback === undefined) {
-      errback = function () {
-        var arg2 = Array.apply(null, arguments);
-        alert(arg2.join(', '));
+    this.hasUserAuthentication = function() {
+
+      return userName && userName.length;
+    };
+
+    /*
+     Return API type for data item.
+
+     return value is one of STRING, NUMBER, DATE, NONE, DATETIME, TIME
+     */
+    function apiType(d) {
+
+      switch (typeof d) {
+
+        case 'number':
+          return 'NUMBER';
+        case 'object':
+          if ($.type(d) == 'date')
+            return 'DATETIME';
+          else
+            return 'STRING';
+        case 'undefined':
+          return 'NONE';
+
+        default:
+          return 'STRING'
+      }
+    }
+
+    // return appropriate /db/ url for action attribute in form
+    this.getQueryUrl = function (altPath) {
+      if (altPath === undefined) {
+        assert(userName,'no username in sqlEngine');
+        assert(userName.length,'username is null in sqlEngine');
+        altPath = '/db/' + userName;
+      }
+      return remote + altPath;
+    };
+
+    // return appropriate /accountlogin/ url for action attribute in form
+    this.getLoginUrl = function () {
+      assert(userName,'no username in sqlEngine');
+      assert(userName.length > 1,'username is too short in sqlEngine');
+      return this.getQueryUrl('/accountlogin/'+userName.substring(1));
+    };
+
+
+    /*
+     parms is object containing various options
+
+     callback : function to call with data from successful query
+     errback : function to call with error object from query failure
+
+     q : the query string itself
+     args : array of arguments (optional), must correspond with %s tokens
+     in query
+     namedParams: object of name value pairs, params are referenced in
+     sql like '%(paramName)  with parenthesis
+     plainTextJson : true if JSON parsing to be skipped, instead
+     returning the JSON plaintext
+     format : 'json' or 'json-easy'
+     */
+    this.query = function (parms) {
+
+      var that = this;
+      return this._query(parms, function () { return that.getQueryUrl() } );
+    };
+
+    this._query = function(parms, urlFunc) {
+
+      var errback = parms.errback,
+          args = parms.args || [],
+          namedParams = parms.namedParams || {},
+          nm, typNm,
+          defer = $.Deferred();
+
+      var that = this;
+
+      var data = {
+        q: parms.q,
+        kw: parms.kw,
+        format: parms.format || format,
+        mode: parms.mode,
+        authcode: parms.authcode
       };
-    }
 
-    // attach provided handlers (if any) to deferred
-    //
-    defer.fail(errback);
-    if (parms.callback) defer.done(parms.callback);
-
-    // super callback that checks for server side errors, calls errback
-    //  where appropriate
-    function qCallback(json) {
-
-      if (json.status[0] === 'error') {
-        defer.reject(json.status[1], json.error.toString());
+      // define default errback
+      if (errback === undefined) {
+        errback = function () {
+          var arg2 = Array.apply(null, arguments);
+          alert(arg2.join(', '));
+        };
       }
-      else {
-        defer.resolve(json);
-      }
-    }
 
-    function qErrback(xhr, stat, exc) {
+      // attach provided handlers (if any) to deferred
+      //
+      defer.fail(errback);
+      if (parms.callback) defer.done(parms.callback);
 
-      defer.reject('ajax', stat);
-    }
+      // super callback that checks for server side errors, calls errback
+      //  where appropriate
+      function qCallback(json) {
 
-    // iterate over arg lists, and add
-    //  arg### values to data
-    for (var i = 0; i < args.length; i++) {
-
-      var num = '000' + i;
-      nm = 'arg' + num.substr(num.length - 3);
-      data[nm] = args[i];
-      typNm = 'argtype' + num.substr(num.length - 3);
-      data[typNm] = apiType(args[i]);
-    }
-
-    // if cookie tokens found in sql, convert to namedParams
-    var ckTestRe = /%\{([^\}]+)\}/;
-    if ( namedParams === undefined )
-      namedParams = {};
-
-    while ( ckTestRe.test(data.q) ) {
-
-      var ckArray = ckTestRe.exec(data.q),
-          ck = ckArray[0],
-          ckV = ckArray[1],
-          newNm = '_ck_'+ckV,
-          ckValue = $.cookie(ckV);
-      data.q = data.q.replace(ck,'%('+newNm+')');
-      namedParams[newNm] = ckValue;
-    }
-
-    // if keyword params are provided, convert to named form 'arg:name'.
-    if (namedParams !== undefined) {
-      for (var kw in namedParams) {
-        if (namedParams.hasOwnProperty(kw)) {
-
-          nm = 'arg:' + kw;
-          data[nm] = namedParams[kw];
-          typNm = 'argtype:' + kw;
-          data[typNm] = apiType(namedParams[kw]);
+        if (json.status[0] === 'error') {
+          defer.reject(json.status[1], json.error.toString());
+        }
+        else {
+          defer.resolve(json);
         }
       }
-    }
 
-    var url = urlFunc();
+      function qErrback(xhr, stat, exc) {
 
-    // use jQuery ajax call to submit to server
-    //
-    $.ajax({
-      type: "POST",
-      url: url,
-      data: data,
-      dataType: 'json',
-      success: qCallback,
-      error: qErrback
-    });
-
-    // return promise, so client can attach handlers
-    //
-    return defer.promise();
-  };
-
-
-  /* parms is just like for query method, but callback gets row array and
-   header array, not whole data structure.
-   an additional param is 'incomplete', a function that is called
-   (with rows and header) when data set is truncated by 100 record limit
-   */
-  this.queryRows = function (parms) {
-
-    var callback = parms.callback;
-    var incomplete_callback = parms.incomplete || callback;
-
-    function cb(json) {
-
-      var rows = json.records.rows || [];
-      var status = json.status[0];
-      var header = json.records.header || [];
-
-      if (status === 'complete') {
-        callback(rows, header);
+        defer.reject('ajax', stat);
       }
-      else if (status === 'incomplete') {
-        incomplete_callback(rows, header);
+
+      // iterate over arg lists, and add
+      //  arg### values to data
+      for (var i = 0; i < args.length; i++) {
+
+        var num = '000' + i;
+        nm = 'arg' + num.substr(num.length - 3);
+        data[nm] = args[i];
+        typNm = 'argtype' + num.substr(num.length - 3);
+        data[typNm] = apiType(args[i]);
       }
-    }
 
-    parms.callback = cb;
-    var promise = this.query(parms);
+      // if cookie tokens found in sql, convert to namedParams
+      var ckTestRe = /%\{([^\}]+)\}/;
+      if ( namedParams === undefined )
+        namedParams = {};
 
-    return promise;
-  };
+      while ( ckTestRe.test(data.q) ) {
+
+        var ckArray = ckTestRe.exec(data.q),
+            ck = ckArray[0],
+            ckV = ckArray[1],
+            newNm = '_ck_'+ckV,
+            ckValue = $.cookie(ckV);
+        data.q = data.q.replace(ck,'%('+newNm+')');
+        namedParams[newNm] = ckValue;
+      }
+
+      // if keyword params are provided, convert to named form 'arg:name'.
+      if (namedParams !== undefined) {
+        for (var kw in namedParams) {
+          if (namedParams.hasOwnProperty(kw)) {
+
+            nm = 'arg:' + kw;
+            data[nm] = namedParams[kw];
+            typNm = 'argtype:' + kw;
+            data[typNm] = apiType(namedParams[kw]);
+          }
+        }
+      }
+
+      var url = urlFunc();
+
+      // use jQuery ajax call to submit to server
+      //
+      $.ajax({
+        type: "POST",
+        url: url,
+        data: data,
+        dataType: 'json',
+        success: qCallback,
+        error: qErrback
+      });
+
+      // return promise, so client can attach handlers
+      //
+      return defer.promise();
+    };
 
 
-  /* parms is object containing various options
+    /* parms is just like for query method, but callback gets row array and
+     header array, not whole data structure.
+     an additional param is 'incomplete', a function that is called
+     (with rows and header) when data set is truncated by 100 record limit
+     */
+    this.queryRows = function (parms) {
 
-   formId : the id of the form with the data
+      var callback = parms.callback;
+      var incomplete_callback = parms.incomplete || callback;
 
-   callback : function to call with data from successfull query
-   errback : function to call with error object from query failure
+      function cb(json) {
 
-   plainTextJson : true if JSON parsing to be skipped, in lieu of
-   returning the JSON plaintext
+        var rows = json.records.rows || [];
+        var status = json.status[0];
+        var header = json.records.header || [];
+
+        if (status === 'complete') {
+          callback(rows, header);
+        }
+        else if (status === 'incomplete') {
+          incomplete_callback(rows, header);
+        }
+      }
+
+      parms.callback = cb;
+      var promise = this.query(parms);
+
+      return promise;
+    };
+
+
+    /* parms is object containing various options
+
+     formId : the id of the form with the data
+
+     callback : function to call with data from successfull query
+     errback : function to call with error object from query failure
+
+     plainTextJson : true if JSON parsing to be skipped, in lieu of
+     returning the JSON plaintext
+     */
+    this.queryByForm = function (parms) {
+      throw new Error('not implemented');
+    };
+
+
+    /* loginAjax
+
+     parms is object containing various options
+
+     email :
+     password :
+
+     callback : function to call with data from successfull query
+     errback : function to call with error object from query failure
+
+     plainTextJson : true if JSON parsing to be skipped, instead
+     returning the JSON plaintext
+     */
+    this.loginAjax =  function (parms) {
+
+      var email = parms.email,
+          password = parms.password,
+          that = this;
+      delete parms.email; delete parms.password;
+      parms.namedParams = { email: email,  password: password };
+      parms.format = 'json-easy';
+
+      return this._query( parms, function() {
+        return that.getLoginUrl()
+      });
+    };
+
+  } // end of SQLEngine class
+  SQLEngine.formnamectr = 0;
+
+  window.SQLEngine = SQLEngine;
+
+  /*
+   following section defines some jQuery plugins
+
    */
-  this.queryByForm = function (parms) {
-    throw new Error('not implemented');
-  };
-
-
-  /* loginAjax
-
-   parms is object containing various options
-
-   email :
-   password :
-
-   callback : function to call with data from successfull query
-   errback : function to call with error object from query failure
-
-   plainTextJson : true if JSON parsing to be skipped, instead
-   returning the JSON plaintext
-   */
-  this.loginAjax =  function (parms) {
-
-    var email = parms.email,
-        password = parms.password,
-        that = this;
-    delete parms.email; delete parms.password;
-    parms.namedParams = { email: email,  password: password };
-    parms.format = 'json-easy';
-
-    return this._query( parms, function() {
-      return that.getLoginUrl()
-    });
-  };
-
-} // end of SQLEngine class
-SQLEngine.formnamectr = 0;
-
-
-/*
- following section defines some jQuery plugins
-
- */
-
-(function ($, window) {
 
   // default generic callbacks
   //
@@ -867,24 +868,23 @@ SQLEngine.formnamectr = 0;
     return $selset;
   };
 
-
-}(jQuery, this));
-
-
-/* create assert function
- example : assert( obj === null, 'object was not null!' );
- error message appears in javascript console, if any.
- credit to: Ayman Hourieh http://aymanh.com/
- */
-function AssertException(message) {
-  this.message = message;
-}
-AssertException.prototype.toString = function () {
-  return 'AssertException: ' + this.message;
-};
-function assert(exp, message) {
-  if (!exp) {
-    throw new AssertException(message);
+  /* create assert function
+   example : assert( obj === null, 'object was not null!' );
+   error message appears in javascript console, if any.
+   credit to: Ayman Hourieh http://aymanh.com/
+   */
+  function AssertException(message) {
+    this.message = message;
   }
-}
+  AssertException.prototype.toString = function () {
+    return 'AssertException: ' + this.message;
+  };
+  function assert(exp, message) {
+    if (!exp) {
+      throw new AssertException(message);
+    }
+  }
+
+}(jQuery, window));
+
 

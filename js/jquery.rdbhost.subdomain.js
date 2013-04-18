@@ -74,475 +74,476 @@
  */
 
 
-/*
- logging
- */
-function consoleLog(msg) {
-  window.console.log(msg);
-}
+(function ($, window) {
+
+  /*
+   logging
+   */
+  function consoleLog(msg) {
+    window.console.log(msg);
+  }
 
 
 // SQL Engine that uses form for input, and hidden iframe for response
 //   handles file fields
 //
-function SQLEngine(userName, authcode, domain) {
+  function SQLEngine(userName, authcode, domain) {
 
-  // store engine config info
-  var proto = window.document.location.protocol,
-      remote = proto + '//' + domain,
-      format = 'jsond';
+    // store engine config info
+    var proto = window.document.location.protocol,
+        remote = proto + '//' + domain,
+        format = 'jsond';
 
-  // for setting auth info later
-  this.setUserAuthentication = function(uName, aCode) {
+    // for setting auth info later
+    this.setUserAuthentication = function(uName, aCode) {
 
-    userName = uName;
-    authcode = aCode;
-  };
+      userName = uName;
+      authcode = aCode;
+    };
 
-  this.hasUserAuthentication = function() {
+    this.hasUserAuthentication = function() {
 
-    return userName && userName.length;
-  };
+      return userName && userName.length;
+    };
 
-  // to add hidden field to form
-  function add_hidden_field($form, nm, val) {
+    // to add hidden field to form
+    function add_hidden_field($form, nm, val) {
 
-    var fld = $('<input type="hidden" class="hidden-field-auto" />');
-    fld.attr('name', nm).val(val);
-    $form.append(fld);
-  }
-
-  // delay before removing iframe, workaround for ff 'busy' bug.
-  function remove_iframe(ttag) {
-
-    setTimeout(function () {
-      $('#' + ttag).remove();
-    }, 1);
-  }
-
-
-  /*
-   Return API type for data item.
-
-   return value is one of STRING, NUMBER, DATE, NONE, DATETIME, TIME
-   */
-  function apiType(d) {
-
-    switch (typeof d) {
-
-      case 'number':
-        return 'NUMBER';
-      case 'object':
-        if ($.type(d) == 'date')
-          return 'DATETIME';
-        else
-          return 'STRING';
-      case 'undefined':
-        return 'NONE';
-
-      default:
-        return 'STRING'
+      var fld = $('<input type="hidden" class="hidden-field-auto" />');
+      fld.attr('name', nm).val(val);
+      $form.append(fld);
     }
-  }
+
+    // delay before removing iframe, workaround for ff 'busy' bug.
+    function remove_iframe(ttag) {
+
+      setTimeout(function () {
+        $('#' + ttag).remove();
+      }, 1);
+    }
 
 
-  // return appropriate /db/ url for action attribute in form
-  this.getQueryUrl = function (altPath) {
-    if (altPath === undefined) {
+    /*
+     Return API type for data item.
+
+     return value is one of STRING, NUMBER, DATE, NONE, DATETIME, TIME
+     */
+    function apiType(d) {
+
+      switch (typeof d) {
+
+        case 'number':
+          return 'NUMBER';
+        case 'object':
+          if ($.type(d) == 'date')
+            return 'DATETIME';
+          else
+            return 'STRING';
+        case 'undefined':
+          return 'NONE';
+
+        default:
+          return 'STRING'
+      }
+    }
+
+
+    // return appropriate /db/ url for action attribute in form
+    this.getQueryUrl = function (altPath) {
+      if (altPath === undefined) {
+        assert(userName,'no username in sqlEngine');
+        assert(userName.length,'username is null in sqlEngine');
+        altPath = '/db/' + userName;
+      }
+      return remote + altPath;
+    };
+
+    // return appropriate /accountlogin/ url for action attribute in form
+    this.getLoginUrl = function () {
       assert(userName,'no username in sqlEngine');
-      assert(userName.length,'username is null in sqlEngine');
-      altPath = '/db/' + userName;
-    }
-    return remote + altPath;
-  };
-
-  // return appropriate /accountlogin/ url for action attribute in form
-  this.getLoginUrl = function () {
-    assert(userName,'no username in sqlEngine');
-    assert(userName.length > 1,'username is too short in sqlEngine');
-    return this.getQueryUrl('/accountlogin/'+userName.substring(1));
-  };
+      assert(userName.length > 1,'username is too short in sqlEngine');
+      return this.getQueryUrl('/accountlogin/'+userName.substring(1));
+    };
 
 
-  this.getCommonDomain = function () {
+    this.getCommonDomain = function () {
 
-    var hparts = window.location.hostname.split('.').slice(-2);
+      var hparts = window.location.hostname.split('.').slice(-2);
 
-    return hparts.join('.');
-  };
+      return hparts.join('.');
+    };
 
 
-  /*
-   parms is object containing various options
+    /*
+     parms is object containing various options
 
-   callback : function to call with data from successful query
-   errback : function to call with error object from query failure
-   q : the query string itself
-   args : array of arguments (optional), must correspond with %s tokens
-   in query
-   namedParams : object with names values
-   plainTextJson : true if JSON parsing to be skipped, in lieu of
-   returning the JSON plaintext
-   format : 'jsond' or 'jsond-easy'
-   */
-  this.query = function (parms) {
+     callback : function to call with data from successful query
+     errback : function to call with error object from query failure
+     q : the query string itself
+     args : array of arguments (optional), must correspond with %s tokens
+     in query
+     namedParams : object with names values
+     plainTextJson : true if JSON parsing to be skipped, in lieu of
+     returning the JSON plaintext
+     format : 'jsond' or 'jsond-easy'
+     */
+    this.query = function (parms) {
 
-    var that = this;
-    return this._query(parms, function () {
-      return that.getQueryUrl();
-    });
-  };
-
-  this._query = function (parms, urlFunc) {
-
-    parms.format = parms.format || format;
-    parms.args = parms.args || [];
-    parms.namedParams = parms.namedParams || {};
-
-    var errback = parms.errback,
-        iframe_requested = false,
-        that = this,
-        formId = 'rdb_hidden_form_' + (SQLEngine.formnamectr += 1),
-        defer = $.Deferred();
-
-    // define default errback
-    if (errback === undefined) {
-      errback = function () {
-        var arg2 = Array.apply(null, arguments);
-        alert(arg2.join(', '));
-      };
-    }
-
-    // attach success and fail handlers to promise
-    if (parms.callback)
-      defer.done(parms.callback);
-    defer.fail(errback);
-
-    // local callbacks to do cleanup prior to 'real' callback
-    function qErrback(err, msg) {
-
-      // if frame loaded by 'back button', skip over it
-      if (!iframe_requested) {
-        parent.history.back();
-      }
-
-      iframe_requested = false;
-      $hiddenform.remove();
-      defer.reject(err, msg);
-    }
-
-    function qCallback(json) {
-
-      // if frame loaded by 'back button', skip over it
-      if (!iframe_requested) {
-        parent.history.back();
-      }
-
-      iframe_requested = false;
-      $hiddenform.remove();
-      defer.resolve(json);
-    }
-
-    // create hidden form if necessary
-    var $hiddenform = $('#' + formId);
-
-    if ($hiddenform.length < 1) {
-
-      var $newform = $(('<form method="post" name="~~id~~" id="~~id~~"' +
-          ' enctype="multipart/form-data" style="display:none">' +
-          ' </form>').replace(/~~id~~/g, formId));
-      $('body').append($newform);
-      $hiddenform = $('#' + formId);
-    }
-
-    // if params are provided, convert to named form 'arg000', 'arg001'...
-    var num, nm, typNm;
-    if (parms.args !== undefined) {
-
-      for (var i = 0; i < parms.args.length; i += 1) {
-
-        num = '000' + i;
-        nm = 'arg' + num.substr(num.length - 3);
-        add_hidden_field($hiddenform, nm, parms.args[i]);
-        typNm = 'argtype' + num.substr(num.length - 3);
-        add_hidden_field($hiddenform, typNm, apiType(parms.args[i]));
-      }
-    }
-
-    // if cookie tokens found in sql, convert to namedParams
-    var ckTestRe = /%\{([^\}]+)\}/;
-    if (parms.namedParams === undefined)
-      parms.namedParams = {};
-
-    while (ckTestRe.test(parms.q)) {
-
-      var ckArray = ckTestRe.exec(parms.q),
-          ck = ckArray[0],
-          ckV = ckArray[1],
-          newNm = '_ck_' + ckV,
-          ckValue = $.cookie(ckV);
-      parms.q = parms.q.replace(ck, '%(' + newNm + ')');
-      parms.namedParams[newNm] = ckValue;
-    }
-
-    if (parms.namedParams !== undefined) {
-
-      // if named params provided
-      $.each(parms.namedParams, function (k, v) {
-
-        nm = 'arg:' + k;
-        add_hidden_field($hiddenform, nm, v);
-        typNm = 'argtype:' + k;
-        add_hidden_field($hiddenform, typNm, apiType(v));
+      var that = this;
+      return this._query(parms, function () {
+        return that.getQueryUrl();
       });
-    }
+    };
 
-    // put query in hidden form
-    add_hidden_field($hiddenform, 'q', parms.q);
+    this._query = function (parms, urlFunc) {
 
-    if (parms.kw)
-      add_hidden_field($hiddenform, 'kw', parms.kw);
+      parms.format = parms.format || format;
+      parms.args = parms.args || [];
+      parms.namedParams = parms.namedParams || {};
 
-    // remove submit handler, if one already, and bind new handler
-    $hiddenform.unbind('submit');
+      var errback = parms.errback,
+          iframe_requested = false,
+          that = this,
+          formId = 'rdb_hidden_form_' + (SQLEngine.formnamectr += 1),
+          defer = $.Deferred();
 
-    $hiddenform.submit(function (ev) {
-
-      ev.stopPropagation();
-      iframe_requested = true;
-
-      var defr = that._queryByForm({
-        'formId': formId,
-        'callback': qCallback,
-        'errback': qErrback,
-        'format': parms.format,
-        'plainTextJson': parms.plainTextJson
-      }, urlFunc);
-
-      defr.done(defer.resolve);
-      defr.fail(defer.fail);
-    });
-
-    // submit the hidden form
-    $hiddenform.submit();
-
-    return defer.promise();
-  };
-
-
-  /*
-   parms is just like for query method, but callback gets row array and
-   header array, not whole data structure.
-   an additional param is 'incomplete', a function that is called
-   (with rows and header) when data set is truncated by 100 record limit
-   */
-  this.queryRows = function (parms) {
-    var callback = parms.callback,
-        incomplete_callback = parms.incomplete || callback;
-
-    function cb(json) {
-
-      var rows = json.records.rows || [],
-          status = json.status[0],
-          header = json.records.header || [];
-
-      if (status === 'complete') {
-
-        callback(rows, header);
+      // define default errback
+      if (errback === undefined) {
+        errback = function () {
+          var arg2 = Array.apply(null, arguments);
+          alert(arg2.join(', '));
+        };
       }
-      else if (status === 'incomplete') {
 
-        incomplete_callback(rows, header);
+      // attach success and fail handlers to promise
+      if (parms.callback)
+        defer.done(parms.callback);
+      defer.fail(errback);
+
+      // local callbacks to do cleanup prior to 'real' callback
+      function qErrback(err, msg) {
+
+        // if frame loaded by 'back button', skip over it
+        if (!iframe_requested) {
+          parent.history.back();
+        }
+
+        iframe_requested = false;
+        $hiddenform.remove();
+        defer.reject(err, msg);
       }
-    }
 
-    parms.callback = cb;
+      function qCallback(json) {
 
-    return this.query(parms);
-  };
+        // if frame loaded by 'back button', skip over it
+        if (!iframe_requested) {
+          parent.history.back();
+        }
+
+        iframe_requested = false;
+        $hiddenform.remove();
+        defer.resolve(json);
+      }
+
+      // create hidden form if necessary
+      var $hiddenform = $('#' + formId);
+
+      if ($hiddenform.length < 1) {
+
+        var $newform = $(('<form method="post" name="~~id~~" id="~~id~~"' +
+            ' enctype="multipart/form-data" style="display:none">' +
+            ' </form>').replace(/~~id~~/g, formId));
+        $('body').append($newform);
+        $hiddenform = $('#' + formId);
+      }
+
+      // if params are provided, convert to named form 'arg000', 'arg001'...
+      var num, nm, typNm;
+      if (parms.args !== undefined) {
+
+        for (var i = 0; i < parms.args.length; i += 1) {
+
+          num = '000' + i;
+          nm = 'arg' + num.substr(num.length - 3);
+          add_hidden_field($hiddenform, nm, parms.args[i]);
+          typNm = 'argtype' + num.substr(num.length - 3);
+          add_hidden_field($hiddenform, typNm, apiType(parms.args[i]));
+        }
+      }
+
+      // if cookie tokens found in sql, convert to namedParams
+      var ckTestRe = /%\{([^\}]+)\}/;
+      if (parms.namedParams === undefined)
+        parms.namedParams = {};
+
+      while (ckTestRe.test(parms.q)) {
+
+        var ckArray = ckTestRe.exec(parms.q),
+            ck = ckArray[0],
+            ckV = ckArray[1],
+            newNm = '_ck_' + ckV,
+            ckValue = $.cookie(ckV);
+        parms.q = parms.q.replace(ck, '%(' + newNm + ')');
+        parms.namedParams[newNm] = ckValue;
+      }
+
+      if (parms.namedParams !== undefined) {
+
+        // if named params provided
+        $.each(parms.namedParams, function (k, v) {
+
+          nm = 'arg:' + k;
+          add_hidden_field($hiddenform, nm, v);
+          typNm = 'argtype:' + k;
+          add_hidden_field($hiddenform, typNm, apiType(v));
+        });
+      }
+
+      // put query in hidden form
+      add_hidden_field($hiddenform, 'q', parms.q);
+
+      if (parms.kw)
+        add_hidden_field($hiddenform, 'kw', parms.kw);
+
+      // remove submit handler, if one already, and bind new handler
+      $hiddenform.unbind('submit');
+
+      $hiddenform.submit(function (ev) {
+
+        ev.stopPropagation();
+        iframe_requested = true;
+
+        var defr = that._queryByForm({
+          'formId': formId,
+          'callback': qCallback,
+          'errback': qErrback,
+          'format': parms.format,
+          'plainTextJson': parms.plainTextJson
+        }, urlFunc);
+
+        defr.done(defer.resolve);
+        defr.fail(defer.fail);
+      });
+
+      // submit the hidden form
+      $hiddenform.submit();
+
+      return defer.promise();
+    };
 
 
-  /*
-   parms is object containing various options
+    /*
+     parms is just like for query method, but callback gets row array and
+     header array, not whole data structure.
+     an additional param is 'incomplete', a function that is called
+     (with rows and header) when data set is truncated by 100 record limit
+     */
+    this.queryRows = function (parms) {
+      var callback = parms.callback,
+          incomplete_callback = parms.incomplete || callback;
 
-   formId : the id of the form with the data
-   callback : function to call with data from successfull query
-   errback : function to call with error object from query failure
-   plainTextJson : true if JSON parsing to be skipped, instead
-   returning the JSON plaintext
-   */
-  this.queryByForm = function (parms) {
+      function cb(json) {
 
-    var that = this;
-    return this._queryByForm(parms, that.getQueryUrl);
-  };
+        var rows = json.records.rows || [],
+            status = json.status[0],
+            header = json.records.header || [];
+
+        if (status === 'complete') {
+
+          callback(rows, header);
+        }
+        else if (status === 'incomplete') {
+
+          incomplete_callback(rows, header);
+        }
+      }
+
+      parms.callback = cb;
+
+      return this.query(parms);
+    };
 
 
-  this._queryByForm = function (parms, urlFunc) {
+    /*
+     parms is object containing various options
 
-    parms.format = parms.format ? parms.format : format;
-    var errback = parms.errback,
-        targetTag = 'upload_target_' + parms.formId + '_' + (SQLEngine.formnamectr += 1),
-        target, action,
-        defer = $.Deferred();
+     formId : the id of the form with the data
+     callback : function to call with data from successfull query
+     errback : function to call with error object from query failure
+     plainTextJson : true if JSON parsing to be skipped, instead
+     returning the JSON plaintext
+     */
+    this.queryByForm = function (parms) {
 
-    // get form, return if not found
-    var $form = $('#' + parms.formId);
-    if ($form.length < 1)
-      return false;
+      var that = this;
+      return this._queryByForm(parms, that.getQueryUrl);
+    };
 
-    // define default errback
-    if (errback === undefined) {
-      errback = function () {
-        var arg2 = Array.apply(null, arguments);
-        alert(arg2.join(', '));
-      };
-    }
 
-    // add handlers to deferred
-    if (parms.callback)
-      defer.done(parms.callback);
-    defer.fail(errback);
+    this._queryByForm = function (parms, urlFunc) {
 
-    // inner errback
-    function results_bad(err, msg) {
+      parms.format = parms.format ? parms.format : format;
+      var errback = parms.errback,
+          targetTag = 'upload_target_' + parms.formId + '_' + (SQLEngine.formnamectr += 1),
+          target, action,
+          defer = $.Deferred();
 
-      //cleanup_submit(parms.formId);
-      defer.reject(err, msg);
-    }
+      // get form, return if not found
+      var $form = $('#' + parms.formId);
+      if ($form.length < 1)
+        return false;
 
-    function results_good(json) {
+      // define default errback
+      if (errback === undefined) {
+        errback = function () {
+          var arg2 = Array.apply(null, arguments);
+          alert(arg2.join(', '));
+        };
+      }
 
-      //cleanup_submit(parms.formId);
-      defer.resolve(json);
-    }
+      // add handlers to deferred
+      if (parms.callback)
+        defer.done(parms.callback);
+      defer.fail(errback);
 
-    // function to handle json when loaded
-    function results_loaded(targetTag) {
+      // inner errback
+      function results_bad(err, msg) {
 
-      var $fr = $(frames[targetTag].document);
-      if ($fr.length === 0)
-        results_bad('err', 'target "~" iframe document not found'.replace('~', targetTag));
+        //cleanup_submit(parms.formId);
+        defer.reject(err, msg);
+      }
 
-      var cont = $.trim($fr.find('body script').html()),
-          json_result;
+      function results_good(json) {
 
-      if (cont) {
-        if (cont.substr(0, 1) === '{') {
+        //cleanup_submit(parms.formId);
+        defer.resolve(json);
+      }
 
-          if (parms.plainTextJson) {
-            results_good(cont);
-          }
-          else {
+      // function to handle json when loaded
+      function results_loaded(targetTag) {
 
-            try {
-              json_result = JSON.parse(cont);
-            }
-            catch (err) {
-              results_bad('err', 'json err: ' + err.toString());
-              return;
-            }
-            if (json_result.status[0] === 'error') {
-              results_bad(json_result.status[1], json_result.error[1]);
+        var $fr = $(frames[targetTag].document);
+        if ($fr.length === 0)
+          results_bad('err', 'target "~" iframe document not found'.replace('~', targetTag));
+
+        var cont = $.trim($fr.find('body script').html()),
+            json_result;
+
+        if (cont) {
+          if (cont.substr(0, 1) === '{') {
+
+            if (parms.plainTextJson) {
+              results_good(cont);
             }
             else {
-              results_good(json_result);
+
+              try {
+                json_result = JSON.parse(cont);
+              }
+              catch (err) {
+                results_bad('err', 'json err: ' + err.toString());
+                return;
+              }
+              if (json_result.status[0] === 'error') {
+                results_bad(json_result.status[1], json_result.error[1]);
+              }
+              else {
+                results_good(json_result);
+              }
             }
+          }
+          else {
+            results_bad('err', 'not json ' + cont.substr(0, 3));
           }
         }
         else {
-          results_bad('err', 'not json ' + cont.substr(0, 3));
+          results_bad('err', 'no content');
         }
       }
-      else {
-        results_bad('err', 'no content');
+
+      // function to cleanup after data received
+      function cleanup_submit(formtag) {
+
+        var $form = $('#' + formtag);
+        $form.find('.hidden-field-auto').remove();
+        $form.attr('target', target);  // restore saved target,action
+        $form.attr('action', action);
+        remove_iframe(targetTag)
       }
-    }
 
-    // function to cleanup after data received
-    function cleanup_submit(formtag) {
+      // save prior values for target and action
+      target = $form.attr('target');
+      action = $form.attr('action');
 
-      var $form = $('#' + formtag);
-      $form.find('.hidden-field-auto').remove();
-      $form.attr('target', target);  // restore saved target,action
-      $form.attr('action', action);
-      remove_iframe(targetTag)
-    }
+      // put password into form
+      add_hidden_field($form, 'authcode', authcode);
 
-    // save prior values for target and action
-    target = $form.attr('target');
-    action = $form.attr('action');
+      // set format, action, and target
+      var url = urlFunc();
+      add_hidden_field($form, 'format', parms.format);
+      $form.attr('target', targetTag);
+      $form.attr('action', url);
 
-    // put password into form
-    add_hidden_field($form, 'authcode', authcode);
+      // add hidden iframe to end of body
+      var iframeTxt = '<iframe id="~tt~" name="~tt~" src="" style="display:none;" ></iframe>';
 
-    // set format, action, and target
-    var url = urlFunc();
-    add_hidden_field($form, 'format', parms.format);
-    $form.attr('target', targetTag);
-    $form.attr('action', url);
+      if ($('#' + targetTag).length === 0) {
 
-    // add hidden iframe to end of body
-    var iframeTxt = '<iframe id="~tt~" name="~tt~" src="" style="display:none;" ></iframe>';
+        // put tagname into iframe txt, and append iframe to body
+        iframeTxt = iframeTxt.replace(/~tt~/g, targetTag);
+        $('body').append($(iframeTxt));
 
-    if ($('#' + targetTag).length === 0) {
+        // bind action functions to hidden iframe
+        $('#' + targetTag).load(function () {
 
-      // put tagname into iframe txt, and append iframe to body
-      iframeTxt = iframeTxt.replace(/~tt~/g, targetTag);
-      $('body').append($(iframeTxt));
+          results_loaded(targetTag);
+          cleanup_submit(parms.formId);
+        });
+      }
+      else {
+        alert('tag ' + targetTag + ' iframe already present');
+      }
 
-      // bind action functions to hidden iframe
-      $('#' + targetTag).load(function () {
+      // change window domain to common-rightmost part of domain
+      var winDomain = window.document.domain;
+      window.document.domain = this.getCommonDomain();
 
-        results_loaded(targetTag);
-        cleanup_submit(parms.formId);
+      return defer.promise();
+    };
+
+
+    /*
+     parms is object containing various options
+
+     formId : the id of the form with the data
+     callback : function to call with data from successfull query
+     errback : function to call with error object from query failure
+     plainTextJson : true if JSON parsing to be skipped, in lieu of
+     returning the JSON plaintext
+     */
+    this.loginAjax = function (parms) {
+
+      var email = parms.email,
+          password = parms.password,
+          that = this;
+      delete parms.email; delete parms.password;
+      parms.namedParams = { email: email,  password: password };
+      parms.format = 'jsond-easy';
+
+      return this._query(parms, function () {
+        return that.getLoginUrl();
       });
     }
-    else {
-      alert('tag ' + targetTag + ' iframe already present');
-    }
 
-    // change window domain to common-rightmost part of domain
-    var winDomain = window.document.domain;
-    window.document.domain = this.getCommonDomain();
+  } // end of SQLEngine class
+  SQLEngine.formnamectr = 0;
 
-    return defer.promise();
-  };
-
+  window.SQLEngine = SQLEngine;
 
   /*
-   parms is object containing various options
+   following section defines some jQuery plugins
 
-   formId : the id of the form with the data
-   callback : function to call with data from successfull query
-   errback : function to call with error object from query failure
-   plainTextJson : true if JSON parsing to be skipped, in lieu of
-   returning the JSON plaintext
    */
-  this.loginAjax = function (parms) {
-
-    var email = parms.email,
-        password = parms.password,
-        that = this;
-    delete parms.email; delete parms.password;
-    parms.namedParams = { email: email,  password: password };
-    parms.format = 'jsond-easy';
-
-    return this._query(parms, function () {
-      return that.getLoginUrl();
-    });
-  }
-
-} // end of SQLEngine class
-SQLEngine.formnamectr = 0;
-
-
-/*
- following section defines some jQuery plugins
-
- */
-
-(function ($, window) {
 
   // default generic callbacks
   //
