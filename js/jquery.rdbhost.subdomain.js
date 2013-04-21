@@ -74,15 +74,15 @@
  */
 
 
+/*
+ logging
+ */
+function consoleLog(msg) {
+  window.console.log(msg);
+}
+
+
 (function ($, window) {
-
-  /*
-   logging
-   */
-  function consoleLog(msg) {
-    window.console.log(msg);
-  }
-
 
 // SQL Engine that uses form for input, and hidden iframe for response
 //   handles file fields
@@ -103,7 +103,11 @@
 
     this.hasUserAuthentication = function() {
 
-      return userName && userName.length;
+      return userName && userName.length && authcode && authcode.length;
+    };
+
+    this.userName = function() {
+      return userName;
     };
 
     // to add hidden field to form
@@ -591,10 +595,12 @@
 
     assert(arguments.length <= 1, 'too many parms to withResults');
     var inp = $.extend({}, $.rdbHostConfig.opts, parms || {});
+
     var sqlEngine = new SQLEngine(inp.userName, inp.authcode, inp.domain);
     delete inp.userName;
     delete inp.authcode;
     delete inp.domain;
+
     return sqlEngine.query(inp);
   };
 
@@ -664,7 +670,10 @@
    param q : query to post data
    param kw : query-keyword to post data
    */
-  $.postData = function (parms) {
+  $.postData = $.withResults;
+
+/*
+  function (parms) {
 
     assert(arguments.length < 2, 'too many parms to postData');
     var inp = $.extend({}, $.rdbHostConfig.opts, parms || {});
@@ -676,6 +685,7 @@
 
     return sqlEngine.query(inp);
   };
+*/
 
 
   /*

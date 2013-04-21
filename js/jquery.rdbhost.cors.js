@@ -64,6 +64,13 @@
 
  */
 
+/*
+ logging
+ */
+function consoleLog(msg) {
+  window.console.log(msg);
+}
+
 (function ($, window) {
 
   // SQL Engine that uses AJAX, and functions on browsers that support the
@@ -87,7 +94,11 @@
 
     this.hasUserAuthentication = function() {
 
-      return userName && userName.length;
+      return userName && userName.length && authcode && authcode.length;
+    };
+
+    this.userName = function() {
+      return userName;
     };
 
     /*
@@ -443,7 +454,10 @@
    param q : query to post data
    param kw : query-keyword to post data
    */
-  $.postData = function (parms) {
+  $.postData = $.withResults;
+
+/*
+  function (parms) {
 
     assert(arguments.length < 2, 'too many parms to postData');
     var inp = $.extend({}, $.rdbHostConfig.opts, parms || {});
@@ -454,6 +468,7 @@
 
     return sqlEngine.query(inp);
   };
+*/
 
 
 

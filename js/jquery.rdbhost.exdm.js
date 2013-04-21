@@ -73,11 +73,13 @@
 
  */
 
-
 /*
- following section defines some jQuery plugins
-
+ logging
  */
+function consoleLog(msg) {
+  window.console.log(msg);
+}
+
 
 (function ($, window) {
 
@@ -174,7 +176,11 @@
 
     this.hasUserAuthentication = function() {
 
-      return userName && userName.length;
+      return userName && userName.length && authcode && authcode.length;
+    };
+
+    this.userName = function() {
+      return userName;
     };
 
     /*
@@ -327,7 +333,7 @@
                 resp.data = JSON.parse(resp.data);
               }
               catch (e) {
-                defer.reject(e.name, e.message);
+                defer.reject('json-parse', resp.data);
                 return;
               }
               if (resp.data.status[0] == 'error') {
@@ -414,7 +420,7 @@
           }
           catch (e) {
             delete CONNECTIONS[easyXDMAjaxHandle].handler;
-            defer.reject(e.name, e.message);
+            defer.reject('json parse', response);
             return;
           }
 
@@ -479,6 +485,12 @@
       return defer.promise();
     };
 
+
+
+    /*
+     following section defines some jQuery plugins
+
+     */
 
     /*
      parms is object containing various options
@@ -654,7 +666,10 @@
    param q : query to post data
    param kw : query-keyword to post data
    */
-  $.postData = function (parms) {
+  $.postData = $.withResults;
+
+/*
+  function (parms) {
 
     assert(arguments.length < 2, 'too many parms to postData');
     var inp = $.extend({}, $.rdbHostConfig.opts, {format:'json-exdm'}, parms || {});
@@ -671,6 +686,7 @@
 
     return promise;
   };
+*/
 
 
 
