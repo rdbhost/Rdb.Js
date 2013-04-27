@@ -78,6 +78,8 @@ function consoleLog(msg) {
   //
   function SQLEngine(userName, authcode, domain) {
 
+    this.version = 'jquery.rdbhost.cors.js 0.9.0';
+
     // store engine config info
     if (!domain)
       domain = 'www.rdbhost.com';
@@ -200,7 +202,7 @@ function consoleLog(msg) {
       function qCallback(json) {
 
         if (json.status[0] === 'error') {
-          defer.reject(json.status[1], json.error.toString());
+          defer.reject(json.error[0], json.error[1]);
         }
         else {
           defer.resolve(json);

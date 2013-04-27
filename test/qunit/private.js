@@ -9,5 +9,5 @@
  */
 
 
-var demo_r_role = 'r0000000002';
-
+var domain = 'dev.rdbhost.com',
+    demo_r_role = 'r0000000002';

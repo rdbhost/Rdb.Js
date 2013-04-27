@@ -89,6 +89,8 @@ function consoleLog(msg) {
   //
   function SQLEngine(userName, authcode, domain) {
 
+    this.version = 'jquery.rdbhost.subdomain.js 0.9.0';
+
     // store engine config info
     var proto = window.document.location.protocol,
         remote = proto + '//' + domain;

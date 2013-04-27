@@ -141,6 +141,8 @@ function consoleLog(msg) {
 //
   function SQLEngine(userName, authcode, domain) {
 
+    this.version = 'jquery.rdbhost.exdm.js 0.9.0';
+
     // store engine config info
     var remote = 'https://' + domain,
         easyXDMAjaxHandle = userName.substring(1);
