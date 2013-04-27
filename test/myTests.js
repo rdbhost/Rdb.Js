@@ -165,7 +165,7 @@ asyncTest('ajax SELECT error - promise', 3, function() {
   });
 
   p.fail( function(a) {
-    ok(a,'promise fail called')
+    ok(a,'promise fail called');
     start();
   });
 });
@@ -396,9 +396,45 @@ asyncTest('use namedParams Date', 3, function () {
 
     errback: function(err, resp) {
 
-      ok(true, 'placeholder, for 3 tests');
       ok(true, "errback was called");
-      equal(err.length, 5, "errorval: "+err);
+      clearTimeout(to);
+      start();
+    }
+  });
+
+  // ends async test at 2 seconds.
+  var to = setTimeout(function() {
+    start();
+  }, 2000);
+
+});
+
+
+// use namedParams Date param - fail on bad format
+//
+asyncTest('use namedParams Date - fail', 2, function () {
+
+  var q = 'CREATE TEMP TABLE t ( t TIMESTAMP );\n'+
+          'INSERT INTO t (t) VALUES (%(ts));',
+      dt = new Date('foo');
+
+  this.e.query({
+
+    q : q,
+    format: 'json-easy',
+    namedParams: { 'ts': dt },
+
+    callback: function (resp) {
+
+      ok(false, 'callback called');
+      clearTimeout(to);
+      start();
+    },
+
+    errback: function(err, resp) {
+
+      ok(true, "errback was called");
+      equal(err, 'rdb21', "errorval: "+err);
       clearTimeout(to);
       start();
     }
@@ -417,12 +453,15 @@ var form = "<form id=\"qunit_form\" method='post' enctype=\"multipart/form-data\
            "<input name=\"q\" value=\"SELECT 99 AS col\" />"+
            "</form>";
 
+var tmpEngine = new SQLEngine(demo_r_role,'-',domain),
+    isCORSversion = ~tmpEngine.version.indexOf('cors');
+tmpEngine = null;
+
 module('SQLEngine Form tests', {
 
   setup: function () {
 
     this.e = new SQLEngine(demo_r_role,'-',domain);
-    this.skip = ~this.e.version.indexOf('cors');
     $('#qunit_form').remove();
     $('body').append(form);
   },
@@ -444,148 +483,163 @@ test('SQLEngine form setup verification', function() {
 });
 
 // form select
-asyncTest('form SELECT', 4+1, function() {
+if ( isCORSversion ) {
 
-  var that = this;
+  test('form SELECT ****SKIPPED***', function() { ok(true,'skipped') } );
+}
+else {
 
-  if ( this.skip ) {
-    for ( var i=0; i<4; i++ )
-      ok(true);
-    start();
-    return;
-  }
+  asyncTest('form SELECT', 4+1, function() {
 
-  that.e.queryByForm({
+    var that = this;
+
+    that.e.queryByForm({
 
       "formId": "qunit_form",
 
       callback: function (resp) {
 
-            ok(typeof resp === 'object', 'response is object'); // 0th assert
-            ok(resp.status[1].toLowerCase() == 'ok', 'status is not ok: '+resp.status[1]); // 1st assert
-            ok(resp.row_count[0] > 0, 'data row found');
-            ok(resp.records.rows[0][0] === 99, 'data is not 99: '+resp.records.rows[0]['col']);
-            start();
-          }
+        ok(typeof resp === 'object', 'response is object'); // 0th assert
+        ok(resp.status[1].toLowerCase() == 'ok', 'status is not ok: '+resp.status[1]); // 1st assert
+        ok(resp.row_count[0] > 0, 'data row found');
+        ok(resp.records.rows[0][0] === 99, 'data is not 99: '+resp.records.rows[0]['col']);
+        start();
+      }
     });
 
-  $('#qunit_form').rdbhostSubmit();
-});
+    $('#qunit_form').rdbhostSubmit();
+  });
+}
 
 
 
 // form select with promise
-asyncTest('form SELECT promise', 5+1, function() {
+if ( isCORSversion ) {
 
-  var that = this;
+  test('form SELECT promise ***SKIPPED***', function() { ok(true,'skipped') } );
+}
+else {
 
-  if ( this.skip ) {
-    for ( var i=0; i<5; i++ )
-      ok(true);
-    start();
-    return;
-  }
+  asyncTest('form SELECT promise', 5+1, function() {
 
-  var p = that.e.queryByForm({
+    var that = this;
 
-    "formId": "qunit_form",
-
-    callback: function (resp) {
-
-      ok(typeof resp === 'object', 'response is object'); // 0th assert
-      ok(resp.status[1].toLowerCase() == 'ok', 'status is not ok: '+resp.status[1]); // 1st assert
-      ok(resp.row_count[0] > 0, 'data row found');
-      ok(resp.records.rows[0][0] === 99, 'data is not 99: '+resp.records.rows[0]['col']);
-    }
-  });
-
-  p.done(function(a) {
-    ok(a, 'promise done called');
+    if ( this.skip ) {
+      for ( var i=0; i<5; i++ )
+        ok(true);
       start();
+      return;
+    }
+
+    var p = that.e.queryByForm({
+
+      "formId": "qunit_form",
+
+      callback: function (resp) {
+
+        ok(typeof resp === 'object', 'response is object'); // 0th assert
+        ok(resp.status[1].toLowerCase() == 'ok', 'status is not ok: '+resp.status[1]); // 1st assert
+        ok(resp.row_count[0] > 0, 'data row found');
+        ok(resp.records.rows[0][0] === 99, 'data is not 99: '+resp.records.rows[0]['col']);
+      }
+    });
+
+    p.done(function(a) {
+      ok(a, 'promise done called');
+        start();
+    });
+
+    $('#qunit_form').rdbhostSubmit();
   });
+}
 
-  $('#qunit_form').rdbhostSubmit();
-});
+if ( isCORSversion ) {
+
+  test('form SELECT ***SKIPPED***', function() { ok(true,'skipped') } );
+}
+else {
+
+  // form select with error
+  asyncTest('form SELECT error', 2+1, function() {
+
+    var that = this;
+
+    if ( this.skip ) {
+      for ( var i=0; i<2; i++ )
+        ok(true);
+      start();
+      return;
+    }
+
+    $('#qunit_form').find('input').val('SELECTY 1');
+
+    that.e.queryByForm({
+
+        "formId": "qunit_form",
+
+        errback: function (err, resp) {
+
+              console.log(err);
+              console.log(resp);
+              ok(typeof resp === typeof 'o', 'response is string'); // 0th assert
+              ok(err.length === 5, 'error code not len 5: '+err); // 1st assert
+              start();
+            },
+        callback: function(resp) {
+              ok(false,'callback called');
+            }
+      });
+
+    $('#qunit_form').rdbhostSubmit();
+  });
+}
 
 
-// form select with error
-asyncTest('form SELECT error', 2+1, function() {
+if ( isCORSversion ) {
 
-  var that = this;
-  var callerArgs = arguments.callee.caller.arguments;
+  test('form SELECT ***SKIPPED***', function() { ok(true,'skipped') } );
+}
+else {
 
-  if ( this.skip ) {
-    for ( var i=0; i<2; i++ )
-      ok(true);
-    start();
-    return;
-  }
+  // form select with error w/ promise
+  asyncTest('form SELECT error - promise', 3+1, function() {
 
-  $('#qunit_form input').val('SELECTY 1');
+    var that = this;
 
-  that.e.queryByForm({
+    if ( this.skip ) {
+      for ( var i=0; i<3; i++ )
+        ok(true);
+      start();
+      return;
+    }
+
+    $('#qunit_form').find('input').val('SELECTY 1');
+
+    var p = that.e.queryByForm({
 
       "formId": "qunit_form",
 
       errback: function (err, resp) {
 
-            console.log(err);
-            console.log(resp);
-            ok(typeof resp === typeof 'o', 'response is string'); // 0th assert
-              ok(err.length === 5, 'error code not len 5: '+err); // 1st assert
-            start();
-          },
+        console.log(err);
+        console.log(resp);
+        ok(typeof resp === typeof 'o', 'response is string'); // 0th assert
+        ok(err.length === 5, 'error code not len 5: '+err); // 1st assert
+        start();
+      },
       callback: function(resp) {
-            var a =1;
-          }
+        ok(false,'should not happen');
+      }
     });
 
-  $('#qunit_form').rdbhostSubmit();
-});
+    p.fail(function(m) {
+      ok(m,'promise fail called');
+    });
 
-
-
-// form select with error w/ promise
-asyncTest('form SELECT error - promise', 3+1, function() {
-
-  var that = this;
-
-  if ( this.skip ) {
-    for ( var i=0; i<3; i++ )
-      ok(true);
-    start();
-    return;
-  }
-
-  $('#qunit_form input').val('SELECTY 1');
-
-  var p = that.e.queryByForm({
-
-    "formId": "qunit_form",
-
-    errback: function (err, resp) {
-
-      console.log(err);
-      console.log(resp);
-      ok(typeof resp === typeof 'o', 'response is string'); // 0th assert
-      ok(err.length === 5, 'error code not len 5: '+err); // 1st assert
-      start();
-    },
-    callback: function(resp) {
-      ok(false,'should not happen');
-    }
+    $('#qunit_form').rdbhostSubmit();
   });
 
-  p.fail(function(m) {
-    ok(m,'promise fail called');
-  });
-
-  $('#qunit_form').rdbhostSubmit();
-});
-
-
-
-
+}
 
 
 
