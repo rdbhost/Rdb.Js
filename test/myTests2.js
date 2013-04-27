@@ -203,7 +203,7 @@ asyncTest('$.eachRecord err promise', 2, function() {
 
 
 /* $.postFormData.  */
-var tmpEngine = new SQLEngine();
+var tmpEngine = new SQLEngine('');
 
 // do SELECT query form way
 var form = "<form id=\"qunit_form2\" method='post' enctype=\"multipart/form-data\">"+
