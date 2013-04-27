@@ -3,7 +3,7 @@
 ## jquery.rdbhost.exdm.js ##
 
 ### Dependencies ###
-This module requires jQuery.  Version 1.9 or greater is recommended.
+This module requires jQuery.  Version 1.5 or greater is recommended.
 Use with Internet Explorer 7 requires json2.js also.
 
 ### Overview ###
@@ -37,15 +37,15 @@ Before we discuss the functions and methods themselves, let's go over the option
 
 * *authcode:* 'authentication code' for role.  50 base-64 digits. *required*
 
-* *q:* the query, in SQL.  Some roles can not execute free-form queries. Either _q_ or _kw_ is *required*.
+* *q:* the query, in SQL.  Either _q_ or _kw_ is *required*.
 
-* *kw:* a lookup keyword, used to lookup a query pre-stored on the server. All roles can execute queries via _kw_.  Either _q_ or _kw_ is *required*.
+* *kw:* a lookup keyword, used to lookup a query pre-stored on the server.  Either _q_ or _kw_ is *required*.
 
-* *args:* an array with arguments to replace substitution tokens in the query string.  The number of _args_ elements should match the number of substitution tokens in the query string.  Can be used with _kw_ s also, in which case the args interpolate into the query string on the server, indexed by the _kw_ value.
+* *args:* an array with arguments to replace substitution tokens in the query string.  The number of _args_ elements should match the number of substitution tokens in the query string.  Can be used with _kw_ s also, in which case the args interpolate into the query string on the server.
 
 * *namedParams:* an object with named attributes.  The params are referenced in the query string with tokens like _%(paramName)_.
 
-* *format:* either _jsond_ or _jsond-easy_. default = _jsond-easy_.
+* *format:* either _json_ or _json-easy_. default = _json-easy_.
 
 * *domain:* what rdbhost server are you using?  default www.rdbhost.com
 
@@ -56,16 +56,17 @@ Not required, but the default is a basic _*JSON*_ dump and probably not what you
 
 * *eachrec:* the $.eachRecord function calls this, for each record, in lieu of _callback_.
 
+
 ### Data Format ###
 
 See [json response format](http://www.rdbhost.com/result-formats.html), for details, but here is a quick overview:
 
-* the records will be Javascript objects as a Javascript array in data.records.rows, where data is the parameter
-name your callback function used to receive the result data.
-* data.status[0] will be either 'incomplete' or 'complete', depending
-on whether the Rdbhost records-per-request limit was exceeded.  The data.status[0] will never be 'error', since errors result in calling errback in lieu of callback.
+* the records will be Javascript objects as a Javascript array in data.records.rows, where data is the parameter name your callback function used to receive the result data.
+* data.status[0] will be either 'incomplete' or 'complete', depending on whether the Rdbhost records-per-request limit was exceeded.  The data.status[0] will never be 'error', since errors result in calling errback in lieu of callback.
+
 
 ### Functions ###
+
 * *$.rdbHostConfig:* Stores its options as the default for all subsequent functions. It can accept *any* or *all* of the options.
 
 * *$.postData:* used to submit data to server, similar to an $.ajax call.  This method ends query to server, gets results, calls callback with single result object as the parameter.
@@ -90,12 +91,17 @@ The _q_ query string (or the on-server query string referenced by _kw_) may incl
                             'callback':redisplay});
 
     The above example assumes that _userName_, and _authcode_ have been set as defaults. _kw_ could have been provided as a field value in the form.  _redisplay_ is a function that does some appropriate followup action.
+
 The form *must* include a unique _id_.  Form fields can include _q_, _kw_, _format_, _arg###_ (where ### is a 3 digit number, '0' padded, starting with '000'), and _argtype###_.
-The _q_ query string (or the on-server query string referenced by _kw_) may include '%s' substition tokens, and an _arg###_ field should be provided for each such token.
+The _q_ query string (or the on-server query string referenced by _kw_) may include '%s' substition tokens,
+and an _arg###_ field may be provided for each such token.
 _arg###_ fields may be *file* fields, and this is the surest way to submit binary data with the query.
 The _argtype###_ fields are optional, but (if provided) should be numbered to match _arg###_ fields, and each value should be a Python DB API type string ('STRING', 'NUMBER', 'BINARY', ...). These are used by the server to typecast the argument values before passing them to PostgreSQL.
-Any response data from the server will be passed to the callback.
+
+Response data from the server will be passed to the callback.
+
 Remember to avoid the use of '.preventDefault()' and 'return false', as the form itself does get submitted.
+
 It is also recommended to explicitly set 'enctype' and 'method' attributes on the form.
 
 [see demo here](http://www.paginaswww.com/rdb/examples/jq_rdbhost_exdm_postbyform.html)
@@ -104,10 +110,9 @@ It is also recommended to explicitly set 'enctype' and 'method' attributes on th
 
 * *$.eachRecord:* sends query to server, gets results, calls _errback_ if status is 'error', otherwise, calls _eachrec_ callback with each record.  By default, the _jsond-easy_ format is used, and each record is an object with named attribute for each record field.
 
-* *$.loginAjax:* sends email and password to server, gets list of roles and authcodes
+* *$.loginAjax:* sends your email and password to server, gets list of roles and authcodes.
 
-* *$.loginOpenId enables logging users in via OpenID logins.  This handles your users logging in to your app, not you
-  logging in to your account.
+* *$.loginOpenId enables logging users in via OpenID logins.  This handles your users logging in to your app, not you logging in to your Rdbhost account.
 
 
 [see demo here](http://www.paginaswww.com/rdb/examples/openid-login.html)

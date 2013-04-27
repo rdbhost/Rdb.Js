@@ -233,22 +233,25 @@ function consoleLog(msg) {
 
      callback : function to call with data from successful query
      errback : function to call with error object from query failure
+
      q : the query string itself
+
      args : array of arguments (optional), must correspond with %s tokens
-     in query
+        in query
      namedParams : an object containing arguments, by name. Reference
-     in query with tokens like %(name)
-     plainTextJson : true if JSON parsing to be skipped, instead
-     returning the JSON plaintext
+        in query with tokens like %(name)
+
      format : 'json' or 'json-easy'
+     plainTextJson : true if JSON parsing to be skipped, instead
+        returning the JSON plaintext
      */
     this.query = function(parms) {
 
       var that = this;
-      return this._query(parms, function() { return that.getQueryUrl() });
+      return _query(parms, function() { return that.getQueryUrl() });
     };
 
-    this._query = function (parms, urlFunc) {
+    function _query(parms, urlFunc) {
 
       var errback = parms.errback,
           args = parms.args || [],
@@ -567,20 +570,21 @@ function consoleLog(msg) {
 
 
   $.rdbHostConfig = function (parms) {
+
     $.rdbHostConfig.opts = $.extend({}, opts, parms || {});
   };
 
 
   /*
    withResults - calls callback with json result object
-   or errback with error object
+      or errback with error object
 
    param q : query to get data
+
    param callback : function to call with json data
    param errback : function to call in case of error
    */
   $.withResults = function (parms) {
-
 
     assert(arguments.length <= 1, 'too many parms to withResults');
     var inp = $.extend({}, $.rdbHostConfig.opts, parms || {});
@@ -601,18 +605,20 @@ function consoleLog(msg) {
 
   /*
    eachRecord - calls 'eachrec' callback with each record,
-   or errback with error object
+     or errback with error object
 
    param q : query to get data
+
    param eachrec : function to call with each record
    param errback : function to call in case of error
    */
   $.eachRecord = function (parms) {
 
     assert(arguments.length <= 1, 'too many parms to eachRecord');
+    assert(parms.eachrec, 'eachrec not provided');
+
     var eachrec = parms.eachrec;
     delete parms.eachrec;
-    assert(eachrec, 'eachrec not provided');
 
     function cback(json) {
 
