@@ -6,7 +6,6 @@
 *
 */
 
-var domain = 'dev.paginaswww.com';
 
 module('rdbhost plugin pre-test', {
   setup: function () {
@@ -203,7 +202,6 @@ asyncTest('$.eachRecord err promise', 2, function() {
 
 
 /* $.postFormData.  */
-var tmpEngine = new SQLEngine('');
 
 // do SELECT query form way
 var form = "<form id=\"qunit_form2\" method='post' enctype=\"multipart/form-data\">"+
@@ -221,7 +219,9 @@ module('$.postFormData tests', {
       'authcode': '-'
     });
 
+    var tmpEngine = new SQLEngine('','',domain);
     this.skip = ~tmpEngine.version.indexOf('cors');
+    tmpEngine = undefined;
 
     $('#qunit_form2').remove();
     $('body').append(form);
