@@ -80,7 +80,6 @@ function consoleLog(msg) {
   window.console.log(msg);
 }
 
-
 (function ($, window) {
 
   // isolate each easyXDM in its own namespace
@@ -127,6 +126,9 @@ function consoleLog(msg) {
             returnResponse: function (response) {
               CONNECTIONS[uid].handler(response);
             }
+          },
+          remote: {
+            createTargetIframe: {}
           }
         }
     );
@@ -140,8 +142,7 @@ function consoleLog(msg) {
   function SQLEngine(userName, authcode, domain) {
 
     // store engine config info
-    var format = 'json-exdm',
-        remote = 'https://' + domain,
+    var remote = 'https://' + domain,
         easyXDMAjaxHandle = userName.substring(1);
 
     if (!domain) {
@@ -251,12 +252,14 @@ function consoleLog(msg) {
           args = parms.args || [],
           namedParams = parms.namedParams || {},
           defer = $.Deferred(),
+          formatType = 'json',
+          fmt = parms.format || '',
           nm, typNm;
 
       var data = {
         q: parms.q,
         kw: parms.kw,
-        format: parms.format || format,
+        format: ~fmt.toLowerCase().indexOf('easy') ? formatType+'-easy' : formatType,
         mode: parms.mode,
         authcode: parms.authcode
       };
@@ -404,7 +407,9 @@ function consoleLog(msg) {
       var errback = parms.errback,
           formId = parms.formId,
           plainTextJson = parms.plainTextJson,
-          defer = $.Deferred();
+          defer = $.Deferred(),
+          formatType = 'json-exdm',
+          that = this;
 
       // attach callback, if provided, to defer
       if (parms.callback)
@@ -444,8 +449,8 @@ function consoleLog(msg) {
 
       CONNECTIONS[easyXDMAjaxHandle].handler = cBack;
 
-      var targettag = 'request_target_' + userName.substring(1);
-      parms.format = parms.format || format;
+      var fmt = parms.format || '';
+      parms.format = ~fmt.toLowerCase().indexOf('easy') ? formatType+'-easy' : formatType;
       assert(~parms.format.indexOf('xdm'),'bad format '+parms.format);
 
       // get form, return if not found
@@ -453,6 +458,29 @@ function consoleLog(msg) {
       if ($form.length < 1) {
         return false;
       }
+
+      $form.attr('target','');
+      // var targettag = 'request_target_' + userName.substring(1);
+      CONNECTIONS[easyXDMAjaxHandle].remoteRpc.createTargetIframe(
+
+          function (targettag) {
+
+            // init vars
+            var dbUrl = that.getQueryUrl();
+
+            // save vals
+            var target = $form.attr('target'),
+                action = $form.attr('action');
+
+            // put password into form
+            add_hidden_field($form, 'authcode', authcode);
+            // set format, action, and target
+            add_hidden_field($form, 'format', parms.format);
+
+            $form.attr('target', targettag);
+            $form.attr('action', dbUrl);
+          }
+      );
 
       // define default errback
       if (errback === undefined) {
@@ -464,21 +492,6 @@ function consoleLog(msg) {
 
       // set errback on deferred
       defer.fail(errback);
-
-      // init vars
-      var dbUrl = this.getQueryUrl();
-
-      // save vals
-      var target = $form.attr('target'),
-          action = $form.attr('action');
-
-      // put password into form
-      add_hidden_field($form, 'authcode', authcode);
-      // set format, action, and target
-      add_hidden_field($form, 'format', parms.format);
-
-      $form.attr('target', targettag);
-      $form.attr('action', dbUrl);
 
       // return promise, so client can add callbacks/errbacks as required
       //
@@ -624,7 +637,7 @@ function consoleLog(msg) {
 
     assert(arguments.length <= 2, 'too many parms to postFormData');
     var $form = $(that).closest('form'),
-        inp = $.extend({}, $.rdbHostConfig.opts, {format:'json-exdm'}, parms || {});
+        inp = $.extend({}, $.rdbHostConfig.opts, parms || {});
 
     inp.formId = $form.attr('id');
     assert(inp.formId, 'form must have a unique id attribute');
@@ -667,27 +680,6 @@ function consoleLog(msg) {
    param kw : query-keyword to post data
    */
   $.postData = $.withResults;
-
-/*
-  function (parms) {
-
-    assert(arguments.length < 2, 'too many parms to postData');
-    var inp = $.extend({}, $.rdbHostConfig.opts, {format:'json-exdm'}, parms || {});
-
-    try {
-
-      var sqlEngine = new SQLEngine(inp.userName, inp.authcode, inp.domain);
-      var promise = sqlEngine.query(inp);
-    }
-    catch (e) {
-
-      inp.errback(e.name, e.message);
-    }
-
-    return promise;
-  };
-*/
-
 
 
   /*
@@ -924,7 +916,7 @@ function consoleLog(msg) {
 
     if (targetName && targetName.substr(0, reqPrefix.length) === reqPrefix) {
 
-      var uid = targetName.substr(reqPrefix.length);
+      var uid = targetName.substr(targetName.length-10);
 
       if (CONNECTIONS[uid].remoteRpcReady) {
         $that.submit();
@@ -936,7 +928,9 @@ function consoleLog(msg) {
       }
     }
     else {
-      $that.submit();
+      setTimeout(function () {
+        $that.rdbhostSubmit();
+      }, 50);
     }
 
   };

@@ -84,15 +84,14 @@ function consoleLog(msg) {
 
 (function ($, window) {
 
-// SQL Engine that uses form for input, and hidden iframe for response
-//   handles file fields
-//
+  // SQL Engine that uses form for input, and hidden iframe for response
+  //   handles file fields
+  //
   function SQLEngine(userName, authcode, domain) {
 
     // store engine config info
     var proto = window.document.location.protocol,
-        remote = proto + '//' + domain,
-        format = 'jsond';
+        remote = proto + '//' + domain;
 
     // for setting auth info later
     this.setUserAuthentication = function(uName, aCode) {
@@ -201,7 +200,6 @@ function consoleLog(msg) {
 
     this._query = function (parms, urlFunc) {
 
-      parms.format = parms.format || format;
       parms.args = parms.args || [];
       parms.namedParams = parms.namedParams || {};
 
@@ -386,11 +384,13 @@ function consoleLog(msg) {
 
     this._queryByForm = function (parms, urlFunc) {
 
-      parms.format = parms.format ? parms.format : format;
-      var errback = parms.errback,
+      var formatType = 'jsond',
+          fmt = parms.format || '',
+          errback = parms.errback,
           targetTag = 'upload_target_' + parms.formId + '_' + (SQLEngine.formnamectr += 1),
           target, action,
           defer = $.Deferred();
+      parms.format = ~fmt.toLowerCase().indexOf('easy') ? formatType+'-easy' : formatType;
 
       // get form, return if not found
       var $form = $('#' + parms.formId);
@@ -445,11 +445,11 @@ function consoleLog(msg) {
                 json_result = JSON.parse(cont);
               }
               catch (err) {
-                results_bad('err', 'json err: ' + err.toString());
+                results_bad('json.parse', 'json err: ' + err.toString());
                 return;
               }
               if (json_result.status[0] === 'error') {
-                results_bad(json_result.status[1], json_result.error[1]);
+                results_bad(json_result.error[0], json_result.error[1]);
               }
               else {
                 results_good(json_result);
@@ -457,7 +457,7 @@ function consoleLog(msg) {
             }
           }
           else {
-            results_bad('err', 'not json ' + cont.substr(0, 3));
+            results_bad('not-json', 'not json ' + cont.substr(0, 3));
           }
         }
         else {
@@ -572,7 +572,7 @@ function consoleLog(msg) {
     errback: errback,
     callback: dumper,
     eachrec: undefined,
-    format: 'jsond-easy',
+    format: 'json-easy',
     userName: '',
     authcode: ''        };
 

@@ -12,7 +12,7 @@ module('rdbhost plugin pre-test', {
   setup: function () {
       $.rdbHostConfig( {
         'domain': domain,
-        'format': 'jsond-easy',
+        'format': 'json-easy',
         'userName': demo_r_role,
         'authcode': '-'
       })
@@ -70,20 +70,73 @@ asyncTest('verify setup - promise', 2, function() {
 });
 
 
+// verify postData
+asyncTest('verify postData - promise', 2, function() {
+
+  var p = $.postData({
+
+    'q': 'SELECT 1 AS one',
+    'callback' : function(json) {
+      console.log(json);
+      equal(json.status[1],'OK', 'json has data');
+    },
+
+    'errback': function(json) {
+      ok(false);
+      start();
+    }
+  });
+
+  p.done(function(m) {
+    ok(m,'promise done called');
+    start();
+  });
+});
+
+
+// verify easy format
+asyncTest('verify easy - promise', 2, function() {
+
+  var p = $.withResults({
+
+    'q': 'SELECT 1 AS one',
+    'callback' : function(json) {
+      console.log(json);
+      equal(json.status[1],'OK', 'json has data');
+    },
+
+    'errback': function(json) {
+      ok(false);
+      start();
+    }
+  });
+
+  p.done(function(m) {
+    ok(m,'promise done called');
+    start();
+  });
+});
+
+
 /* $.eachRecord, */
 asyncTest('$.eachRecord', 2, function() {
+
   $.eachRecord({
+
     'q': 'SELECT 1 AS one UNION SELECT 2',
+
     'eachrec' : function(jsonRow) {
           ok(jsonRow['one']===1 || jsonRow['one']===2, 'row has value 1');
           start();
         },
+
     'errback': function(json) {
           ok(false);
           start();
         }
   })
 });
+
 
 /* $.eachRecord w/ promise */
 asyncTest('$.eachRecord promise', 3, function() {
@@ -151,23 +204,24 @@ asyncTest('$.eachRecord err promise', 2, function() {
 
 /* $.postFormData.  */
 
-
 // do SELECT query form way
 var form = "<form id=\"qunit_form2\" method='post' enctype=\"multipart/form-data\">"+
            "<input name=\"q\" value=\"SELECT 199 AS col\" />"+
            "</form>";
 
 module('$.postFormData tests', {
+
   setup: function () {
     $.rdbHostConfig( {
       'domain': domain,
-      'format': 'jsond-easy',
+      'format': 'json-easy',
       'userName': demo_r_role,
       'authcode': '-'
     });
     $('#qunit_form2').remove();
     $('body').append(form);
   },
+
   teardown: function () {
     $.rdbHostConfig( {
       'domain': undefined,
@@ -175,6 +229,7 @@ module('$.postFormData tests', {
       'userName': undefined,
       'authcode': '-'
     });
+
     $('#qunit_form2').remove();
     equal($('#qunit_form2').length, 0, 'test form not cleaned up');
   }
@@ -186,9 +241,11 @@ test('$.postFormData setup verification', function() {
 });
 
 
+// $.postFormData test
 asyncTest('$.postFornData test', 4+1, function() {
 
   $.postFormData($('#qunit_form2'), {
+      format: 'json-easy',
       callback: function (resp) {
             ok(typeof resp === 'object', 'response is object'); // 0th assert
             ok(resp.status[1].toLowerCase() == 'ok', 'status is not ok: '+resp.status[1]); // 1st assert
@@ -200,6 +257,7 @@ asyncTest('$.postFornData test', 4+1, function() {
 
   $('#qunit_form2').rdbhostSubmit();
 });
+
 
  // $.postFormData fail w/ promise
  asyncTest('$.postFornData test fail promise', 2+1, function() {
@@ -239,22 +297,21 @@ asyncTest('$.postFornData test', 4+1, function() {
         }
    });
 
-
   p.done(function(m) {
       ok(m,'promise done called');
       start();
     });
 
    $('#qunit_form2').rdbhostSubmit();
- });
 
+ });
 
 
 module('$.loginAjax tests', {
   setup: function () {
     $.rdbHostConfig( {
       'domain': domain,
-      'format': 'jsond-easy',
+      'format': 'json-easy',
       'userName': demo_r_role,
       'authcode': '-'
     });
@@ -270,23 +327,24 @@ module('$.loginAjax tests', {
 });
 
 
-// $.loginAjax test w/ promise
-asyncTest('$.loginAjax test w promise ', 2+0, function() {
+// $.loginByForm test w/ promise
+asyncTest('$.loginAjax test w/ promise ', 2+0, function() {
 
   var p = $.loginAjax({
 
     errback: function(resp) {
 
-      ok(resp,'loginByform');
+      ok(resp,'loginAjax');
       start();
     }
   });
 
   p.fail(function(m) {
-    ok(m,'login failed')
-  })
+
+    ok(m,'fail handler called');
 });
 
+});
 
 
 // do SELECT query form way
@@ -296,7 +354,7 @@ module('plugin display tests', {
   setup: function () {
     $.rdbHostConfig( {
       'domain': domain,
-      'format': 'jsond-easy',
+      'format': 'json-easy',
       'userName': demo_r_role,
       'authcode': '-'
     });
@@ -361,7 +419,7 @@ module('$.populateForm tests', {
   setup: function () {
     $.rdbHostConfig( {
       'domain': domain,
-      'format': 'jsond-easy',
+      'format': 'json-easy',
       'userName': demo_r_role,
       'authcode': '-'
     });
