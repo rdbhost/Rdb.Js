@@ -279,8 +279,7 @@ function consoleLog(msg) {
 
       // attach provided handlers (if any) to deferred
       //
-      if ( !parms.callback )
-        parms.callback = function(a) { return a };
+      parms.callback = parms.callback || null;
       var deferOut = defer.then(parms.callback, errback);
 
       // if params are provided, convert to named form 'arg000', 'arg001'...
@@ -416,9 +415,8 @@ function consoleLog(msg) {
           formatType = 'json-exdm',
           that = this;
 
-      // attach callback, if provided, to defer
-      if ( ! parms.callback)
-        parms.callback = function(a) { return a };
+      // ensure callback is null, not undefined
+      parms.callback = parms.callback || null;
 
       // internal callback function
       function cBack(response) {

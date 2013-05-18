@@ -220,8 +220,7 @@ function consoleLog(msg) {
       }
 
       // attach success and fail handlers to promise
-      if ( !parms.callback )
-        parms.callback = function(a) { return a };
+      parms.callback = parms.callback || null;
 
       var deferOut = defer.then(parms.callback, errback);
 
@@ -410,8 +409,7 @@ function consoleLog(msg) {
       }
 
       // add handlers to deferred
-      if ( !parms.callback )
-        parms.callback = function(a) { return a };
+      parms.callback = parms.callback || null;
 
       var deferOut = defer.then(parms.callback, errback);
 

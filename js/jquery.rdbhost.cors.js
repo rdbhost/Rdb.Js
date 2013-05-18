@@ -194,8 +194,7 @@ function consoleLog(msg) {
 
       // attach provided handlers (if any) to deferred
       //
-      if ( !parms.callback)
-        parms.callback = function(a) { return a };
+      parms.callback = parms.callback || null;
       var deferOut = defer.then(parms.callback, errback);
 
       // super callback that checks for server side errors, calls errback
