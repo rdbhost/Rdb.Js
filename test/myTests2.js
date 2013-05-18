@@ -6,6 +6,10 @@
 *
 */
 
+var tmpEngine = new SQLEngine(demo_r_role,'-',domain),
+    isCORSversion = ~tmpEngine.version.indexOf('cors');
+tmpEngine = null;
+
 
 module('rdbhost plugin pre-test', {
   setup: function () {
@@ -54,15 +58,46 @@ asyncTest('verify setup - promise', 2, function() {
     'callback' : function(json) {
       console.log(json);
       equal(json.status[1],'OK', 'json has data');
+      return 'abc';
     },
 
-    'errback': function(json) {
+    'errback': function(err, errmsg) {
       ok(false);
       start();
     }
   });
 
   p.done(function(m) {
+    ok(m,'promise done called');
+    start();
+  });
+});
+
+
+// verify setup promise - chained
+asyncTest('verify setup - promise chained', 3, function() {
+
+  var p = $.withResults({
+
+    'q': 'SELECT 1 AS one',
+    'callback' : function(json) {
+
+      console.log(json);
+      equal(json.status[1],'OK', 'json has data');
+      json.pumpkin = 'pie';
+      return json;
+    },
+
+    'errback': function(json) {
+
+      ok(false);
+      start();
+    }
+  });
+
+  p.done(function(m) {
+
+    equal(m.pumpkin, 'pie', 'pumpkin pie');
     ok(m,'promise done called');
     start();
   });
@@ -78,6 +113,7 @@ asyncTest('verify postData - promise', 2, function() {
     'callback' : function(json) {
       console.log(json);
       equal(json.status[1],'OK', 'json has data');
+      return 1;
     },
 
     'errback': function(json) {
@@ -102,6 +138,7 @@ asyncTest('verify easy - promise', 2, function() {
     'callback' : function(json) {
       console.log(json);
       equal(json.status[1],'OK', 'json has data');
+      return 1;
     },
 
     'errback': function(json) {
@@ -155,7 +192,32 @@ asyncTest('$.eachRecord promise', 3, function() {
   });
 
   p.done(function(m) {
-    ok(m,'promise done called');
+    ok(true,'promise done called');
+    start();
+  })
+});
+
+
+/* $.eachRecord w/ promise - chained */
+asyncTest('$.eachRecord promise - chained', 3, function() {
+
+  var p = $.eachRecord({
+
+    'q': 'SELECT 1 AS one UNION SELECT 2',
+
+    'eachrec' : function(jsonRow) {
+
+      ok(jsonRow['one']===1 || jsonRow['one']===2, 'row has value 1');
+    },
+
+    'errback': function(json) {
+      ok(false);
+      start();
+    }
+  });
+
+  p.done(function(m) {
+    ok(true,'promise done called');
     start();
   })
 });
@@ -194,7 +256,7 @@ asyncTest('$.eachRecord err promise', 2, function() {
   });
 
   p.fail(function(m) {
-    ok(m,'promise fail called');
+    ok(true,'promise fail called');
     start();
   })
 });
@@ -248,61 +310,66 @@ test('$.postFormData setup verification', function() {
 
 
 // $.postFormData test
-asyncTest('$.postFornData test', 4+1, function() {
+if ( isCORSversion ) {
 
-  if ( this.skip ) {
-    for ( var i=0; i<4; i++ )
-      ok(true);
-    start();
-    return;
-  }
+  test('$.postFormData test ****SKIPPED***', function() { ok(true,'skipped') } );
+}
+else {
+  asyncTest('$.postFornData test', 4+1, function() {
 
-  $.postFormData($('#qunit_form2'), {
+    $.postFormData($('#qunit_form2'), {
       format: 'json-easy',
       callback: function (resp) {
-            ok(typeof resp === 'object', 'response is object'); // 0th assert
-            ok(resp.status[1].toLowerCase() == 'ok', 'status is not ok: '+resp.status[1]); // 1st assert
-            ok(resp.row_count[0] > 0, 'data row found');
-            ok(resp.records.rows[0]['col'] === 199, 'data is not 199: '+resp.records.rows[0]['col']);
-            start();
-          }
+        ok(typeof resp === 'object', 'response is object'); // 0th assert
+        ok(resp.status[1].toLowerCase() == 'ok', 'status is not ok: '+resp.status[1]); // 1st assert
+        ok(resp.row_count[0] > 0, 'data row found');
+        ok(resp.records.rows[0]['col'] === 199, 'data is not 199: '+resp.records.rows[0]['col']);
+        start();
+      }
     });
 
-  $('#qunit_form2').rdbhostSubmit();
-});
+    $('#qunit_form2').rdbhostSubmit();
+  });
+}
 
 
- // $.postFormData fail w/ promise
- asyncTest('$.postFornData test fail promise', 2+1, function() {
+// $.postFormData fail w/ promise
+if ( isCORSversion ) {
 
-   if ( this.skip ) {
-     for ( var i=0; i<2; i++ )
-       ok(true);
-     start();
-     return;
-   }
+  test('$.postFormData test ****SKIPPED***', function() { ok(true,'skipped') } );
+}
+else {
+   asyncTest('$.postFornData test fail promise', 2+1, function() {
 
-   var p = $.postFormData($('#qunit_form2'), {
-
-     errback: function(resp) {
-       ok(resp,'errback called');
-     },
-
-     callback: function (resp) {
-       ok(typeof resp === 'object', 'response is object'); // 0th assert
+     if ( this.skip ) {
+       for ( var i=0; i<2; i++ )
+         ok(true);
+       start();
+       return;
      }
+
+     var p = $.postFormData($('#qunit_form2'), {
+
+       errback: function(resp) {
+         ok(resp,'errback called');
+         return 1;
+       },
+
+       callback: function (resp) {
+         ok(typeof resp === 'object', 'response is object'); // 0th assert
+       }
+     });
+
+     p.fail(function(m) {
+       ok(m,'promise fail called');
+       start();
+     });
+
+     $('#qunit_form2 input:text').val('SELECTY');
+     $('#qunit_form2').rdbhostSubmit();
+
    });
-
-   p.fail(function(m) {
-     ok(m,'promise fail called');
-     start();
-   });
-
-   $('#qunit_form2 input:text').val('SELECTY');
-   $('#qunit_form2').rdbhostSubmit();
-
- });
-
+}
 
  // $.postFormData test w/ promise
  asyncTest('$.postFornData test promise', 5+1, function() {
@@ -321,17 +388,59 @@ asyncTest('$.postFornData test', 4+1, function() {
            ok(resp.status[1].toLowerCase() == 'ok', 'status is not ok: '+resp.status[1]); // 1st assert
            ok(resp.row_count[0] > 0, 'data row found');
            ok(resp.records.rows[0]['col'] === 199, 'data is not 199: '+resp.records.rows[0]['col']);
+           return 456;
         }
    });
 
   p.done(function(m) {
-      ok(m,'promise done called');
+      ok(m === 456,'promise done called');
       start();
     });
 
    $('#qunit_form2').rdbhostSubmit();
 
  });
+
+
+// $.postFormData test w/ promise - chained
+if ( isCORSversion ) {
+
+  test('$.postFormData test ****SKIPPED***', function() { ok(true,'skipped') } );
+}
+else {
+  asyncTest('$.postFornData test promise - chained', 6+1, function() {
+
+    if ( this.skip ) {
+      for ( var i=0; i<5; i++ )
+        ok(true);
+      start();
+      return;
+    }
+
+    var p = $.postFormData($('#qunit_form2'), {
+
+      callback: function (resp) {
+
+        ok(typeof resp === 'object', 'response is object'); // 0th assert
+        ok(resp.status[1].toLowerCase() == 'ok', 'status is not ok: '+resp.status[1]); // 1st assert
+        ok(resp.row_count[0] > 0, 'data row found');
+        ok(resp.records.rows[0]['col'] === 199, 'data is not 199: '+resp.records.rows[0]['col']);
+        var r = {'pumpkin' :'pie'};
+        return r;
+      }
+    });
+
+    p.done(function(m) {
+
+      equal(m.pumpkin, 'pie', 'pumpkin pie');
+      ok(m,'promise done called');
+      start();
+    });
+
+    $('#qunit_form2').rdbhostSubmit();
+
+  });
+}
 
 
 // do SELECT query form way

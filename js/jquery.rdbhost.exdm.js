@@ -279,9 +279,9 @@ function consoleLog(msg) {
 
       // attach provided handlers (if any) to deferred
       //
-      defer.fail(errback);
-      if (parms.callback)
-        defer.done(parms.callback);
+      if ( !parms.callback )
+        parms.callback = function(a) { return a };
+      var deferOut = defer.then(parms.callback, errback);
 
       // if params are provided, convert to named form 'arg000', 'arg001'...
       if (args !== undefined) {
@@ -364,8 +364,8 @@ function consoleLog(msg) {
 
       // return promise object from deferred, so client can add additional handlers
       //  as necessary
-      return defer.promise();
-    };
+      return deferOut.promise();
+    }
 
     /*
      parms is just like for query method, but callback gets row array and
@@ -417,8 +417,8 @@ function consoleLog(msg) {
           that = this;
 
       // attach callback, if provided, to defer
-      if (parms.callback)
-        defer.done(parms.callback);
+      if ( ! parms.callback)
+        parms.callback = function(a) { return a };
 
       // internal callback function
       function cBack(response) {
@@ -496,11 +496,11 @@ function consoleLog(msg) {
       }
 
       // set errback on deferred
-      defer.fail(errback);
+      var deferOut = defer.then(parms.callback, errback);
 
       // return promise, so client can add callbacks/errbacks as required
       //
-      return defer.promise();
+      return deferOut.promise();
     };
 
 
@@ -531,7 +531,7 @@ function consoleLog(msg) {
       parms.namedParams = { email: email,  password: password };
       parms.format = 'json-easy';
 
-      return that._query(parms, function() { return that.getLoginUrl(); });
+      return _query(parms, function() { return that.getLoginUrl(); });
     }
 
   } // end of SQLEngine class

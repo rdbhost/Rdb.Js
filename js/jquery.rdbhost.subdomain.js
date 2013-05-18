@@ -220,9 +220,11 @@ function consoleLog(msg) {
       }
 
       // attach success and fail handlers to promise
-      if (parms.callback)
-        defer.done(parms.callback);
-      defer.fail(errback);
+      if ( !parms.callback )
+        parms.callback = function(a) { return a };
+
+      var deferOut = defer.then(parms.callback, errback);
+
 
       // local callbacks to do cleanup prior to 'real' callback
       function qErrback(err, msg) {
@@ -332,7 +334,7 @@ function consoleLog(msg) {
       // submit the hidden form
       $hiddenform.submit();
 
-      return defer.promise();
+      return deferOut.promise();
     };
 
 
@@ -408,9 +410,10 @@ function consoleLog(msg) {
       }
 
       // add handlers to deferred
-      if (parms.callback)
-        defer.done(parms.callback);
-      defer.fail(errback);
+      if ( !parms.callback )
+        parms.callback = function(a) { return a };
+
+      var deferOut = defer.then(parms.callback, errback);
 
       // inner errback
       function results_bad(err, msg) {
@@ -514,7 +517,7 @@ function consoleLog(msg) {
       var winDomain = window.document.domain;
       window.document.domain = this.getCommonDomain();
 
-      return defer.promise();
+      return deferOut.promise();
     };
 
 

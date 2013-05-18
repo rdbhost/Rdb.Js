@@ -194,8 +194,9 @@ function consoleLog(msg) {
 
       // attach provided handlers (if any) to deferred
       //
-      defer.fail(errback);
-      if (parms.callback) defer.done(parms.callback);
+      if ( !parms.callback)
+        parms.callback = function(a) { return a };
+      var deferOut = defer.then(parms.callback, errback);
 
       // super callback that checks for server side errors, calls errback
       //  where appropriate
@@ -269,7 +270,7 @@ function consoleLog(msg) {
 
       // return promise, so client can attach handlers
       //
-      return defer.promise();
+      return deferOut.promise();
     };
 
 

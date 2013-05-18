@@ -74,6 +74,32 @@ asyncTest('ajax SELECT promise', 5, function() {
 });
 
 
+asyncTest('ajax SELECT promise chained', 4, function() {
+
+  var p = this.e.query({
+
+    q: "SELECT 1 as one",
+    format: 'json-easy',
+
+    callback: function (resp) {
+
+      ok(typeof resp === 'object', 'response is object'); // 0th assert
+      ok(resp.status[1].toLowerCase() == 'ok', 'status is ok: '+resp.status[1]); // 1st assert
+
+      return {'pumpkin' :'pie'};
+    }
+  });
+
+  p.done(function (resp) {
+
+    ok(resp.pumpkin == 'pie', 'pumpkin pie');
+    ok(true, 'promise resolved');
+    start();
+  });
+
+});
+
+
 asyncTest('ajax multi SELECT', 12, function() {
 
   this.e.query({
@@ -165,7 +191,7 @@ asyncTest('ajax SELECT error - promise', 3, function() {
   });
 
   p.fail( function(a) {
-    ok(a,'promise fail called');
+    ok(true,'promise fail called');
     start();
   });
 });
@@ -211,7 +237,7 @@ asyncTest('ajax SELECT promise', 6, function() {
   });
 
   p.done(function(a) {
-    ok(a,'promise done called');
+    ok(true,'promise done called');
     start();
   });
 });
@@ -541,6 +567,7 @@ else {
         ok(resp.status[1].toLowerCase() == 'ok', 'status is not ok: '+resp.status[1]); // 1st assert
         ok(resp.row_count[0] > 0, 'data row found');
         ok(resp.records.rows[0][0] === 99, 'data is not 99: '+resp.records.rows[0]['col']);
+        return resp;
       }
     });
 
@@ -625,15 +652,16 @@ else {
         console.log(resp);
         ok(typeof resp === typeof 'o', 'response is string'); // 0th assert
         ok(err.length === 5, 'error code not len 5: '+err); // 1st assert
-        start();
+        return ['abc','def'];
       },
       callback: function(resp) {
         ok(false,'should not happen');
       }
     });
 
-    p.fail(function(m) {
+    p.fail(function(m,msg) {
       ok(m,'promise fail called');
+      start();
     });
 
     $('#qunit_form').rdbhostSubmit();
