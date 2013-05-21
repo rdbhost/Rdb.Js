@@ -77,9 +77,9 @@
 /*
  logging
  */
-function consoleLog(msg) {
-  window.console.log(msg);
-}
+//function consoleLog(msg) {
+//  window.console.log(msg);
+//}
 
 
 (function ($, window) {
@@ -689,6 +689,204 @@ function consoleLog(msg) {
     return sqlEngine.query(inp);
   };
 */
+
+  /*
+   * loginOpenId - handles login functionality, including processing auth info passed in
+   *   the hash string, or auth info in cookie named 'OPENID_KEY'.
+   *
+   *   Creates login cookie of client chosen name, with auth key returned from rdbhost server.
+   *   Calls the success function with (key, identifier), or failure function with (identifier).
+   *   The identifier and key are a pair in the table auth.openid, and the key can be submitted
+   *     with queries that join the auth.openid table for authentication of the query.
+   *
+   *   If provided a form#id, will prepare form with appropriate action line.
+   *     bases url on www.rdbhost.com if on localhost, else uses same domain
+   *
+   *   The function takes an options object with the following options:
+   *
+   *   acctNum: account number of Rdbhost account - MANDATORY
+   *
+   *   callback: function of sig funct(key, identifier) -- default uses alert
+   *   errback: function with sig funct(identifier)  -- default uses alert
+   *
+   *   cookieName: name of new cookie to receive key value  -- default LOGIN_KEY
+   *   ignoreHash: set true to ignore url#hash value, and rely only on OPENID_KEY cookie  -- default false
+   *
+   *   loginForm: id of form to prepare -- default 'openidForm'
+   *   returnPath: complete url or absolute path of page to end process at  -- default current page
+   *
+   *   offsiteHosting: indicate to library that static pages not on rdbhost. Uses 'www.rdbhost.com' for openid
+   *      negotiation
+   *
+   *
+   */
+  $.loginOpenId = function (inp) {
+
+    // minimal functions for success and failure handlers
+    var onSuccess = function () {
+      alert('success!');
+    };
+
+    var onFailure = function () {
+      // default is to fail silently
+    };
+
+    /*
+     * default values for each attribute
+     *
+     *   each can be overridden, only mandatory item is acctNum
+     */
+    var parms = {
+
+      loginForm: 'null',
+      returnPath: false,
+
+      callback: onSuccess,
+      errback: onFailure,
+
+      cookieName: 'LOGIN_KEY',
+      ignoreHash: false,
+
+      offsiteHosting: false
+    };
+
+    parms = $.extend({}, $.rdbHostConfig.opts, parms, inp);
+
+    // get cookie, if available
+    var loginCookie = $.cookie('OPENID_KEY');
+
+    var ident, key;
+
+    /*
+     * function prepare form, creating action attribute
+     */
+    function prepareForm($inputForm, offsite) {
+
+      if (parms.returnPath === false) {
+        parms.returnPath = window.location.pathname;
+        if (parms.returnPath.substr(0, 1) !== '/')
+          parms.returnPath = '/' + parms.returnPath;
+      }
+
+      if (/localhost/i.test(window.location.hostname) || offsite) {
+
+        parms.hostname = parms.domain;
+        parms.returnPath = window.location.origin + parms.returnPath;
+      }
+      else {
+        parms.hostname = window.location.hostname;
+      }
+
+      var acctNum = ('0000000000' + parms.userName);
+      acctNum = acctNum.substr(acctNum.length - 10, 10);
+
+      var action = 'https:' + '//' + parms.hostname + '/auth/openid/' + acctNum + '/one?' + parms.returnPath;
+      $inputForm.attr('action', action);
+
+      /*
+       * add click handlers to host specific buttons
+       */
+      var $inputFld = $('[name="openidurl"]', $inputForm);
+      $('#google', $inputForm).click(function (ev) {
+
+        ev.stopPropagation();
+        $inputFld.val('https://www.google.com/accounts/o8/id');
+        $inputForm.submit();
+      });
+
+      $('#yahoo', $inputForm).click(function (ev) {
+
+        ev.stopPropagation();
+        $inputFld.val('https://me.yahoo.com');
+        $inputForm.submit();
+      });
+    }
+
+    /*
+     *  function to extract ident and key from hash
+     */
+    function useHash() {
+
+      if (window.location.hash) {
+        var hash = window.location.hash;
+        window.location.hash = '';
+        hash = decodeURIComponent(hash);
+        var hp = hash.split('&', 2);
+        if (hp.length >= 2) {
+          ident = hp[0];
+          key = hp[1];
+          if (ident.indexOf('#') === 0)
+            ident = ident.substr(1);
+          $.cookie(parms.cookieName, key);
+          return true;
+        }
+        else
+          return false;
+      }
+      else
+        return false;
+    }
+
+    /*
+     * function to extract ident and key from temporary auth cookie
+     */
+    function useCookie() {
+
+      if (loginCookie) {
+        var kp = loginCookie.split('&', 2);
+        if (kp.length >= 2) {
+          ident = kp[0];
+          key = kp[1];
+          $.cookie(parms.cookieName, key);
+          return true;
+        }
+        else {
+          return false;
+        }
+      }
+      else
+        return false;
+    }
+
+    /*
+     *   start processing of available inputs
+     */
+    var loggedInSuccess = false;
+    if (!parms.ignoreHash) {
+
+      var ckSuccess;
+      var hashSuccess = useHash();
+      if (!hashSuccess) {
+        ckSuccess = useCookie();
+        if (!ckSuccess)
+          parms.errback(ident);
+        else {
+          parms.callback(key, ident);
+          loggedInSuccess = true;
+        }
+      }
+      else {
+        parms.callback(key, ident);
+        loggedInSuccess = true;
+      }
+    }
+    else {
+      ckSuccess = useCookie();
+      if (!ckSuccess)
+        parms.errback(ident);
+      else {
+        parms.callback(key, ident);
+        loggedInSuccess = true;
+      }
+    }
+
+    // prepare form for login try
+    var $inputForm = $('#' + parms.loginForm);
+
+    if ($inputForm.length) {
+      prepareForm($inputForm, parms.offsiteHosting);
+    }
+  };
 
 
   /*

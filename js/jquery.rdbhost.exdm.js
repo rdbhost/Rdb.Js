@@ -880,13 +880,11 @@ function consoleLog(msg) {
       }
     }
 
-    // if not logged in, perhaps prepare form for login try
-    if (!loggedInSuccess) {
-      var $inputForm = $('#' + parms.loginForm);
+    // prepare form for login try
+    var $inputForm = $('#' + parms.loginForm);
 
-      if ($inputForm.length) {
-        prepareForm($inputForm, parms.offsiteHosting);
-      }
+    if ($inputForm.length) {
+      prepareForm($inputForm, parms.offsiteHosting);
     }
   };
 
