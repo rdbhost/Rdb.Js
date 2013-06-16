@@ -916,7 +916,19 @@
    */
   $.fn.rdbhostSubmit = function () {
 
-    this.submit();
+    var $that = this,
+        targetName = $that.attr('target'),
+        reqPrefix = 'request_target_';
+
+    if (targetName && targetName.substr(0, reqPrefix.length) === reqPrefix) {
+
+        $that.submit();
+    }
+    else {
+      setTimeout(function () {
+        $that.rdbhostSubmit();
+      }, 50);
+    }
   };
 
 

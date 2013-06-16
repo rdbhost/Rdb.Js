@@ -145,13 +145,13 @@ function consoleLog(msg) {
 
     // store engine config info
     var remote = 'https://' + domain,
-        easyXDMAjaxHandle = userName.substring(1);
+        easyXDMAjaxHandle;
 
     if (!domain) {
       domain = 'www.rdbhost.com';
     }
-    if (CONNECTIONS[easyXDMAjaxHandle] === undefined) {
-      createConnection(userName, domain);
+    if ( userName && userName.length > 2 ) {
+        this.setUserAuthentication(userName, authcode);
     }
 
     // function to clean up entry forms - used by .queryByForm method
@@ -175,6 +175,11 @@ function consoleLog(msg) {
 
       userName = uName;
       authcode = aCode;
+
+      easyXDMAjaxHandle = userName.substring(1);
+      if (CONNECTIONS[easyXDMAjaxHandle] === undefined) {
+        createConnection(userName, domain);
+      }
     };
 
     this.hasUserAuthentication = function() {
@@ -259,6 +264,7 @@ function consoleLog(msg) {
           defer = $.Deferred(),
           formatType = 'json',
           fmt = parms.format || '',
+          that = this,
           nm, typNm;
 
       var data = {
@@ -266,7 +272,7 @@ function consoleLog(msg) {
         kw: parms.kw,
         format: ~fmt.toLowerCase().indexOf('easy') ? formatType+'-easy' : formatType,
         mode: parms.mode,
-        authcode: parms.authcode
+        authcode: parms.authcode || authcode
       };
 
       // define default errback
@@ -413,6 +419,7 @@ function consoleLog(msg) {
           plainTextJson = parms.plainTextJson,
           defer = $.Deferred(),
           formatType = 'json-exdm',
+          authCode = parms.authcode || authcode,
           that = this;
 
       // ensure callback is null, not undefined
@@ -476,7 +483,7 @@ function consoleLog(msg) {
                 action = $form.attr('action');
 
             // put password into form
-            add_hidden_field($form, 'authcode', authcode);
+            add_hidden_field($form, 'authcode', authCode);
             // set format, action, and target
             add_hidden_field($form, 'format', parms.format);
 
