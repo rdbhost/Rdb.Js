@@ -150,9 +150,6 @@ function consoleLog(msg) {
     if (!domain) {
       domain = 'www.rdbhost.com';
     }
-    if ( userName && userName.length > 2 ) {
-        this.setUserAuthentication(userName, authcode);
-    }
 
     // function to clean up entry forms - used by .queryByForm method
     function cleanup_form($form, target, action) {
@@ -190,6 +187,10 @@ function consoleLog(msg) {
     this.userName = function() {
       return userName;
     };
+
+    if ( userName && userName.length > 2 ) {
+          this.setUserAuthentication(userName, authcode);
+    }
 
     /*
      Return API type for data item.
