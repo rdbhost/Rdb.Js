@@ -259,8 +259,7 @@ function consoleLog(msg) {
 
     function _query(parms, urlFunc) {
 
-      var errback = parms.errback,
-          args = parms.args || [],
+      var args = parms.args || [],
           namedParams = parms.namedParams || {},
           defer = $.Deferred(),
           formatType = 'json',
@@ -276,18 +275,9 @@ function consoleLog(msg) {
         authcode: parms.authcode || authcode
       };
 
-      // define default errback
-      if (errback === undefined) {
-        errback = function () {
-          var arg2 = Array.apply(null, arguments);
-          alert(arg2.join(', '));
-        };
-      }
-
       // attach provided handlers (if any) to deferred
       //
-      parms.callback = parms.callback || null;
-      var deferOut = defer.then(parms.callback, errback);
+      var deferOut = defer.then(parms.callback || null, parms.errback || null);
 
       // if params are provided, convert to named form 'arg000', 'arg001'...
       if (args !== undefined) {
@@ -347,11 +337,11 @@ function consoleLog(msg) {
                 resp.data = JSON.parse(resp.data);
               }
               catch (e) {
-                defer.reject('json-parse', resp.data);
+                defer.reject(['json-parse', resp.data]);
                 return;
               }
               if (resp.data.status[0] == 'error') {
-                defer.reject(resp.data.error[0], resp.data.error[1]);
+                defer.reject([resp.data.error[0], resp.data.error[1]]);
               }
               else {
                 defer.resolve(resp.data);
@@ -364,7 +354,7 @@ function consoleLog(msg) {
 
           function (errObj) {
             // error handler
-            defer.reject(errObj.message, errObj.data);
+            defer.reject([errObj.message, errObj.data]);
           }
       );
 
@@ -415,16 +405,12 @@ function consoleLog(msg) {
      */
     this.queryByForm = function (parms) {
 
-      var errback = parms.errback,
-          formId = parms.formId,
+      var formId = parms.formId,
           plainTextJson = parms.plainTextJson,
           defer = $.Deferred(),
           formatType = 'json-exdm',
           authCode = parms.authcode || authcode,
           that = this;
-
-      // ensure callback is null, not undefined
-      parms.callback = parms.callback || null;
 
       // internal callback function
       function cBack(response) {
@@ -436,13 +422,13 @@ function consoleLog(msg) {
           }
           catch (e) {
             delete CONNECTIONS[easyXDMAjaxHandle].handler;
-            defer.reject('json parse', response);
+            defer.reject(['json parse', response]);
             return;
           }
 
           if (response.status[0] == 'error') {
             delete CONNECTIONS[easyXDMAjaxHandle].handler;
-            defer.reject(response.error[0], response.error[1]);
+            defer.reject(response.error);
           }
           else {
             delete CONNECTIONS[easyXDMAjaxHandle].handler;
@@ -493,16 +479,8 @@ function consoleLog(msg) {
           }
       );
 
-      // define default errback
-      if (errback === undefined) {
-        errback = function () {
-          var arg2 = Array.apply(null, arguments);
-          alert(arg2.join(', '));
-        }
-      }
-
       // set errback on deferred
-      var deferOut = defer.then(parms.callback, errback);
+      var deferOut = defer.then(parms.callback || null, parms.errback || null);
 
       // return promise, so client can add callbacks/errbacks as required
       //
@@ -565,14 +543,13 @@ function consoleLog(msg) {
   //  configuration setting function
   //  saves defaults as attribute on the config function
   //
-  var opts = {  errback: errback,
-    callback: dumper,
-    eachrec: undefined,
+  var opts = {
     domain: 'www.rdbhost.com',
     mode: undefined,
     format: 'json-easy',
     userName: '',
-    authcode: ''        };
+    authcode: ''
+  };
 
 
   $.rdbHostConfig = function (parms) {
@@ -602,7 +579,7 @@ function consoleLog(msg) {
     }
     catch (e) {
 
-      inp.errback(e.name, e.message);
+      errback(e.name, e.message);
     }
 
     return promise; // return promise
@@ -678,7 +655,7 @@ function consoleLog(msg) {
     }
     catch (e) {
 
-      inp.errback(e.name, e.message);
+      errback(e.name, e.message);
     }
 
     return promise;
@@ -728,15 +705,6 @@ function consoleLog(msg) {
    */
   $.loginOpenId = function (inp) {
 
-    // minimal functions for success and failure handlers
-    var onSuccess = function () {
-      alert('success!');
-    };
-
-    var onFailure = function () {
-      // default is to fail silently
-    };
-
     /*
      * default values for each attribute
      *
@@ -747,8 +715,8 @@ function consoleLog(msg) {
       loginForm: 'null',
       returnPath: false,
 
-      callback: onSuccess,
-      errback: onFailure,
+      // default is to fail silently
+      errback: function() {},
 
       cookieName: 'LOGIN_KEY',
       ignoreHash: false,
@@ -859,32 +827,34 @@ function consoleLog(msg) {
     /*
      *   start processing of available inputs
      */
-    var loggedInSuccess = false;
     if (!parms.ignoreHash) {
 
-      var ckSuccess;
-      var hashSuccess = useHash();
+      var hashSuccess = useHash(),
+          errH = parms.errback || function(id) { alert(id)},
+          ckSuccess;
       if (!hashSuccess) {
         ckSuccess = useCookie();
-        if (!ckSuccess)
-          parms.errback(ident);
+        if (!ckSuccess) {
+
+          errH(ident);
+        }
         else {
           parms.callback(key, ident);
-          loggedInSuccess = true;
         }
       }
       else {
         parms.callback(key, ident);
-        loggedInSuccess = true;
       }
     }
     else {
       ckSuccess = useCookie();
-      if (!ckSuccess)
-        parms.errback(ident);
+      errH = parms.errback || function(id) { alert(id)};
+      if (!ckSuccess) {
+
+        errH(ident);
+      }
       else {
         parms.callback(key, ident);
-        loggedInSuccess = true;
       }
     }
 

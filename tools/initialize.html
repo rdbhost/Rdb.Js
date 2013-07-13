@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Initialize Email and Credit Card Tables</title>
+    <script language="javascript" type="text/javascript"
+            src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.js"></script>
+    <!-- Your project file goes here -->
+    <script language="javascript" type="text/javascript"
+            src="http://dev.rdbhost.com/js/easyxdm/easyXDM.debug.js"></script>
+    <script type="text/javascript" src="http://dev.rdbhost.com/js/jquery.rdbhost.exdm.js"></script>
+    <script type="text/javascript" src="http://dev.rdbhost.com/js/jquery.rdbhost.utils.js"></script>
+    <script type="text/javascript" src="../test/private.js"></script>
+</head>
+<body>
+
+
+<div>
+    <form id="emailapi" method="POST">
+
+        Add email service to API Table
+        <ul>
+            <li>Service: <input name="service" id="emservice" length="50"></li>
+            <li>API Key: <input name="apikey" id="emapikey" length="50"></li>
+            <li>Account Email: <input name="acctemail" id="acctemail" length="50"></li>
+            <li>Webmaster: <input name="webmaster" id="webmaster" length="50"></li>
+            <li><input type="submit"  /></li>
+        </ul>
+        Will create table if necessary.
+    </form>
+</div>
+
+<script>
+
+    $(document).ready(function() {
+
+        $.rdbHostConfig({
+                domain:   'dev.rdbhost.com',
+                userName: 's0000000012'
+        });
+
+        var $emailForm = $('#emailapi');
+        $emailForm.submit(function (ev) {
+
+            var svc = $emailForm.find('#emservice').val(),
+                apikey = $emailForm.find('#emapikey').val(),
+                acctemail = $emailForm.find('#acctemail').val(),
+                webmaster = $emailForm.find('#webmaster').val();
+
+            var p = $.setupEmail({
+
+                service: svc,
+                apikey: apikey,
+                acctemail: acctemail,
+                webmaster: webmaster
+            });
+
+            p.done(function(resp) {
+
+                alert('email apikey added to apis table');
+            });
+            p.fail(function(errArray) {
+
+                alert('email apikey addition failed! '+errArray[1]);
+            })
+        });
+
+    })
+</script>
+
+<div>
+    <form id="chargeapi" method="POST">
+
+        Add credit card ('stripe') service to API Table
+        <ul>
+            <li>Service <select name="cservice"><option value="stripe">Stripe</option></select></li>
+            <li>API Key: <input name="capikey" id="capikey" length="50"></li>
+            <li><input type="submit"  /></li>
+        </ul>
+        Will create apis table if necessary.
+    </form>
+</div>
+
+<script>
+
+    $(document).ready(function() {
+
+        $.rdbHostConfig({
+            domain:   'dev.rdbhost.com',
+            userName: 's0000000012'
+        });
+
+        var $chargeForm = $('#chargeapi');
+        $chargeForm.submit(function (ev) {
+
+            var svc = $chargeForm.find('#cservice').val(),
+                apikey = $chargeForm.find('#capikey').val();
+
+            var p = $.setupCharge({
+
+                service: svc,
+                apikey: apikey
+            });
+
+            p.done(function(resp) {
+
+                alert('charge apikey added to apis table');
+            });
+            p.fail(function(errArray) {
+
+                alert('charge apikey addition failed! '+errArray[1]);
+            })
+        });
+    })
+</script>
+
+
+
+</body>
+</html>

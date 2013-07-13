@@ -108,7 +108,7 @@ Any response data from the server will be passed to the callback.
 
 * *$.loginAjax:* sends email and password to server, gets list of roles and authcodes
 
-* *$.loginOpenId enables logging users in via OpenID logins.  This handles your users logging in to your app, not you
+* *$.loginOpenId* enables logging users in via OpenID logins.  This handles your users logging in to your app, not you
   logging in to your account.
 
 
