@@ -20,12 +20,12 @@ asyncTest('login ajax fail', 2+0, function() {
     'email': 'abc',
     'password': 'def',
 
-    errback: function (err, resp) {
+    errback: function (err) {
 
-      console.log(err);
-      console.log(resp);
-      ok(typeof resp === typeof 'o', 'response is string'); // 0th assert
-      ok(err.length, 'error code: '+err); // 1st assert
+      console.log(err[0]);
+      console.log(err[1]);
+      ok(typeof err[1] === typeof 'o', 'response is string'); // 0th assert
+      ok(err[0].length, 'error code: '+err[0]); // 1st assert
       start();
     },
 
@@ -68,3 +68,5 @@ if ( email && pass ) {
 else {
   test('login ajax succeed ***SKIPPED***', function() { ok(true) });
 }
+
+//

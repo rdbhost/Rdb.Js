@@ -479,9 +479,6 @@ var form = "<form id=\"qunit_form\" method='post' enctype=\"multipart/form-data\
            "<input name=\"q\" value=\"SELECT 99 AS col\" />"+
            "</form>";
 
-var tmpEngine = new SQLEngine(demo_r_role,'-',domain),
-    isCORSversion = ~tmpEngine.version.indexOf('cors');
-tmpEngine = null;
 
 module('SQLEngine Form tests', {
 
@@ -509,13 +506,7 @@ test('SQLEngine form setup verification', function() {
 });
 
 // form select
-if ( isCORSversion ) {
-
-  test('form SELECT ****SKIPPED***', function() { ok(true,'skipped') } );
-}
-else {
-
-  asyncTest('form SELECT', 4+1, function() {
+asyncTest('form SELECT', 4+1, function() {
 
     var that = this;
 
@@ -534,8 +525,7 @@ else {
     });
 
     $('#qunit_form').rdbhostSubmit();
-  });
-}
+});
 
 
 
@@ -581,13 +571,7 @@ else {
 
 
 // form select with promise
-if ( isCORSversion ) {
-
-  test('form SELECT promise ***SKIPPED***', function() { ok(true,'skipped') } );
-}
-else {
-
-  asyncTest('form SELECT promise', 5+1, function() {
+asyncTest('form SELECT promise', 5+1, function() {
 
     var that = this;
 
@@ -618,17 +602,10 @@ else {
     });
 
     $('#qunit_form').rdbhostSubmit();
-  });
-}
+});
 
-if ( isCORSversion ) {
-
-  test('form SELECT ***SKIPPED***', function() { ok(true,'skipped') } );
-}
-else {
-
-  // form select with error
-  asyncTest('form SELECT error', 2+1, function() {
+// form select with error
+asyncTest('form SELECT error', 2+1, function() {
 
     var that = this;
 
@@ -659,18 +636,11 @@ else {
       });
 
     $('#qunit_form').rdbhostSubmit();
-  });
-}
+});
 
 
-if ( isCORSversion ) {
-
-  test('form SELECT ***SKIPPED***', function() { ok(true,'skipped') } );
-}
-else {
-
-  // form select with error w/ promise
-  asyncTest('form SELECT error - promise', 3+1, function() {
+// form select with error w/ promise
+asyncTest('form SELECT error - promise', 3+1, function() {
 
     var that = this;
 
@@ -706,9 +676,7 @@ else {
     });
 
     $('#qunit_form').rdbhostSubmit();
-  });
-
-}
+});
 
 
 
