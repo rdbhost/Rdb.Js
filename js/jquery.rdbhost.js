@@ -84,12 +84,14 @@ window.easyXDM = window.easyXDM || null;
 
 (function ($, window) {
 
+    // function to load easyXDM on-demand during run-time
+    //
     var easyXDMPath = 'https://www.rdbhost.com/js/easyxdm/easyXDM.min.js';
-
     function lateLoadEasyXDM(fn) {
 
-        if ( window.yepnope ) {
-            yepnope({
+        var yn = window.yepnope || (window.modernizr && window.modernizr.load) || null;
+        if ( yn ) {
+            yn({
                 load: easyXDMPath,
                 callback: fn
             })
