@@ -160,7 +160,7 @@ window.easyXDM = window.easyXDM || null;
         return uid;
     }
 
-    // make request using previously prepared connection
+    // create function to make request using previously prepared eastXDM connection
     //
     var easyxdm_ajaxer_creator = function(easyXDMAjaxHandle) {
 
@@ -357,13 +357,13 @@ window.easyXDM = window.easyXDM || null;
          q : the query string itself
 
          args : array of arguments (optional), must correspond with %s tokens
-         in query
+           in query
          namedParams : an object containing arguments, by name. Reference
-         in query with tokens like %(name)
+           in query with tokens like %(name)
 
          format : 'json' or 'json-easy'
          plainTextJson : true if JSON parsing to be skipped, instead
-         returning the JSON plaintext
+           returning the JSON plaintext
          */
         this.query = function (parms) {
 
@@ -470,9 +470,9 @@ window.easyXDM = window.easyXDM || null;
 
         /*
          parms is just like for query method, but callback gets row array and
-         header array, not whole data structure.
+           header array, not whole data structure.
          an additional param is 'incomplete', a function that is called
-         (with rows and header) when data set is truncated by 100 record limit
+           (with rows and header) when data set is truncated by 100 record limit
          */
         this.queryRows = function (parms) {
 
@@ -679,9 +679,15 @@ window.easyXDM = window.easyXDM || null;
         mode: undefined,
         format: 'json-easy',
         userName: '',
-        authcode: ''
+        authcode: '',
+        accountNumber: ''
     };
 
+    var roleNameTest = /[sapr]\d{10}/;
+    function roleName(acct, role) {
+
+        return role.substring(0,1).toLowerCase() + ("000000000"+acct).slice(-10);
+    }
 
     $.rdbHostConfig = function (parms) {
 
@@ -691,7 +697,7 @@ window.easyXDM = window.easyXDM || null;
 
     /*
      withResults - calls callback with json result object
-     or errback with error object
+       or errback with error object
 
      param q : query to get data
 
@@ -702,6 +708,8 @@ window.easyXDM = window.easyXDM || null;
 
         assert(arguments.length <= 1, 'too many parms to withResults');
         var inp = $.extend({}, $.rdbHostConfig.opts, parms || {});
+        if ( ! roleNameTest.test(inp.userName) )
+            inp.userName = roleName(inp.accountNumber, inp.userName);
 
         try {
 
@@ -719,7 +727,7 @@ window.easyXDM = window.easyXDM || null;
 
     /*
      eachRecord - calls 'eachrec' callback with each record,
-     or errback with error object
+       or errback with error object
 
      param q : query to get data
 
@@ -761,6 +769,9 @@ window.easyXDM = window.easyXDM || null;
         var $form = $(that).closest('form'),
             inp = $.extend({}, $.rdbHostConfig.opts, parms || {});
 
+        if ( ! roleNameTest.test(inp.userName) )
+            inp.userName = roleName(inp.accountNumber, inp.userName);
+
         inp.formId = $form.attr('id');
         assert(inp.formId, 'form must have a unique id attribute');
 
@@ -795,7 +806,7 @@ window.easyXDM = window.easyXDM || null;
 
     /*
      postData submits some data (in the options object) to the server
-     and provides the response to callback.
+       and provides the response to callback.
 
      param q : query to post data
      param kw : query-keyword to post data
@@ -1009,6 +1020,9 @@ window.easyXDM = window.easyXDM || null;
     $.loginAjax = function (parms) {
 
         var inp = $.extend({}, $.rdbHostConfig.opts, parms || {});
+
+        if ( ! roleNameTest.test(inp.userName) )
+            inp.userName = roleName(inp.accountNumber, inp.userName);
 
         var sqlEngine = new SQLEngine(inp.userName, inp.authcode, inp.domain);
         delete inp.userName;

@@ -10,6 +10,7 @@
 
 
 var domain = 'www.rdbhost.com',
+    acct_number = 12,
     demo_r_role = 'r0000000012',
     demo_p_role = 'p0000000012',
     demo_s_role = 's0000000012',

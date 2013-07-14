@@ -127,6 +127,68 @@ asyncTest('verify postData - promise', 2, function() {
 });
 
 
+// verify postData
+asyncTest('verify postData - roleName', 2, function() {
+
+    $.rdbHostConfig( {
+        'domain': domain,
+        'format': 'json-easy',
+        'accountNumber': acct_number,
+        'userName': 'reader',
+        'authcode': '-'
+    });
+
+    var p = $.postData({
+
+        'q': 'SELECT 1 AS one',
+        'callback' : function(json) {
+            console.log(json);
+            equal(json.status[1],'OK', 'json has data');
+            return 1;
+        },
+
+        'errback': function(json) {
+            ok(false);
+            start();
+        }
+    });
+
+    p.done(function(m) {
+        ok(m,'promise done called');
+        start();
+    });
+});
+
+
+// verify postData
+asyncTest('verify postData - roleName p', 1, function() {
+
+    $.rdbHostConfig( {
+        'domain': domain,
+        'format': 'json-easy',
+        'accountNumber': acct_number,
+        'userName': 'preauth',
+        'authcode': '-'
+    });
+
+    var p = $.postData({
+
+        'q': 'SELECT 1 AS onesy',
+        'callback' : function(json) {
+            console.log(json);
+        },
+
+        'errback': function(json) {
+            ok(true);
+        }
+    });
+
+    p.always(function(m) {
+        start();
+    });
+});
+
+
 // verify easy format
 asyncTest('verify easy - promise', 2, function() {
 
