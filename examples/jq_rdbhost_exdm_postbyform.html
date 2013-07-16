@@ -6,13 +6,13 @@
     <script language="javascript" type="text/javascript"
 			src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.js"></script>
     <script language="javascript" type="text/javascript"
-      src="http://dev.rdbhost.com/js/easyxdm/easyXDM.debug.js"></script>
-    <script language="javascript" type="text/javascript" src="../js/jquery.rdbhost.exdm.js"></script>
+      src="http://www.rdbhost.com/js/easyxdm/easyXDM.debug.js"></script>
+    <script language="javascript" type="text/javascript" src="../js/jquery.rdbhost.js"></script>
     <script language="javascript" type="text/javascript" src="../js/json2.js"></script>
 		<script>
     $(document).ready(function () {
         var q = 'SELECT * FROM capitols';
-        $.rdbHostConfig({domain : 'dev.rdbhost.com'});
+        $.rdbHostConfig({domain : 'www.rdbhost.com'});
 				function repopulate() {
 					$('.targets').populateTable({
             q : q,
