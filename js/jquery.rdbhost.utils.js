@@ -34,7 +34,7 @@
 
         return $.postData({
 
-            userName:   demo_p_role,
+            userName:   'preauth',
 
             q:          emailWMQuery,
             kw:         'emailWebmaster',
@@ -88,7 +88,7 @@
 
         return $.postData({
 
-            userName:   demo_p_role,
+            userName:   'preauth',
 
             q:          emailAUQuery,
             kw:         'emailAllUsers',
@@ -123,7 +123,7 @@
          *
          */
 
-         var qCreateAPITable =
+        var qCreateAPITable =
              'CREATE TABLE "auth"."apis" (                            \n'+
              '  service VARCHAR(10) NOT NULL,                         \n'+
              '  apikey VARCHAR(100) NOT NULL,                         \n'+
@@ -145,27 +145,42 @@
              'VALUES(%(service),%(apikey),%(webmaster),%(acctemail));   ';
 
 
-         var p = $.superPostData({
+        var p = $.superPostData({
 
              userName: opts.userName,
              q:        qCreateAPITable
-         });
+        });
 
-         return p.then(function() {
+        function qInsertFunc() {
 
-             var p1 = $.superPostData({
+            return $.superPostData({
 
-                 userName:    opts.userName,
-                 q:           qInsert,
+                userName:    opts.userName,
+                q:           qInsert,
 
-                 namedParams: {
-                     service: opts.service,
-                     apikey: opts.apikey,
-                     webmaster: opts.webmasterEmail,
-                     acctemail: opts.accountEmail
-                 }
-             })
-         });
+                namedParams: {
+                    service: opts.service,
+                    apikey: opts.apikey,
+                    webmaster: opts.webmaster,
+                    acctemail: opts.acctemail
+                }
+            })
+        }
+
+        return p.then(function() {
+
+             return qInsertFunc();
+
+        }, function(errList) {
+
+            if ( errList[0] === '42P07' ) {
+
+                return qInsertFunc();
+            }
+            else {
+                return errList;
+            }
+        });
     };
 
 
@@ -205,7 +220,7 @@
 
         return $.postData({
 
-          userName:   demo_p_role,
+          userName:   'preauth',
 
           q:          chargeQuery,
           kw:         'chargeCard',
@@ -284,24 +299,24 @@
 
       return p.finally(function() {
 
-        var p1 = $.superPostData({
+          var p1 = $.superPostData({
 
-          userName:    opts.userName,
-          q:           qInsert,
+            userName:    opts.userName,
+            q:           qInsert,
 
-          namedParams: {
-            service: opts.service,
-            apikey: opts.apikey,
-            webmaster: '',
-            acctemail: opts.accountEmail
-          }
-        });
+            namedParams: {
+              service: opts.service,
+              apikey: opts.apikey,
+              webmaster: '',
+              acctemail: opts.accountEmail
+            }
+          });
 
-        var p2 = $.superPostData({
+          var p2 = $.superPostData({
 
-          userName:    opts.userName,
-          q:           qCreateChargeResultsTables
-        })
+            userName:    opts.userName,
+            q:           qCreateChargeResultsTables
+          })
       });
 
     };

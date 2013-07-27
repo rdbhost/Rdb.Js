@@ -220,7 +220,7 @@ window.easyXDM = window.easyXDM || null;
 
         function qErrback(xhr, stat, exc) {
 
-            defer.reject('ajax', stat);
+            defer.reject(['ajax', stat]);
         }
 
         // use jQuery ajax call to submit to server
@@ -842,7 +842,6 @@ window.easyXDM = window.easyXDM || null;
      *   offsiteHosting: indicate to library that static pages not on rdbhost. Uses 'www.rdbhost.com' for openid
      *      negotiation
      *
-     *
      */
     $.loginOpenId = function (inp) {
 
@@ -862,11 +861,15 @@ window.easyXDM = window.easyXDM || null;
 
             cookieName: 'LOGIN_KEY',
             ignoreHash: false,
+            userName: 'preauth',
 
             offsiteHosting: false
         };
 
         parms = $.extend({}, $.rdbHostConfig.opts, parms, inp);
+
+        if ( ! roleNameTest.test(parms.userName) )
+            parms.userName = roleName(parms.accountNumber, parms.userName);
 
         // get cookie, if available
         var loginCookie = $.cookie('OPENID_KEY');
@@ -916,8 +919,6 @@ window.easyXDM = window.easyXDM || null;
                 $inputFld.val('https://me.yahoo.com');
                 $inputForm.submit();
             });
-
-
         }
 
         /*
