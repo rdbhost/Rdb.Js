@@ -44,12 +44,12 @@ asyncTest('verifysetup', 1, function() {
           equal(json.status[1],'OK', 'json has data');
           start();
         },
-    'errback': function(err,errmsg) {
-          if ( err === 'rdb10' ) {
+    'errback': function(errArry) {
+          if ( errArry[0] === 'rdb10' ) {
               ok('true','not preauthorized');
           }
           else {
-              ok(false,'should not see');
+              ok(false,'should not see '+errArry);
           }
           start();
         }
@@ -217,7 +217,7 @@ asyncTest('$.emailWebmaster test', 4, function() {
         ok(resp.records.rows[0]['result'] === 'Success', 'data is not Success: '+resp.records.rows[0]['result']);
     }, function(errArry) {
 
-        ok(false,'should not see this '+errArry[1]);
+        ok(false,'should not see this '+errArry);
     })
 
     .then(function() { start(); },

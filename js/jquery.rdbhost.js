@@ -694,7 +694,11 @@ window.easyXDM = window.easyXDM || null;
 
     $.rdbHostConfig = function (parms) {
 
-        $.rdbHostConfig.opts = $.extend({}, opts, parms || {});
+        var inp = $.extend({}, opts, parms || {});
+        if ( ! inp.accountNumber && roleNameTest.test(inp.userName) )
+            inp.accountNumber = parseInt(inp.userName.substr(1), 10);
+
+        $.rdbHostConfig.opts = inp;
     };
 
     function myExtend() {
@@ -704,10 +708,10 @@ window.easyXDM = window.easyXDM || null;
                 return $.extend(prev, curr);
             });
 
-        if ( ! inp.accountNumber && roleNameTest.test(inp.userName) )
+        if ( roleNameTest.test(inp.userName) )
             inp.accountNumber = parseInt(inp.userName.substr(1), 10);
 
-        if ( ! roleNameTest.test(inp.userName) )
+        else
             inp.userName = roleName(inp.accountNumber, inp.userName);
 
         return inp;
