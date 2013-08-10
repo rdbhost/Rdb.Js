@@ -239,7 +239,7 @@ window.easyXDM = window.easyXDM || null;
      *  SQL Engine that uses form for input, and hidden iframe for response
      *   handles file fields
      */
-    function SQLEngine(userName, authcode, domain) {
+    function SQLEngine(dbRole, authcode, domain) {
 
         this.prototype = this.prototype || {};
         this.version = this.prototype.version = 'jquery.rdbhost.js 0.9.1';
@@ -269,9 +269,9 @@ window.easyXDM = window.easyXDM || null;
         }
 
         // for setting auth info later
-        this.setUserAuthentication = function (uName, aCode) {
+        this.setUserAuthentication = function (roleName, aCode) {
 
-            userName = uName;
+            dbRole = roleName;
             authcode = aCode;
             var that = this;
 
@@ -279,15 +279,15 @@ window.easyXDM = window.easyXDM || null;
 
                 if ( easyXDM ) {
 
-                    easyXDMAjaxHandle = userName.substring(1);
+                    easyXDMAjaxHandle = dbRole.substring(1);
                     if ( CONNECTIONS[easyXDMAjaxHandle] === undefined ) {
-                        createConnection(userName, domain);
+                        createConnection(dbRole, domain);
                     }
                 }
                 else {
 
                     lateLoadEasyXDM( function() {
-                        that.setUserAuthentication(uName, aCode);
+                        that.setUserAuthentication(roleName, aCode);
                     });
                 }
             }
@@ -295,15 +295,15 @@ window.easyXDM = window.easyXDM || null;
 
         this.hasUserAuthentication = function () {
 
-            return userName && userName.length && authcode && authcode.length;
+            return dbRole && dbRole.length && authcode && authcode.length;
         };
 
         this.userName = function () {
-            return userName;
+            return dbRole;
         };
 
-        if (userName && userName.length > 2) {
-            this.setUserAuthentication(userName, authcode);
+        if (dbRole && dbRole.length > 2) {
+            this.setUserAuthentication(dbRole, authcode);
         }
 
         /*
@@ -333,18 +333,18 @@ window.easyXDM = window.easyXDM || null;
         // return appropriate /db/ url for action attribute in form
         this.getQueryUrl = function (altPath) {
             if (altPath === undefined) {
-                assert(userName, 'no username in sqlEngine');
-                assert(userName.length, 'username is null in sqlEngine');
-                altPath = '/db/' + userName;
+                assert(dbRole, 'no username in sqlEngine');
+                assert(dbRole.length, 'username is null in sqlEngine');
+                altPath = '/db/' + dbRole;
             }
             return remote + altPath;
         };
 
         // return appropriate /accountlogin/ url for action attribute in form
         this.getLoginUrl = function () {
-            assert(userName, 'no username in sqlEngine');
-            assert(userName.length > 1, 'username is too short in sqlEngine');
-            return this.getQueryUrl('/accountlogin/' + userName.substring(1));
+            assert(dbRole, 'no username in sqlEngine');
+            assert(dbRole.length > 1, 'username is too short in sqlEngine');
+            return this.getQueryUrl('/accountlogin/' + dbRole.substring(1));
         };
 
 
@@ -526,9 +526,9 @@ window.easyXDM = window.easyXDM || null;
                 return dfr2.promise();
             }
 
-            easyXDMAjaxHandle = userName.substring(1);
+            easyXDMAjaxHandle = dbRole.substring(1);
             if ( CONNECTIONS[easyXDMAjaxHandle] === undefined ) {
-                createConnection(userName, domain);
+                createConnection(dbRole, domain);
             }
             if ( ! CONNECTIONS[easyXDMAjaxHandle].remoteRpcReady ) {
 
@@ -583,7 +583,7 @@ window.easyXDM = window.easyXDM || null;
             }
 
             $form.attr('target', '');
-            // var targettag = 'request_target_' + userName.substring(1);
+            // var targettag = 'request_target_' + dbRole.substring(1);
             CONNECTIONS[easyXDMAjaxHandle].remoteRpc.createTargetIframe(
 
                 function (targettag) {
@@ -688,12 +688,30 @@ window.easyXDM = window.easyXDM || null;
 
         return role.substring(0,1).toLowerCase() + ("000000000"+acct).slice(-10);
     }
+    $.role = function() {
+        return roleName($.rdbHostConfig.opts.accountNumber, $.rdbHostConfig.opts.userName)
+    };
 
     $.rdbHostConfig = function (parms) {
 
         $.rdbHostConfig.opts = $.extend({}, opts, parms || {});
     };
 
+    function myExtend() {
+
+        var args = Array.prototype.slice.call(arguments,0),
+            inp = args.reduce(function(prev, curr) {
+                return $.extend(prev, curr);
+            });
+
+        if ( ! inp.accountNumber && roleNameTest.test(inp.userName) )
+            inp.accountNumber = parseInt(inp.userName.substr(1), 10);
+
+        if ( ! roleNameTest.test(inp.userName) )
+            inp.userName = roleName(inp.accountNumber, inp.userName);
+
+        return inp;
+    }
 
     /*
      withResults - calls callback with json result object
@@ -707,9 +725,7 @@ window.easyXDM = window.easyXDM || null;
     $.withResults = function (parms) {
 
         assert(arguments.length <= 1, 'too many parms to withResults');
-        var inp = $.extend({}, $.rdbHostConfig.opts, parms || {});
-        if ( ! roleNameTest.test(inp.userName) )
-            inp.userName = roleName(inp.accountNumber, inp.userName);
+        var inp = myExtend({}, $.rdbHostConfig.opts, parms || {});
 
         try {
 
@@ -767,10 +783,7 @@ window.easyXDM = window.easyXDM || null;
 
         assert(arguments.length <= 2, 'too many parms to postFormData');
         var $form = $(that).closest('form'),
-            inp = $.extend({}, $.rdbHostConfig.opts, parms || {});
-
-        if ( ! roleNameTest.test(inp.userName) )
-            inp.userName = roleName(inp.accountNumber, inp.userName);
+            inp = myExtend({}, $.rdbHostConfig.opts, parms || {});
 
         inp.formId = $form.attr('id');
         assert(inp.formId, 'form must have a unique id attribute');
@@ -866,10 +879,7 @@ window.easyXDM = window.easyXDM || null;
             offsiteHosting: false
         };
 
-        parms = $.extend({}, $.rdbHostConfig.opts, parms, inp);
-
-        if ( ! roleNameTest.test(parms.userName) )
-            parms.userName = roleName(parms.accountNumber, parms.userName);
+        parms = myExtend({}, $.rdbHostConfig.opts, parms, inp);
 
         // get cookie, if available
         var loginCookie = $.cookie('OPENID_KEY');
@@ -1020,10 +1030,7 @@ window.easyXDM = window.easyXDM || null;
      */
     $.loginAjax = function (parms) {
 
-        var inp = $.extend({}, $.rdbHostConfig.opts, parms || {});
-
-        if ( ! roleNameTest.test(inp.userName) )
-            inp.userName = roleName(inp.accountNumber, inp.userName);
+        var inp = myExtend({}, $.rdbHostConfig.opts, parms || {});
 
         var sqlEngine = new SQLEngine(inp.userName, inp.authcode, inp.domain);
         delete inp.userName;

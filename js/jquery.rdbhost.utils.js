@@ -123,7 +123,13 @@
          *
          */
 
-        var qCreateAPITable =
+        var qCreateAuthSchema =
+             'CREATE SCHEMA "auth";                                     ',
+
+            qGrantAuthSchemaPrivs =
+             'GRANT USAGE ON SCHEMA "auth" TO %s                        ',
+
+            qCreateAPITable =
              'CREATE TABLE "auth"."apis" (                            \n'+
              '  service VARCHAR(10) NOT NULL,                         \n'+
              '  apikey VARCHAR(100) NOT NULL,                         \n'+
@@ -131,7 +137,7 @@
              '  account_email VARCHAR(150) NOT NULL                   \n'+
              ');                                                        ',
 
-             qCreateEmailBodyTable =
+            qCreateEmailBodyTable =
              'CREATE TABLE "emails" (                                 \n'+
              '  id VARCHAR(75),                                       \n'+
              '  subject VARCHAR(150),                                 \n'+
@@ -139,17 +145,40 @@
              '  htmlbody TEXT                                         \n'+
              ');                                                      \n',
 
-             qInsert =
+            qInsert =
              'INSERT INTO "auth"."apis"                               \n'+
              '  ( service, apikey, webmaster_email, account_email )   \n'+
              'VALUES(%(service),%(apikey),%(webmaster),%(acctemail));   ';
 
 
-        var p = $.superPostData({
+        function createAuthSchema() {
 
-             userName: opts.userName,
-             q:        qCreateAPITable
-        });
+            var p = $.superPostData({
+
+                userName:    opts.userName,
+                q:           qCreateAuthSchema
+            });
+
+            return p.always(function() {
+
+                var uName = $.role().replace('s','p');
+                var q = qGrantAuthSchemaPrivs.replace('%s',uName);
+                return $.superPostData({
+
+                    userName: opts.userName,
+                    q: q
+                })
+            })
+        }
+
+        function createAPITable() {
+
+            return $.superPostData({
+
+                userName: opts.userName,
+                q:        qCreateAPITable
+            })
+        }
 
         function qInsertFunc() {
 
@@ -167,20 +196,19 @@
             })
         }
 
-        return p.then(function() {
-
-             return qInsertFunc();
-
-        }, function(errList) {
-
-            if ( errList[0] === '42P07' ) {
-
-                return qInsertFunc();
-            }
-            else {
-                return errList;
-            }
+        var p = $.Deferred();
+        var p2 = p.always( function() {
+            return createAuthSchema();
+        })
+        .always(function() {
+            return createAPITable();
+        })
+        .always(function() {
+           return qInsertFunc();
         });
+        p.resolve();
+
+        return p2;
     };
 
 
