@@ -157,6 +157,14 @@
 
                 userName:    opts.userName,
                 q:           qCreateAuthSchema
+            }).fail(function(errArray) {
+
+                console.log('createAuthSchema fail '+errArray);
+                return errArray;
+            }).done(function(resp) {
+
+                console.log('createAuthSchema success ');
+                return resp;
             });
 
             return p.always(function() {
@@ -167,6 +175,14 @@
 
                     userName: opts.userName,
                     q: q
+                }).fail(function(errArray) {
+
+                    console.log('grantAuth error '+errArray+' '+q);
+                    return errArray;
+                }).done(function(resp) {
+
+                    console.log('grantAuth success '+q);
+                    return resp;
                 })
             })
         }
@@ -197,15 +213,42 @@
         }
 
         var p = $.Deferred();
-        var p2 = p.always( function() {
-            return createAuthSchema();
-        })
-        .always(function() {
-            return createAPITable();
-        })
-        .always(function() {
-           return qInsertFunc();
-        });
+        function casStep() {
+            console.log('begin: createAuthSchema');
+            return createAuthSchema()
+                .fail(function(err) {
+                    console.log('createAuthSchema err '+err);
+                    return err;
+                }).done(function(resp) {
+                    console.log('createAuthSchema done');
+                    return resp;
+                });
+        }
+        function catStep() {
+            console.log('begin: createAPITable');
+            return createAPITable()
+                .fail(function(err) {
+                    console.log('createAPITable err '+err);
+                    return err;
+                }).done(function(resp) {
+                    console.log('createAPITable done');
+                    return resp;
+                });
+        }
+        function qifStep() {
+           console.log('begin: qInsertFunc');
+           return qInsertFunc()
+               .fail(function(err) {
+                   console.log('qInsertFunc err '+err);
+                   return err;
+               }).done(function(resp) {
+                   console.log('qInsertFunc done');
+                   return resp;
+               });
+        }
+        var p2 = p.then(casStep, casStep)
+            .then(catStep, catStep)
+            .then(qifStep, qifStep);
         p.resolve();
 
         return p2;
