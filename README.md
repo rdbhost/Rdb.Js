@@ -44,6 +44,8 @@ Before we discuss the functions and methods themselves, let's go over the option
 
 * *format:* either _json_ or _json-easy_. default = _json-easy_.
 
+* *repeat:* an integer >= 1, indicating the query is to be duplicated, and _repeat_ copies submitted as one transaction.  Supply enough arguments to satisfy the whole transaction.
+
 * *domain:* what rdbhost server are you using?  default www.rdbhost.com
 
 * *callback:* a function that gets called with the data, once data is received.  Used by functions, not by methods.

@@ -166,24 +166,24 @@
                 console.log('createAuthSchema success ');
                 return resp;
             });
+        }
 
-            return p.always(function() {
+        function grantSchemaPrivs() {
 
-                var uName = $.role().replace('s','p');
-                var q = qGrantAuthSchemaPrivs.replace('%s',uName);
-                return $.superPostData({
+            var uName = $.role().replace('s','p');
+            var q = qGrantAuthSchemaPrivs.replace('%s',uName);
+            return $.superPostData({
 
-                    userName: opts.userName,
-                    q: q
-                }).fail(function(errArray) {
+                userName: opts.userName,
+                q: q
+            }).fail(function(errArray) {
 
-                    console.log('grantAuth error '+errArray+' '+q);
-                    return errArray;
-                }).done(function(resp) {
+                console.log('grantAuth error '+errArray+' '+q);
+                return errArray;
+            }).done(function(resp) {
 
-                    console.log('grantAuth success '+q);
-                    return resp;
-                })
+                console.log('grantAuth success '+q);
+                return resp;
             })
         }
 
@@ -224,6 +224,18 @@
                     return resp;
                 });
         }
+        function gspStep() {
+
+            console.log('begin: grantSchemaPrivs');
+            return grantSchemaPrivs()
+                .fail(function(err) {
+                    console.log('grantSchemaPrivs err '+err);
+                    return err;
+                }).done(function(resp) {
+                    console.log('grantSchemaPrivs done');
+                    return resp;
+                });
+        }
         function catStep() {
             console.log('begin: createAPITable');
             return createAPITable()
@@ -247,6 +259,7 @@
                });
         }
         var p2 = p.then(casStep, casStep)
+            .then(gspStep, gspStep)
             .then(catStep, catStep)
             .then(qifStep, qifStep);
         p.resolve();
@@ -436,6 +449,9 @@
         return $.loginAjax(opts);
     };
 
+    var superAuthcode = null,
+        superAuthcodeTimer = null,
+        acctEmail = null;
 
     $.superPostData = function(opts) {
 
@@ -445,25 +461,26 @@
          *   sets timeout to clear authcode
          */
 
-        if ( $.rdbHostConfig.opts.superAuthcode ) {
+        if ( superAuthcode ) {
 
-            opts['authcode'] = $.rdbHostConfig.opts.superAuthcode;
+            opts['authcode'] = superAuthcode;
             return $.postData(opts);
         }
         else {
-            if ( !$.rdbHostConfig.opts.acctEmail )
-                $.rdbHostConfig.opts.acctEmail = prompt('Enter account email address');
+            if ( !acctEmail )
+                acctEmail = prompt('Enter account email address');
 
-            var password = prompt('Enter the password for account '+ $.rdbHostConfig.opts.acctEmail);
+            var password = prompt('Enter the password for account '+ acctEmail);
 
             return $.superLogin({
 
-                email: $.rdbHostConfig.opts.acctEmail,
+                email: acctEmail,
                 password: password,
 
                 callback: function(res) {
-                    $.rdbHostConfig.opts.superAuthcode = res.super[1];
-                    setTimeout(function() {delete $.rdbHostConfig.opts.superAuthcode;}, 8000);
+                    clearTimeout(superAuthcodeTimer);
+                    superAuthcode = res.super[1];
+                    superAuthcodeTimer = setTimeout(function() { superAuthcode = null; }, 8000);
                     return $.superPostData(opts);
                 },
 
@@ -479,28 +496,29 @@
          * same as postFormData
          */
 
-        if ( $.rdbHostConfig.opts.superAuthcode ) {
+        if ( superAuthcode ) {
 
-            opts['authcode'] = $.rdbHostConfig.opts.superAuthcode;
+            opts['authcode'] = superAuthcode;
             return $.postFormData(formId, opts);
         }
         else {
-            if ( !$.rdbHostConfig.opts.acctEmail )
-                $.rdbHostConfig.opts.acctEmail = prompt('Enter account email address');
+            if ( ! acctEmail )
+                acctEmail = prompt('Enter account email address');
 
-            var password = prompt('Enter the password for account '+ $.rdbHostConfig.opts.acctEmail);
+            var password = prompt('Enter the password for account '+ acctEmail);
 
             return $.superLogin({
 
-                email: $.rdbHostConfig.opts.acctEmail,
+                email: acctEmail,
                 password: password,
                 userName: opts.userName,
 
                 callback: function(res) {
 
-                    $.rdbHostConfig.opts.superAuthcode = res.super[1];
-                    setTimeout(function() {
-                        delete $.rdbHostConfig.opts.superAuthcode;
+                    clearTimeout(superAuthcodeTimer);
+                    superAuthcode = res.super[1];
+                    superAuthcodeTimer = setTimeout(function() {
+                        superAuthcode = null;
                     }, 8000);
                     return $.superPostFormData(formId, opts);
                 },
