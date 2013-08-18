@@ -364,6 +364,9 @@ window.easyXDM = window.easyXDM || null;
          format : 'json' or 'json-easy'
          plainTextJson : true if JSON parsing to be skipped, instead
            returning the JSON plaintext
+
+         repeat: how many repetitions of query to submit
+
          */
         this.query = function (parms) {
 
@@ -436,6 +439,11 @@ window.easyXDM = window.easyXDM || null;
                 }
             }
 
+            // if repeat value provided, add
+            if ( parms.repeat )
+                data.repeat = parms.repeat
+
+            // calculate url
             var url = urlFunc(),
                 ajaxer;
 

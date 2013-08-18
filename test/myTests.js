@@ -99,6 +99,27 @@ asyncTest('ajax SELECT promise chained', 4, function() {
 
 });
 
+asyncTest('ajax SELECT + repeat', 4, function() {
+
+    this.e.query({
+
+        q: "SELECT 1 as one",
+        format: 'json-easy',
+        repeat: 3,
+
+        callback: function (resp) {
+
+            ok(typeof resp === 'object', 'response is object'); // 0th assert
+            ok(resp.status[1].toLowerCase() == 'ok', 'status is not ok: '+resp.status[1]); // 1st assert
+            ok(resp.result_sets && resp.result_sets.length > 2, 'data sets found');
+            ok(resp.result_sets[2].records.rows[0]['one'] === 1, 'data is '+resp.result_sets[2].records.rows[0]['one']);
+            start();
+        }
+    });
+});
+
+
+
 
 asyncTest('ajax multi SELECT', 12, function() {
 

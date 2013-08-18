@@ -128,7 +128,7 @@ asyncTest('verify postData - promise', 2, function() {
 
 
 // verify postData
-asyncTest('verify postData - roleName', 2, function() {
+asyncTest('verify postData - roleName r', 2, function() {
 
     $.rdbHostConfig( {
         'domain': domain,
@@ -184,6 +184,40 @@ asyncTest('verify postData - roleName p', 1, function() {
     });
 
     p.always(function(m) {
+        start();
+    });
+});
+
+// verify postData
+asyncTest('verify postData - roleName r + repeat', 3, function() {
+
+    $.rdbHostConfig( {
+        'domain': domain,
+        'format': 'json-easy',
+        'accountNumber': acct_number,
+        'userName': 'reader',
+        'authcode': '-'
+    });
+
+    var p = $.postData({
+
+        'q': 'SELECT 1 AS one',
+        repeat: 3,
+        'callback' : function(json) {
+            console.log(json);
+            equal(json.status[1],'OK', 'json has data');
+            ok(json.result_sets && json.result_sets.length > 2, 'json has multi result sets');
+            return 1;
+        },
+
+        'errback': function(json) {
+            ok(false);
+            start();
+        }
+    });
+
+    p.done(function(m) {
+        ok(m,'promise done called');
         start();
     });
 });
