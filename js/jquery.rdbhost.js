@@ -236,6 +236,82 @@ window.easyXDM = window.easyXDM || null;
     };
 
     /*
+     Return API type for data item.
+
+     return value is one of STRING, NUMBER, DATE, NONE, DATETIME, TIME
+     */
+    function apiType(d) {
+
+        switch (typeof d) {
+
+            case 'number':
+                return 'NUMBER';
+            case 'object':
+                if ($.type(d) == 'date')
+                    return 'DATETIME';
+                else
+                    return 'STRING';
+            case 'undefined':
+                return 'NONE';
+
+            default:
+                return 'STRING'
+        }
+    }
+
+    /*
+     *  consolidates positional args, cookies, and namedParams all into one params object
+     *
+     *    args are added as 'arg###', named params as 'arg:xxx', and cookies become named params
+     *
+     *    @param params: object receives all consolidated data
+     *    @param args: list of positional arguments
+     *    @param namedParams: object of names and values
+     *
+     *    @return: nothing
+     */
+    function consolidateParams(params, args, namedParams) {
+
+        var nm, typNm, num;
+
+        // if params are provided, convert to named form 'arg000', 'arg001'...
+        for (var i = 0; i < args.length; i += 1) {
+
+            num = '000' + i;
+            nm = 'arg' + num.substr(num.length - 3);
+            params[nm] = args[i];
+            typNm = 'argtype' + num.substr(num.length - 3);
+            params[typNm] = apiType(args[i]);
+        }
+
+        // if cookie tokens found in sql, convert to namedParams
+        var ckTestRe = /%\{([^\}]+)\}/;
+
+        while (ckTestRe.test(params.q)) {
+
+            var ckArray = ckTestRe.exec(params.q),
+                ck = ckArray[0],
+                ckV = ckArray[1],
+                newNm = '_ck_' + ckV,
+                ckValue = $.cookie(ckV);
+            params.q = params.q.replace(ck, '%(' + newNm + ')');
+            namedParams[newNm] = ckValue;
+        }
+
+        // if keyword params are provided, convert to named form 'arg:name'.
+        for (var kw in namedParams) {
+            if (namedParams.hasOwnProperty(kw)) {
+
+                nm = 'arg:' + kw;
+                params[nm] = namedParams[kw];
+                typNm = 'argtype:' + kw;
+                params[typNm] = apiType(namedParams[kw]);
+            }
+        }
+    }
+
+
+    /*
      *  SQL Engine that uses form for input, and hidden iframe for response
      *   handles file fields
      */
@@ -250,22 +326,6 @@ window.easyXDM = window.easyXDM || null;
 
         if (!domain) {
             domain = 'www.rdbhost.com';
-        }
-
-        // function to clean up entry forms - used by .queryByForm method
-        function cleanup_form($form, target, action) {
-
-            $form.find('.to-remove-later').remove();
-            $form.attr('target', target);
-            $form.attr('action', action);
-        }
-
-        // to add hidden field to form - used by .queryByForm method
-        function add_hidden_field($form, nm, val) {
-
-            var fld = $('<input type="hidden" class="to-remove-later" />');
-            fld.attr('name', nm).val(val);
-            $form.append(fld);
         }
 
         // for setting auth info later
@@ -306,30 +366,6 @@ window.easyXDM = window.easyXDM || null;
             this.setUserAuthentication(dbRole, authcode);
         }
 
-        /*
-         Return API type for data item.
-
-         return value is one of STRING, NUMBER, DATE, NONE, DATETIME, TIME
-         */
-        function apiType(d) {
-
-            switch (typeof d) {
-
-                case 'number':
-                    return 'NUMBER';
-                case 'object':
-                    if ($.type(d) == 'date')
-                        return 'DATETIME';
-                    else
-                        return 'STRING';
-                case 'undefined':
-                    return 'NONE';
-
-                default:
-                    return 'STRING'
-            }
-        }
-
         // return appropriate /db/ url for action attribute in form
         this.getQueryUrl = function (altPath) {
             if (altPath === undefined) {
@@ -342,11 +378,11 @@ window.easyXDM = window.easyXDM || null;
 
         // return appropriate /accountlogin/ url for action attribute in form
         this.getLoginUrl = function () {
+
             assert(dbRole, 'no username in sqlEngine');
             assert(dbRole.length > 1, 'username is too short in sqlEngine');
             return this.getQueryUrl('/accountlogin/' + dbRole.substring(1));
         };
-
 
         /*
          parms is object containing various options
@@ -383,8 +419,7 @@ window.easyXDM = window.easyXDM || null;
                 defer = $.Deferred(),
                 formatType = 'json',
                 fmt = parms.format || '',
-                that = this,
-                nm, typNm;
+                that = this;
 
             var data = {
                 q: parms.q,
@@ -398,50 +433,12 @@ window.easyXDM = window.easyXDM || null;
             //
             var deferOut = defer.then(parms.callback || null, parms.errback || null);
 
-            // if params are provided, convert to named form 'arg000', 'arg001'...
-            if (args !== undefined) {
-                for (var i = 0; i < args.length; i += 1) {
-
-                    var num = '000' + i;
-                    nm = 'arg' + num.substr(num.length - 3);
-                    data[nm] = args[i];
-                    typNm = 'argtype' + num.substr(num.length - 3);
-                    data[typNm] = apiType(args[i]);
-                }
-            }
-
-            // if cookie tokens found in sql, convert to namedParams
-            var ckTestRe = /%\{([^\}]+)\}/;
-            if (namedParams === undefined)
-                namedParams = {};
-
-            while (ckTestRe.test(data.q)) {
-
-                var ckArray = ckTestRe.exec(data.q),
-                    ck = ckArray[0],
-                    ckV = ckArray[1],
-                    newNm = '_ck_' + ckV,
-                    ckValue = $.cookie(ckV);
-                data.q = data.q.replace(ck, '%(' + newNm + ')');
-                namedParams[newNm] = ckValue;
-            }
-
-            // if keyword params are provided, convert to named form 'arg:name'.
-            if (namedParams !== undefined) {
-                for (var kw in namedParams) {
-                    if (namedParams.hasOwnProperty(kw)) {
-
-                        nm = 'arg:' + kw;
-                        data[nm] = namedParams[kw];
-                        typNm = 'argtype:' + kw;
-                        data[typNm] = apiType(namedParams[kw]);
-                    }
-                }
-            }
+            // consolidate args and namedparams, and cookies, into data
+            consolidateParams(data, args, namedParams);
 
             // if repeat value provided, add
             if ( parms.repeat )
-                data.repeat = parms.repeat
+                data.repeat = parms.repeat;
 
             // calculate url
             var url = urlFunc(),
@@ -479,6 +476,7 @@ window.easyXDM = window.easyXDM || null;
         /*
          parms is just like for query method, but callback gets row array and
            header array, not whole data structure.
+
          an additional param is 'incomplete', a function that is called
            (with rows and header) when data set is truncated by 100 record limit
          */
@@ -503,6 +501,22 @@ window.easyXDM = window.easyXDM || null;
             return this.query(parms);
         };
 
+
+        // function to clean up entry forms - used by .queryByForm method
+        function cleanup_form($form, target, action) {
+
+            $form.find('.to-remove-later').remove();
+            $form.attr('target', target);
+            $form.attr('action', action);
+        }
+
+        // to add hidden field to form - used by .queryByForm method
+        function add_hidden_field($form, nm, val) {
+
+            var fld = $('<input type="hidden" class="to-remove-later" />');
+            fld.attr('name', nm).val(val);
+            $form.append(fld);
+        }
 
         /* parms is object containing various options
 
@@ -644,6 +658,7 @@ window.easyXDM = window.easyXDM || null;
             var email = parms.email,
                 password = parms.password,
                 that = this;
+
             delete parms.email;
             delete parms.password;
             parms.namedParams = { email: email, password: password };
@@ -692,8 +707,8 @@ window.easyXDM = window.easyXDM || null;
     };
 
     var roleNameTest = /[sapr]\d{10}/;
-    function roleName(acct, role) {
 
+    function roleName(acct, role) {
         return role.substring(0,1).toLowerCase() + ("000000000"+acct).slice(-10);
     }
     $.role = function() {
@@ -837,6 +852,109 @@ window.easyXDM = window.easyXDM || null;
      param kw : query-keyword to post data
      */
     $.postData = $.withResults;
+
+
+    /*
+     * getGET - creates URL for query that can be retrieved with ajax GET
+     *
+     * param options: usual options
+     * return: string-url
+     */
+    $.getGET = function(inp) {
+
+        assert(arguments.length <= 1, 'too many parms to getGET');
+        var parms = myExtend({}, $.rdbHostConfig.opts, inp || {});
+
+        // validate input
+        if ( parms.authcode === '-' )
+            delete parms.authcode;
+        if ( parms.authcode )
+            throw new Error('authcode not permitted in GET');
+        if ( ! parms.kw && ! parms.q )
+            throw new Error('need q or kw');
+
+        // arguments for GET string
+        var data = {
+            format: ~(parms.format || '').toLowerCase().indexOf('easy') ? 'json-easy' : 'json'
+        };
+
+        // add additional data, as provided
+        $.each(['kw', 'mode', 'q', 'repeat'], function(idx, el) {
+
+            if ( parms.hasOwnProperty(el) && parms[el]  )
+                data[el] = parms[el];
+        });
+
+        // interpolate positional args and named params into 'data'
+        consolidateParams(data, parms.args || [], parms.namedParams || {});
+
+        // GET string parts
+        var remote = 'https://' + parms.domain,
+            path = '/db/'+parms.userName,
+            argsList = $.param(data, false);
+
+        return remote + path + '?' + argsList;
+    };
+
+
+    /*
+     * getPOST - creates URL and params hash for query that can be retrieved with ajax POST
+     *
+     * param options: usual options
+     * return: 2-element array [string-url, params-object]
+     */
+    $.getPOST = function(inp) {
+
+        assert(arguments.length <= 1, 'too many parms to getPOST');
+        var parms = myExtend({}, $.rdbHostConfig.opts, inp || {});
+
+        // validate input
+        if ( parms.authcode === '-' )
+            delete parms.authcode;
+        if ( parms.userName.charAt(0) === 's' && ! parms.authcode )
+            throw new Error('super role needs authcode');
+        if ( ! parms.kw && ! parms.q )
+            throw new Error('need q or kw');
+
+        // arguments for GET string
+        var data = {
+            format: ~(parms.format || '').toLowerCase().indexOf('easy') ? 'json-easy' : 'json'
+        };
+
+        // add additional data, as provided
+        $.each(['kw', 'mode', 'q', 'repeat'], function(idx, el) {
+
+            if ( parms.hasOwnProperty(el) && parms[el]  )
+                data[el] = parms[el];
+        });
+
+        // interpolate positional args and named params into 'data'
+        consolidateParams(data, parms.args || [], parms.namedParams || {});
+
+        // POST string parts
+        var remote = 'https://' + parms.domain,
+            path = '/db/'+parms.userName;
+
+        return {
+            url: remote + path,
+            data: data
+        };
+    };
+
+
+    /*
+     * getBin - creates URL that can be retrieved using src attribute (in img tag, say)
+     *
+     * param options: usual options
+     * return: 2-element array [string-url, params-object]
+     */
+    $.getBin = function(inp) {
+
+        assert(arguments.length <= 1, 'too many parms to withResults');
+        var parms = myExtend({}, $.rdbHostConfig.opts, inp || {});
+
+        // todo - implement this
+    };
 
 
     /*

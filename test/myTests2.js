@@ -251,20 +251,25 @@ asyncTest('verify easy - promise', 2, function() {
 /* $.eachRecord, */
 asyncTest('$.eachRecord', 2, function() {
 
-  $.eachRecord({
+    var ct = 0;
+    $.eachRecord({
 
-    'q': 'SELECT 1 AS one UNION SELECT 2',
+        'q': 'SELECT 1 AS one UNION SELECT 2',
 
-    'eachrec' : function(jsonRow) {
-          ok(jsonRow['one']===1 || jsonRow['one']===2, 'row has value 1');
-          start();
+        'eachrec' : function(jsonRow) {
+            ok(jsonRow['one']===1 || jsonRow['one']===2, 'row has value 1');
+            ct += 1;
+            if ( ct === 2 )
+                start();
         },
 
-    'errback': function(json) {
-          ok(false);
-          start();
+        'errback': function(json) {
+            ok(false);
+            ct += 1;
+            if ( ct === 2 )
+                start();
         }
-  })
+  });
 });
 
 
@@ -632,6 +637,254 @@ asyncTest('$.populateForm test', 2+1, function() {
       start();
     }, 2000);
 });
+
+
+
+module('$.getGET tests', {
+
+    setup: function () {
+        $.rdbHostConfig( {
+            'domain': domain,
+            'format': 'json-easy',
+            'userName': demo_r_role,
+            'authcode': '-'
+        });
+    },
+
+    teardown: function () {
+        $.rdbHostConfig( {
+            'domain': undefined,
+            'format': undefined,
+            'userName': undefined,
+            'authcode': '-'
+        });
+    }
+});
+
+/* $.getGET throws,  */
+test('$.getGET test throws', function() {
+
+    throws(function() {$.getGET() }, 'always throws exception');
+});
+
+/* $.getGET ,  */
+test('$.getGET test ', function() {
+
+    var opts = {
+        q: 'SELECT 1'
+    };
+    var u = $.getGET(opts);
+    ok(~u.indexOf('format'), 'has format string');
+    ok(~u.indexOf('SELECT'), 'has query string');
+    ok(~u.indexOf('rdbhost.'), 'has host string');
+    ok(~u.indexOf(demo_r_role), 'rolename in url');
+    ok(!~u.indexOf(' '), 'has no white space');
+});
+
+
+/* $.getGET ,  */
+test('$.getGET test args ', function() {
+
+    var opts = {
+        q: 'SELECT 1',
+        args: [1, 'abc'],
+        format: 'json-easy'
+    };
+    var u = $.getGET(opts);
+
+    ok(~u.indexOf('format'), 'has format string');
+    ok(~u.indexOf('SELECT'), 'has query string');
+    ok(~u.indexOf('rdbhost.'), 'has host string');
+    ok(~u.indexOf(demo_r_role), 'rolename in url');
+    ok(!~u.indexOf(' '), 'has no white space');
+
+    ok(~u.indexOf('q='), 'query in url');
+    ok(~u.indexOf('arg000=1'), 'arg000 is correct in url');
+    ok(~u.indexOf('arg001=abc'), 'arg001 is correct in url');
+    ok(~u.indexOf('argtype000=NUMBER'), 'argtype000 is correct in url ');
+    ok(~u.indexOf('argtype001=STRING'), 'argtype001 is correct in url ');
+    ok(!~u.indexOf('arg002'), 'no arg002 in url');
+    ok(!~u.indexOf('argtype002'), 'no argtype002 in url');
+
+    ok(~u.indexOf('format=json'), 'format in url');
+});
+
+
+/* $.getGET ,  */
+asyncTest('$.getGET test w AJAX ', 3, function() {
+
+    var opts = {
+        q: 'SELECT 1',
+        args: [1, 'abc'],
+        format: 'json-easy'
+    };
+    var u = $.getGET(opts);
+
+    var p = $.ajax({
+        url: u,
+        dataType: 'json'
+    });
+
+    p.fail(function(errArray) {
+
+       ok(false, 'AJAX test failed ' + errArray[0] + ' ' + errArray[1]);
+       start();
+    });
+
+    p.done(function(data) {
+
+        ok(data, 'AJAX test succeeded');
+        ok(data.status[1].toLowerCase() === 'ok', 'status ' + data.status[1]);
+        ok(data.row_count[0] === 1, 'row count ' + data.row_count);
+        start();
+    });
+});
+
+
+module('$.getPOST tests', {
+
+    setup: function () {
+        $.rdbHostConfig( {
+            'domain': domain,
+            'format': 'json-easy',
+            'userName': demo_r_role,
+            'authcode': '-'
+        });
+    },
+
+    teardown: function () {
+        $.rdbHostConfig( {
+            'domain': undefined,
+            'format': undefined,
+            'userName': undefined,
+            'authcode': '-'
+        });
+    }
+});
+
+/* $.getPOST throws,  */
+test('$.getPOST test throws', function() {
+
+    throws(function() {$.getPOST() }, 'always throws exception');
+});
+
+/* $.getPOST ,  */
+test('$.getPOST test ', function() {
+
+    var opts = {
+        q: 'SELECT 1'
+    };
+    var o = $.getPOST(opts),
+        u = o.url,
+        d = o.data;
+
+    ok(!~u.indexOf('format'), 'url has no format string');
+    ok(!~u.indexOf('SELECT'), 'url has no query string');
+    ok(~u.indexOf('rdbhost.'), 'url has host string');
+    ok(!~u.indexOf(' '), 'has no white space');
+    ok(~u.indexOf(demo_r_role), 'rolename in url');
+
+    ok(d.q, 'query in data');
+    ok(!d.arg000, 'no arg000 in data');
+    ok(!d.arg001, 'no arg001 in data');
+    ok(!d.argtype000, 'no argtype000 in data');
+});
+
+
+/* $.getPOST ,  */
+test('$.getPOST test w args', function() {
+
+    var opts = {
+        q: 'SELECT 1',
+        args: [1, 'abc']
+    };
+    var o = $.getPOST(opts),
+        u = o.url,
+        d = o.data;
+
+    ok(!~u.indexOf('format'), 'url has no format string');
+    ok(!~u.indexOf('SELECT'), 'url has no query string');
+    ok(~u.indexOf('rdbhost.'), 'url has host string');
+    ok(!~u.indexOf(' '), 'has no white space');
+    ok(~u.indexOf(demo_r_role), 'rolename in url');
+
+    ok(d.q, 'query in data');
+    ok(d.arg000 === 1, 'arg000 is correct in data');
+    ok(d.arg001 === 'abc', 'arg001 is correct in data');
+    ok(d.argtype000 === 'NUMBER', 'argtype000 is correct in data '+ d.argtype000);
+    ok(d.argtype001 === 'STRING', 'argtype001 is correct in data ' + d.argtype001);
+    ok(!d.arg002, 'no arg002 in data');
+    ok(!d.argtype002, 'no argtype002 in data');
+});
+
+
+/* $.getPOST ,  */
+asyncTest('$.getPOST test w AJAX ', 3, function() {
+
+    var opts = {
+        q: 'SELECT 1',
+        args: [1, 'abc'],
+        format: 'json-easy'
+    };
+    var u = $.getPOST(opts);
+
+    var p = $.ajax({
+        method: 'POST',
+        url: u.url,
+        data: u.data,
+        dataType: 'json'
+    });
+
+    p.fail(function(errArray) {
+
+        ok(false, 'AJAX test failed ' + errArray[0] + ' ' + errArray[1]);
+        start();
+    });
+
+    p.done(function(data) {
+
+        ok(data, 'AJAX test succeeded');
+        ok(data.status[1].toLowerCase() === 'ok', 'status ' + data.status[1]);
+        ok(data.row_count[0] === 1, 'row count ' + data.row_count);
+        start();
+    });
+});
+
+
+/* $.getPOST ,  */
+asyncTest('$.getPOST test 2 w AJAX ', 2, function() {
+
+    var opts = {
+        userName: 'super',
+        authcode: 'abcdef',
+        q: 'SELECT 1',
+        args: [1, 'abc'],
+        format: 'json-easy'
+    };
+    var u = $.getPOST(opts);
+
+    var p = $.ajax({
+        method: 'POST',
+        url: u.url,
+        data: u.data,
+        dataType: 'json'
+    });
+
+    p.fail(function(errArray) {
+
+        ok(false, 'AJAX test failed ' + errArray[0] + ' ' + errArray[1]);
+        start();
+    });
+
+    p.done(function(data) {
+
+        // for ajax calls, even errors are returned as done(), only http level errors are fail()
+        ok(data.error, 'error occurred');
+        ok(data.error[1] && ~data.error[1].indexOf('Auth fail'), 'error occurred'+data.error[1]);
+        start();
+    });
+});
+
 
 
 

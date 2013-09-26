@@ -7,6 +7,7 @@
 
 (function ($, window) {
 
+
     $.emailWebmaster = function(opts) {
 
         /*
@@ -467,25 +468,31 @@
             return $.postData(opts);
         }
         else {
-            if ( !acctEmail )
-                acctEmail = prompt('Enter account email address');
+            var def = $.Deferred();
 
-            var password = prompt('Enter the password for account '+ acctEmail);
+            function doIt(h) {
 
-            return $.superLogin({
+                return $.superLogin({
 
-                email: acctEmail,
-                password: password,
+                    email: h.email,
+                    password: h.password,
 
-                callback: function(res) {
-                    clearTimeout(superAuthcodeTimer);
-                    superAuthcode = res.super[1];
-                    superAuthcodeTimer = setTimeout(function() { superAuthcode = null; }, 8000);
-                    return $.superPostData(opts);
-                },
+                    callback: function(res) {
+                        clearTimeout(superAuthcodeTimer);
+                        superAuthcode = res.super[1];
+                        superAuthcodeTimer = setTimeout(function() { superAuthcode = null; }, 8000);
+                        return $.superPostData(opts);
+                    },
 
-                errback: opts.errback
-            })
+                    errback: opts.errback
+                })
+            }
+
+            def.then(doIt);
+
+            drawLoginDialog('test title', opts.email, function(h) { def.resolve(h) });
+
+            return def.promise();
         }
     };
 
@@ -502,29 +509,36 @@
             return $.postFormData(formId, opts);
         }
         else {
-            if ( ! acctEmail )
-                acctEmail = prompt('Enter account email address');
 
-            var password = prompt('Enter the password for account '+ acctEmail);
+            var def = $.Deferred();
 
-            return $.superLogin({
+            function doIt(h) {
 
-                email: acctEmail,
-                password: password,
-                userName: opts.userName,
+                return $.superLogin({
 
-                callback: function(res) {
+                    email: h.email,
+                    password: h.password,
+                    userName: opts.userName,
 
-                    clearTimeout(superAuthcodeTimer);
-                    superAuthcode = res.super[1];
-                    superAuthcodeTimer = setTimeout(function() {
-                        superAuthcode = null;
-                    }, 8000);
-                    return $.superPostFormData(formId, opts);
-                },
+                    callback: function(res) {
 
-                errback: opts.errback
-            })
+                        clearTimeout(superAuthcodeTimer);
+                        superAuthcode = res.super[1];
+                        superAuthcodeTimer = setTimeout(function() {
+                            superAuthcode = null;
+                        }, 8000);
+                        return $.superPostFormData(formId, opts);
+                    },
+
+                    errback: opts.errback
+                })
+            }
+
+            def.then(doIt);
+
+            drawLoginDialog('test title', opts.email, function(h) { def.resolve(h) });
+
+            return def.promise();
         }
     };
 
@@ -552,6 +566,77 @@
 
     };
 
+
+    function drawLoginDialog(title, email, onSubmit, onCancel) {
+
+        var $liDialog, hgt = 100, width = 200;
+
+        $liDialog = $('<div id="rdbhost-super-login-form"><form>                    '+
+                      '  <span id="title">t </span> <a href="" class="cancel">x</a>         ' +
+                      '    <br />                                                           ' +
+                      '    <input name="email" type="text" placeholder="email"/>            ' +
+                      '    <input name="password" type="password" placeholder="password" /> ' +
+                      '    <input type="submit" />                                          ' +
+                      '</form></div>                                                        ');
+
+        $liDialog.css({
+
+            'position': 'absolute',
+            'width': width + 'px',
+            'height': hgt + 'px',
+            'margin-top': Math.round(hgt/-2) + 'px',
+            'margin-right': '0',
+            'margin-bottom': '0',
+            'margin-left': Math.round(width/-2) + 'px',
+            'left': '50%',
+            'top': '50%',
+            'display': 'none',
+            'z-index': 10,
+            'background': '#dacba2',
+            'padding': '12px',
+            'border': 'solid #850e45 8px'
+        });
+        $liDialog.find('span').css({
+
+            'font-size': 'larger',
+            'color': '#850e45'
+        });
+        $liDialog.find('input').css({
+
+            'color': '#850e45'
+        });
+
+        $liDialog.find('a').css('float', 'right');
+        $liDialog.find('#title').text(title);
+
+        $('body').append($liDialog);
+        $liDialog.show();
+
+        $liDialog.on('submit', function(ev) {
+
+            var h = {};
+            h.email = $('#email').val();
+            h.passwd = $('#password').val();
+
+            $liDialog.remove();
+            onSubmit(h);
+            return false;
+        });
+
+        $liDialog.find('a').on('click', function(ev) {
+
+            var h = {};
+            h.email = $('#email').val();
+            h.passwd = $('#password').val();
+
+            $liDialog.remove();
+            if ( onCancel )
+                onCancel(h);
+            return false;
+        })
+    }
+
+    $.drawLoginDialog = drawLoginDialog;
 
 }(jQuery, window));
 
