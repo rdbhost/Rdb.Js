@@ -454,6 +454,8 @@
         superAuthcodeTimer = null,
         acctEmail = null;
 
+    $._authcodeStored = function() { return !!superAuthcode; };
+
     $.superPostData = function(opts) {
 
         /*
@@ -465,6 +467,7 @@
         if ( superAuthcode ) {
 
             opts['authcode'] = superAuthcode;
+            opts['userName'] = 'super';
             return $.postData(opts);
         }
         else {
@@ -484,15 +487,20 @@
                         return $.superPostData(opts);
                     },
 
-                    errback: opts.errback
+                    errback: function(e) {
+                        if ('errback' in opts)
+                            return opts.errback(e);
+                        else
+                            return e;
+                    }
                 })
             }
 
-            def.then(doIt);
+            var d2 = def.then(doIt);
 
             drawLoginDialog('test title', opts.email, function(h) { def.resolve(h) });
 
-            return def.promise();
+            return d2.promise();
         }
     };
 
@@ -500,12 +508,13 @@
     $.superPostFormData = function(formId, opts) {
 
         /*
-         * same as postFormData
+         * opts same as postFormData
          */
 
         if ( superAuthcode ) {
 
             opts['authcode'] = superAuthcode;
+            opts['userName'] = 'super';
             return $.postFormData(formId, opts);
         }
         else {
@@ -530,15 +539,23 @@
                         return $.superPostFormData(formId, opts);
                     },
 
-                    errback: opts.errback
+                    errback: function (e) {
+                        if ('errback' in opts)
+                            return opts.errback(e);
+                        else
+                            return e;
+                    }
                 })
             }
 
-            def.then(doIt);
+            var d2 = def.then(doIt);
 
-            drawLoginDialog('test title', opts.email, function(h) { def.resolve(h) });
+            drawLoginDialog('test title', opts.email,
+                function(h) { def.resolve(h) },
+                function(h) { def.reject(h) }
+            );
 
-            return def.promise();
+            return d2.promise();
         }
     };
 
@@ -550,28 +567,163 @@
          *   if get error...
          */
 
-        // todo - implement after server upgrade, for timed-out
+        opts['userName'] = 'preauth';
 
+        // promise 'p' waits for final resolution
+        // promise pD handles first try
+        var p = $.Deferred(),
+            pD = $.postData(opts);
+
+        pD.done(function(args) {
+
+            p.resolve(args);
+        });
+
+        pD.fail(function(err) {
+
+            var errCode = err[0], errMsg = err[1];
+
+            if ( errCode === 'rdb10' ) {
+
+                // alert('preauth collision');
+
+                function doIt(h) {
+
+                    return $.trainAjax({
+
+                        email: h.email,
+                        password: h.password,
+                        userName: opts.userName,
+
+                        callback: function(res) {
+
+                            // training mode has been inited, good for 8 seconds
+
+                            // promise pD2 handles retry of postData
+                            var pD2 = $.postData(opts);
+
+                            pD2.done(function(resp) {
+
+                                p.resolve(resp);
+                            });
+                            pD2.fail(function(err) {
+
+                                p.reject(err);
+                            })
+                        },
+
+                        errback: function (e) {
+
+                            // training mode not inited, for some reason
+                            if ('errback' in opts)
+                                return opts.errback(e);
+                            else
+                                return e;
+                        }
+                    })
+                }
+
+                // show login dialog
+                drawLoginDialog('Preauth Login', opts.email,
+
+                    function(h) { doIt(h) },
+                    function(err) { p.reject(err) }
+                );
+            }
+            else {
+
+                // initial postData failed for reason other than white-list failure
+                p.reject(err);
+            }
+        });
+
+        // return promise that waits for final resolution
+        return p.promise();
     };
 
 
-    $.preauthPostFormData = function(opts) {
+    $.preauthPostFormData = function(that, opts) {
 
         /*
          * same as postData
          *   if get error...
          */
 
-        // todo - implement after server upgrade, for timed-out training sessions
+        opts['userName'] = 'preauth';
+        var p = $.Deferred(),
+            pFD = $.postFormData(that, opts);
 
+        pFD.done(function(resp) {
+
+            p.resolve(resp);
+        });
+
+        pFD.fail(function(err) {
+
+            var errCode = err[0], errMsg = err[1];
+
+            if (errCode === 'rdb10') {
+
+                function doIt(h) {
+
+                    return $.trainAjax({
+
+                        email: h.email,
+                        password: h.password,
+                        userName: opts.userName,
+
+                        callback: function(res) {
+
+                            // training mode has been inited, good for 8 seconds
+
+                            // resubmit form
+                            var pD2 = $.postFormData(that, opts);
+                            $(that).submit();
+
+                            pD2.done(function(resp) {
+
+                                p.resolve(resp);
+                            });
+                            pD2.fail(function(err) {
+
+                                p.reject(err);
+                            })
+                        },
+
+                        errback: function (e) {
+
+                            // training mode not inited, for some reason
+                            if ('errback' in opts)
+                                return opts.errback(e);
+                            else
+                                return e;
+                        }
+                    })
+                }
+
+                // show login dialog
+                drawLoginDialog('Preauth Login', opts.email,
+
+                    function(h) { doIt(h) },
+                    function(err) { p.reject(err) }
+                );
+            }
+            else {
+
+                p.reject(err);
+            }
+        });
+
+        return p.promise();
     };
 
 
     function drawLoginDialog(title, email, onSubmit, onCancel) {
 
-        var $liDialog, hgt = 100, width = 200;
+        var $liDialog, hgt = 100, width = 200,
+            idVal = 'rdbhost-super-login-form';
 
-        $liDialog = $('<div id="rdbhost-super-login-form"><form>                    '+
+        $liDialog = $('<div id="xxxx"><form>                                                ' +
                       '  <span id="title">t </span> <a href="" class="cancel">x</a>         ' +
                       '    <br />                                                           ' +
                       '    <input name="email" type="text" placeholder="email"/>            ' +
@@ -579,6 +731,7 @@
                       '    <input type="submit" />                                          ' +
                       '</form></div>                                                        ');
 
+        $liDialog.attr('id',idVal);
         $liDialog.css({
 
             'position': 'absolute',
@@ -609,16 +762,19 @@
         $liDialog.find('a').css('float', 'right');
         $liDialog.find('#title').text(title);
 
-        $('body').append($liDialog);
+        if ( $('#'+idVal).length === 0 )
+            $('body').append($liDialog);
+        else
+            $liDialog = $('#'+idVal);
         $liDialog.show();
 
         $liDialog.on('submit', function(ev) {
 
             var h = {};
-            h.email = $('#email').val();
-            h.passwd = $('#password').val();
+            h.email = $('input[name="email"]').val();
+            h.password = $('input[name="password"]').val();
 
-            $liDialog.remove();
+            $liDialog.hide();
             onSubmit(h);
             return false;
         });
@@ -627,9 +783,9 @@
 
             var h = {};
             h.email = $('#email').val();
-            h.passwd = $('#password').val();
+            h.password = $('#password').val();
 
-            $liDialog.remove();
+            $liDialog.hide();
             if ( onCancel )
                 onCancel(h);
             return false;

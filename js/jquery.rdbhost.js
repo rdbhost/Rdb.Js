@@ -13,7 +13,7 @@
 
  the module adds four functions and three methods to the jQuery namespace.
 
- The four functions are $.rdbHostConfig, $.withResults, $.eachRecord, and
+ The four functions are $.rdbHostConfig, $.postData, $.eachRecord, and
  $.postFormData.  The three methods are $.fn.populateTable,
  $.fn.populateForm, and $.fn.datadump.  There is also a $.postData alias
  to $.withResults
@@ -21,10 +21,10 @@
  $.rdbHostConfig takes an options object, and makes those options default for
  all subsequent functions and methods.
 
- $.withResults sends a query to the server, receives the data, and calls
- a callback with the received data.
+ $.postData sends a query to the server, receives the data, and calls
+ a callback with the received data.  Similar to jQuery's $.ajax()
 
- $.eachRecord is like $.withResults, in that it gets data from the server,
+ $.eachRecord is like $.postData, in that it gets data from the server,
  but it extracts the rows from the data structure, and calls an eachrec
  callback for each record.  Each record is a javascript object, with a
  named attribute for each field.
@@ -32,9 +32,6 @@
  $.postFormData takes a form as input, submits that form to the server,
  receives the data returned, and provides it to the callback.
  The form fields must be named arg000, arg001, etc
-
- $.postData posts to the server, receives the data returned, and provides it
- to the callback.  Similar to jQuery's $.ajax()
 
  $.loginOpenId provides various services related to OpenID logins.  It will
  prep the form prior to submission, and handles hash values and cookies
@@ -384,6 +381,14 @@ window.easyXDM = window.easyXDM || null;
             return this.getQueryUrl('/accountlogin/' + dbRole.substring(1));
         };
 
+        // return appropriate /accountlogin/train/ url for action attribute in form
+        this.getTrainingUrl = function () {
+
+            assert(dbRole, 'no username in sqlEngine');
+            assert(dbRole.length > 1, 'username is too short in sqlEngine');
+            return this.getQueryUrl('/accountlogin/train/' + dbRole.substring(1));
+        };
+
         /*
          parms is object containing various options
 
@@ -543,7 +548,13 @@ window.easyXDM = window.easyXDM || null;
 
                 var dfr2 = $.Deferred();
                 lateLoadEasyXDM(function() {
-                    dfr2.resolve(that.queryByForm(parms));
+                    var dfr3 = that.queryByForm(parms);
+                    dfr3.then(function(resp) {
+                        dfr2.resolve(resp);
+                    },
+                    function(err) {
+                        dfr2.reject(err);
+                    })
                 });
                 return dfr2.promise();
             }
@@ -555,7 +566,14 @@ window.easyXDM = window.easyXDM || null;
             if ( ! CONNECTIONS[easyXDMAjaxHandle].remoteRpcReady ) {
 
                 setTimeout(function() {
-                    defer.resolve( that.queryByForm(parms) );
+                    var dfr3 = that.queryByForm(parms);
+                    dfr3.then(function(resp) {
+                            defer.resolve(resp);
+                        },
+                        function(err) {
+                            defer.reject(err);
+                        }
+                    )
                 },25);
 
                 return defer.promise();
@@ -637,11 +655,6 @@ window.easyXDM = window.easyXDM || null;
 
 
         /*
-         following section defines some jQuery plugins
-
-         */
-
-        /*
          parms is object containing various options
 
          email :
@@ -652,10 +665,13 @@ window.easyXDM = window.easyXDM || null;
 
          plainTextJson : true if JSON parsing to be skipped, instead
          returning the JSON plaintext
-         */
-        this.loginAjax = function (parms) {
 
-            var email = parms.email,
+         returns: promise
+         */
+        this.loginAjax = function (_parms) {
+
+            var parms = $.extend(true, {}, _parms),
+                email = parms.email,
                 password = parms.password,
                 that = this;
 
@@ -666,6 +682,37 @@ window.easyXDM = window.easyXDM || null;
 
             return _query(parms, function () {
                 return that.getLoginUrl();
+            });
+        };
+
+        /*
+         parms is object containing various options
+
+         email :
+         password :
+
+         callback : function to call with data from successful query
+         errback : function to call with error object from query failure
+
+         plainTextJson : true if JSON parsing to be skipped, instead
+         returning the JSON plaintext
+
+         returns a promise
+         */
+        this.trainAjax = function (_parms) {
+
+            var parms = $.extend(true, {}, _parms),
+                email = parms.email,
+                password = parms.password,
+                that = this;
+
+            delete parms.email;
+            delete parms.password;
+            parms.namedParams = { email: email, password: password };
+            parms.format = 'json-easy';
+
+            return _query(parms, function () {
+                return that.getTrainingUrl();
             });
         }
 
@@ -693,6 +740,12 @@ window.easyXDM = window.easyXDM || null;
         var str = JSON.stringify(json, null, 4);
         alert(str);
     }
+
+
+    /*
+     following section defines some jQuery plugins
+
+     */
 
     //  configuration setting function
     //  saves defaults as attribute on the config function
@@ -741,7 +794,7 @@ window.easyXDM = window.easyXDM || null;
     }
 
     /*
-     withResults - calls callback with json result object
+     postData - calls callback with json result object
        or errback with error object
 
      param q : query to get data
@@ -749,9 +802,9 @@ window.easyXDM = window.easyXDM || null;
      param callback : function to call with json data
      param errback : function to call in case of error
      */
-    $.withResults = function (parms) {
+    $.postData = function (parms) {
 
-        assert(arguments.length <= 1, 'too many parms to withResults');
+        assert(arguments.length <= 1, 'too many parms to postData');
         var inp = myExtend({}, $.rdbHostConfig.opts, parms || {});
 
         try {
@@ -793,7 +846,7 @@ window.easyXDM = window.easyXDM || null;
         }
 
         parms.callback = cback;
-        var promise = $.withResults(parms);
+        var promise = $.postData(parms);
 
         return promise;
     };
@@ -851,7 +904,7 @@ window.easyXDM = window.easyXDM || null;
      param q : query to post data
      param kw : query-keyword to post data
      */
-    $.postData = $.withResults;
+    $.withResults = $.postData;
 
 
     /*
@@ -950,7 +1003,7 @@ window.easyXDM = window.easyXDM || null;
      */
     $.getBin = function(inp) {
 
-        assert(arguments.length <= 1, 'too many parms to withResults');
+        assert(arguments.length <= 1, 'too many parms to getBin');
         var parms = myExtend({}, $.rdbHostConfig.opts, inp || {});
 
         // todo - implement this
@@ -1155,7 +1208,7 @@ window.easyXDM = window.easyXDM || null;
 
 
     /*
-     loginAjax submits login info, gets list of roles/authcodes
+     loginAjax submits login info, gets list of roles / authcodes
 
      */
     $.loginAjax = function (parms) {
@@ -1168,6 +1221,23 @@ window.easyXDM = window.easyXDM || null;
         delete inp.domain;
 
         return sqlEngine.loginAjax(inp);
+    };
+
+
+    /*
+     trainAjax submits login info, establishes training mode for 8 seconds
+
+     */
+    $.trainAjax = function (parms) {
+
+        var inp = myExtend({}, $.rdbHostConfig.opts, parms || {});
+
+        var sqlEngine = new SQLEngine(inp.userName, inp.authcode, inp.domain);
+        delete inp.userName;
+        delete inp.authcode;
+        delete inp.domain;
+
+        return sqlEngine.trainAjax(inp);
     };
 
 
@@ -1297,7 +1367,7 @@ window.easyXDM = window.easyXDM || null;
         }
 
         parms.callback = cback;
-        $.withResults(parms);
+        $.postData(parms);
 
         return $selset;
     };
@@ -1342,7 +1412,7 @@ window.easyXDM = window.easyXDM || null;
         }
 
         parms.callback = cback;
-        $.withResults(parms);
+        $.postData(parms);
         return $selset;
     };
 
@@ -1369,7 +1439,7 @@ window.easyXDM = window.easyXDM || null;
         }
 
         parms.callback = cback;
-        $.withResults(parms);
+        $.postData(parms);
         return $selset;
     };
 

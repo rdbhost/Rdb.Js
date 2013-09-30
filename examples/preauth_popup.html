@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Super Login Popup Demo</title>
+    <title>Preauth Login Popup Demo</title>
     <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.js"></script>
     <!-- Your project file goes here -->
     <script language="javascript" src="http://www.rdbhost.com/vendor/yepnope/1.5.4/yepnope.js"></script>
@@ -19,7 +19,7 @@
         $('a').click(function (ev) {
 
             //$.drawLoginDialog('super login', '', alert);
-            var p = $.superPostData({q: 'SELECT 1'});
+            var p = $.preauthPostData({q: 'SELECT 1'});
             p.then(
               function(h) {
                 alert(JSON.stringify(h, null, '    '));
@@ -30,15 +30,24 @@
             return false;
         });
 
-        var q = $.superPostFormData('form', {});
-        q.then(
-          function(resp) {
 
-              alert(JSON.stringify(resp, null, '    '));
-          },
-          function(e) {
-              alert(JSON.stringify(e, null, '    '));
-          });
+        function doform() {
+
+            var q = $.preauthPostFormData('form', {});
+            q.then(
+                    function(resp) {
+
+                        doform();
+                        alert(JSON.stringify(resp, null, '    '));
+                    },
+                    function(e) {
+
+                        doform();
+                        alert(JSON.stringify(e, null, '    '));
+                    });
+        }
+        doform();
+
     })
     </script>
 </head>

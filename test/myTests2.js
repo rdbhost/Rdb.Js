@@ -380,9 +380,9 @@ module('$.postFormData tests', {
       'authcode': '-'
     });
 
-    var tmpEngine = new SQLEngine('','',domain);
-    this.skip = ~tmpEngine.version.indexOf('cors');
-    tmpEngine = undefined;
+    // var tmpEngine = new SQLEngine('','',domain);
+    // this.skip = false; //~tmpEngine.version.indexOf('cors');
+    // tmpEngine = undefined;
 
     $('#qunit_form2').remove();
     $('body').append(form);
@@ -430,13 +430,6 @@ $('#qunit_form2').rdbhostSubmit();
 // $.postFormData fail w/ promise
 asyncTest('$.postFornData test fail promise', 2+1, function() {
 
- if ( this.skip ) {
-   for ( var i=0; i<2; i++ )
-     ok(true);
-   start();
-   return;
- }
-
  var p = $.postFormData($('#qunit_form2'), {
 
    errback: function(resp) {
@@ -463,13 +456,6 @@ asyncTest('$.postFornData test fail promise', 2+1, function() {
  // $.postFormData test w/ promise
  asyncTest('$.postFornData test promise', 5+1, function() {
 
-   if ( this.skip ) {
-     for ( var i=0; i<5; i++ )
-       ok(true);
-     start();
-     return;
-   }
-
    var p = $.postFormData($('#qunit_form2'), {
 
       callback: function (resp) {
@@ -491,15 +477,30 @@ asyncTest('$.postFornData test fail promise', 2+1, function() {
  });
 
 
+// $.postFormData test w/ promise only
+asyncTest('$.postFornData test promise only', 4+1, function() {
+
+    var p = $.postFormData($('#qunit_form2'), {});
+
+    p.done(function(resp) {
+
+        ok(typeof resp === 'object', 'response is object'); // 0th assert
+        ok(resp.status[1].toLowerCase() == 'ok', 'status is not ok: '+resp.status[1]); // 1st assert
+        ok(resp.row_count[0] > 0, 'data row found');
+        ok(resp.records.rows[0]['col'] === 199, 'data is not 199: '+resp.records.rows[0]['col']);
+        start();
+    });
+
+    setTimeout(function() {
+
+        $('#qunit_form2').rdbhostSubmit();
+    }, 800);
+
+});
+
+
 // $.postFormData test w/ promise - chained
 asyncTest('$.postFornData test promise - chained', 6+1, function() {
-
-if ( this.skip ) {
-  for ( var i=0; i<5; i++ )
-    ok(true);
-  start();
-  return;
-}
 
 var p = $.postFormData($('#qunit_form2'), {
 

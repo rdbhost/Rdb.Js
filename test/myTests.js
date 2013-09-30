@@ -596,13 +596,6 @@ asyncTest('form SELECT promise', 5+1, function() {
 
     var that = this;
 
-    if ( this.skip ) {
-      for ( var i=0; i<5; i++ )
-        ok(true);
-      start();
-      return;
-    }
-
     var p = that.e.queryByForm({
 
       "formId": "qunit_form",
@@ -625,17 +618,36 @@ asyncTest('form SELECT promise', 5+1, function() {
     $('#qunit_form').rdbhostSubmit();
 });
 
+
+// form select with promise only
+asyncTest('form SELECT promise only', 5+1, function() {
+
+    var that = this;
+
+    var p = that.e.queryByForm({
+
+        "formId": "qunit_form"
+    });
+
+    p.done(function(resp) {
+
+        ok(typeof resp === 'object', 'response is object'); // 0th assert
+        ok(resp.status[1].toLowerCase() == 'ok', 'status is not ok: '+resp.status[1]); // 1st assert
+        ok(resp.row_count[0] > 0, 'data row found');
+        ok(resp.records.rows[0][0] === 99, 'data is not 99: '+resp.records.rows[0][0]);
+
+        ok(resp, 'promise done called');
+        start();
+    });
+
+    $('#qunit_form').rdbhostSubmit();
+});
+
+
 // form select with error
 asyncTest('form SELECT error', 2+1, function() {
 
     var that = this;
-
-    if ( this.skip ) {
-      for ( var i=0; i<2; i++ )
-        ok(true);
-      start();
-      return;
-    }
 
     $('#qunit_form').find('input').val('SELECTY 1');
 
@@ -664,13 +676,6 @@ asyncTest('form SELECT error', 2+1, function() {
 asyncTest('form SELECT error - promise', 3+1, function() {
 
     var that = this;
-
-    if ( this.skip ) {
-      for ( var i=0; i<3; i++ )
-        ok(true);
-      start();
-      return;
-    }
 
     $('#qunit_form').find('input').val('SELECTY 1');
 
