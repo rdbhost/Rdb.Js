@@ -654,7 +654,9 @@
 
         opts['userName'] = 'preauth';
         var p = $.Deferred(),
-            pFD = $.postFormData(that, opts);
+            pFD = $.postFormData(that, opts),
+            savedErrback = opts['errback'];
+        delete opts['errback'];
 
         pFD.done(function(resp) {
 
@@ -696,8 +698,8 @@
                         errback: function (e) {
 
                             // training mode not inited, for some reason
-                            if ('errback' in opts)
-                                return opts.errback(e);
+                            if (savedErrback)
+                                return savedErrback(e);
                             else
                                 return e;
                         }
