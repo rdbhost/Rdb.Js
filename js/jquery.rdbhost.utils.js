@@ -154,7 +154,7 @@
 
         function createAuthSchema() {
 
-            var p = $.superPostData({
+            return $.superPostData({
 
                 userName:    opts.userName,
                 q:           qCreateAuthSchema
@@ -167,6 +167,7 @@
                 console.log('createAuthSchema success ');
                 return resp;
             });
+
         }
 
         function grantSchemaPrivs() {
@@ -568,6 +569,8 @@
          */
 
         opts['userName'] = 'preauth';
+        var savedErrback = opts['errback'];
+        delete opts['errback'];
 
         // promise 'p' waits for final resolution
         // promise pD handles first try
@@ -615,8 +618,8 @@
                         errback: function (e) {
 
                             // training mode not inited, for some reason
-                            if ('errback' in opts)
-                                return opts.errback(e);
+                            if (savedErrback)
+                                return savedErrback(e);
                             else
                                 return e;
                         }
