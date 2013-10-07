@@ -1078,6 +1078,11 @@ window.easyXDM = window.easyXDM || null;
                 parms.returnPath = window.location.pathname;
                 if (parms.returnPath.substr(0, 1) !== '/')
                     parms.returnPath = '/' + parms.returnPath;
+                var _hash = window.location.hash;
+                if (_hash.substr(0,1) === '#')
+                    _hash = _hash.substr(1);
+                if (window.location.hash)
+                    parms.returnPath = parms.returnPath + '!!!' + _hash;
             }
 
             if (/localhost/i.test(window.location.hostname) || offsite) {
@@ -1119,18 +1124,35 @@ window.easyXDM = window.easyXDM || null;
          */
         function useHash() {
 
+            var hashRe = new RegExp('#http[^#]{32,}');
+
             if (window.location.hash) {
-                var hash = window.location.hash;
-                window.location.hash = '';
-                hash = decodeURIComponent(hash);
-                var hp = hash.split('&', 2);
-                if (hp.length >= 2) {
-                    ident = hp[0];
-                    key = hp[1];
-                    if (ident.indexOf('#') === 0)
-                        ident = ident.substr(1);
-                    $.cookie(parms.cookieName, key);
-                    return true;
+
+                var t = hashRe.exec(window.location.hash);
+
+                if (t && t[0]) {
+
+                    var hash = decodeURIComponent(t[0]),
+                        hp = hash.split('&', 2);
+
+                    if (hp.length >= 2) {
+
+                        ident = hp[0];
+                        key = hp[1];
+
+                        if (ident.indexOf('#') === 0)
+                            ident = ident.substr(1);
+
+                        // sometimes changing has causes framework to re-init, so save login in cookie
+                        $.cookie(parms.cookieName, key);
+                        $.cookie('OPENID_KEY', ident + '&' + key);
+
+                        window.location.hash = window.location.hash.replace(t[0],'');
+
+                        return true;
+                    }
+                    else
+                        return false;
                 }
                 else
                     return false;

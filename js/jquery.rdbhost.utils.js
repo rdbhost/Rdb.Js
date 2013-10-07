@@ -25,15 +25,15 @@
             "       %(htmlbody) AS htmlbody,                            \n"+
             "       api.webmaster_email AS \"To:\",                     \n"+
             "       api.account_email AS \"From:\",                     \n"+
-//            "       %(from) AS \"From:\",                               \n"+
+            "       %(from) AS \"Reply-to:\",                           \n"+
             "       %(subject) AS \"Subject:\",                         \n"+
             "       api.apikey AS apikey,                               \n"+
             "       'postmark' AS service,                              \n"+
             "       1 AS idx                                            \n"+
-            "  FROM auth.apis AS api WHERE service = 'postmark'     \n"+
+            "  FROM auth.apis AS api WHERE service = 'postmark'         \n"+
             "LIMIT 1                                                      ";
 
-        return $.postData({
+        return $.preauthPostData({
 
             userName:   'preauth',
 
@@ -47,16 +47,6 @@
                 from: opts.from,
                 subject: opts.subject
             }
-
-/*
-            callback: function(resp) {
-                return resp;
-            },
-
-            errback: function(err, errmsg) {
-                return arguments;
-            }
-*/
         });
     };
 

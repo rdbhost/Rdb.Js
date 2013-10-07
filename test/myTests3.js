@@ -185,7 +185,6 @@ module('$.emailWebmaster tests', {
             'userName': demo_p_role,
             'authcode': '-'
         });
-
     },
 
     teardown: function () {
