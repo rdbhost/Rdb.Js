@@ -975,7 +975,7 @@ window.easyXDM = window.easyXDM || null;
         };
 
         // add additional data, as provided
-        $.each(['kw', 'mode', 'q', 'repeat'], function(idx, el) {
+        $.each(['kw', 'mode', 'q', 'repeat', 'authcode'], function(idx, el) {
 
             if ( parms.hasOwnProperty(el) && parms[el]  )
                 data[el] = parms[el];
