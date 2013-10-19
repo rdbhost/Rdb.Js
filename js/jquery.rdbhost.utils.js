@@ -435,10 +435,34 @@
             else
                 return hash;
         }
-        var savedCallback = opts.callback;
-        opts.callback = _callback;
 
-        return $.loginAjax(opts);
+        if ( ! opts.password || opts.password.length < 3 ) {
+
+          var def = $.Deferred(),
+              d2 = def.then(function(h) {
+
+                // login with password
+                opts.email = h.email;
+                opts.password = h.password;
+                return $.superLogin(opts);
+              });
+
+          drawLoginDialog('Login for Super Role', opts.email, function(h) {
+
+            // pass email and password from form to handler
+            def.resolve(h)
+          });
+
+          return d2.promise();
+
+        }
+        else {
+
+          var savedCallback = opts.callback;
+          opts.callback = _callback;
+
+          return $.loginAjax(opts);
+        }
     };
 
     var superAuthcode = null,
@@ -455,43 +479,27 @@
          *   sets timeout to clear authcode
          */
 
+        function _callback(res) {
+
+          clearTimeout(superAuthcodeTimer);
+          superAuthcode = res.super[1];
+          superAuthcodeTimer = setTimeout(function() { superAuthcode = null; }, 8000);
+          opts['callback'] = savedCallback;
+          return $.superPostData(opts);
+        }
+
         if ( superAuthcode ) {
 
-            opts['authcode'] = superAuthcode;
-            opts['userName'] = 'super';
-            return $.postData(opts);
+          opts['authcode'] = superAuthcode;
+          opts['userName'] = 'super';
+          return $.postData(opts);
         }
         else {
-            var def = $.Deferred();
 
-            function doIt(h) {
+          var savedCallback = opts['callback'];
+          opts['callback'] = _callback;
 
-                return $.superLogin({
-
-                    email: h.email,
-                    password: h.password,
-
-                    callback: function(res) {
-                        clearTimeout(superAuthcodeTimer);
-                        superAuthcode = res.super[1];
-                        superAuthcodeTimer = setTimeout(function() { superAuthcode = null; }, 8000);
-                        return $.superPostData(opts);
-                    },
-
-                    errback: function(e) {
-                        if ('errback' in opts)
-                            return opts.errback(e);
-                        else
-                            return e;
-                    }
-                })
-            }
-
-            var d2 = def.then(doIt);
-
-            drawLoginDialog('test title', opts.email, function(h) { def.resolve(h) });
-
-            return d2.promise();
+          return $.superLogin(opts);
         }
     };
 
@@ -502,52 +510,31 @@
          * opts same as postFormData
          */
 
-        if ( superAuthcode ) {
+      function _callback(res) {
 
-            opts['authcode'] = superAuthcode;
-            opts['userName'] = 'super';
-            return $.postFormData(formId, opts);
-        }
-        else {
+        clearTimeout(superAuthcodeTimer);
+        superAuthcode = res.super[1];
+        superAuthcodeTimer = setTimeout(function() {
+          superAuthcode = null;
+        }, 8000);
 
-            var def = $.Deferred();
+        opts['callback'] = savedCallback;
+        return $.superPostFormData(formId, opts);
+      }
 
-            function doIt(h) {
+      if ( superAuthcode ) {
 
-                return $.superLogin({
+        opts['authcode'] = superAuthcode;
+        opts['userName'] = 'super';
+        return $.postFormData(formId, opts);
+      }
+      else {
 
-                    email: h.email,
-                    password: h.password,
-                    userName: opts.userName,
+        var savedCallback = opts['callback'];
+        opts['callback'] = _callback;
 
-                    callback: function(res) {
-
-                        clearTimeout(superAuthcodeTimer);
-                        superAuthcode = res.super[1];
-                        superAuthcodeTimer = setTimeout(function() {
-                            superAuthcode = null;
-                        }, 8000);
-                        return $.superPostFormData(formId, opts);
-                    },
-
-                    errback: function (e) {
-                        if ('errback' in opts)
-                            return opts.errback(e);
-                        else
-                            return e;
-                    }
-                })
-            }
-
-            var d2 = def.then(doIt);
-
-            drawLoginDialog('test title', opts.email,
-                function(h) { def.resolve(h) },
-                function(h) { def.reject(h) }
-            );
-
-            return d2.promise();
-        }
+        return $.superLogin(opts);
+      }
     };
 
 

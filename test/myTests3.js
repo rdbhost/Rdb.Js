@@ -80,6 +80,28 @@ asyncTest('superLogin', 4, function() {
 
 
 
+asyncTest('superLogin - dialog', 4, function() {
+
+  var demo_password = '';
+
+  $.superLogin({
+
+    email: demo_email,
+    password: demo_password,
+
+    callback: function(json) {
+
+      ok(json.preauth[0] === 'p0000000012');
+      ok(json.super[0] === 's0000000012');
+      ok(json.preauth[1] === '');
+      ok(json.super[1].length > 25);
+      start();
+    }
+  });
+});
+
+
+
 // verify superPostData
 asyncTest('verify superPostData - promise', 2, function() {
 
@@ -153,24 +175,24 @@ test('$.superPostFormData setup verification', function() {
 });
 
 
-asyncTest('$.superPostFornData test', 4+1, function() {
+asyncTest('$.superPostFornData dialog', 4+1, function() {
 
-    $.superPostFormData($('#qunit_form2'), {
+  $.superPostFormData($('#qunit_form2'), {
 
-        userName: demo_s_role,
-        format: 'json-easy',
+    userName: demo_s_role,
+    format: 'json-easy',
 
-        callback: function (resp) {
+    callback: function (resp) {
 
-            ok(typeof resp === 'object', 'response is object'); // 0th assert
-            ok(resp.status[1].toLowerCase() == 'ok', 'status is not ok: '+resp.status[1]); // 1st assert
-            ok(resp.row_count[0] > 0, 'data row found');
-            ok(resp.records.rows[0]['col'] === 199, 'data is not 199: '+resp.records.rows[0]['col']);
-            start();
-        }
-    });
+      ok(typeof resp === 'object', 'response is object'); // 0th assert
+      ok(resp.status[1].toLowerCase() == 'ok', 'status is not ok: '+resp.status[1]); // 1st assert
+      ok(resp.row_count[0] > 0, 'data row found');
+      ok(resp.records.rows[0]['col'] === 199, 'data is not 199: '+resp.records.rows[0]['col']);
+      start();
+    }
+  });
 
-    $('#qunit_form2').rdbhostSubmit();
+  $('#qunit_form2').rdbhostSubmit();
 });
 
 
