@@ -641,7 +641,7 @@ asyncTest('$.populateForm test', 2+1, function() {
 
 
 
-module('$.getGET tests', {
+module('Rdbhost.getGET tests', {
 
     setup: function () {
         $.rdbHostConfig( {
@@ -662,19 +662,19 @@ module('$.getGET tests', {
     }
 });
 
-/* $.getGET throws,  */
-test('$.getGET test throws', function() {
+/* Rdbhost.getGET throws,  */
+test('Rdbhost.getGET test throws', function() {
 
-    throws(function() { $.getGET() }, 'always throws exception');
+    throws(function() { Rdbhost.getGET() }, 'always throws exception');
 });
 
-/* $.getGET ,  */
-test('$.getGET test ', function() {
+/* Rdbhost.getGET ,  */
+test('Rdbhost.getGET test ', function() {
 
     var opts = {
         q: 'SELECT 1'
     };
-    var u = $.getGET(opts);
+    var u = Rdbhost.getGET(opts);
     ok(~u.indexOf('format'), 'has format string');
     ok(~u.indexOf('SELECT'), 'has query string');
     ok(~u.indexOf('rdbhost.'), 'has host string');
@@ -683,15 +683,15 @@ test('$.getGET test ', function() {
 });
 
 
-/* $.getGET ,  */
-test('$.getGET test args ', function() {
+/* Rdbhost.getGET ,  */
+test('Rdbhost.getGET test args ', function() {
 
     var opts = {
         q: 'SELECT 1',
         args: [1, 'abc'],
         format: 'json-easy'
     };
-    var u = $.getGET(opts);
+    var u = Rdbhost.getGET(opts);
 
     ok(~u.indexOf('format'), 'has format string');
     ok(~u.indexOf('SELECT'), 'has query string');
@@ -711,15 +711,15 @@ test('$.getGET test args ', function() {
 });
 
 
-/* $.getGET ,  */
-asyncTest('$.getGET test w AJAX ', 3, function() {
+/* Rdbhost.getGET ,  */
+asyncTest('Rdbhost.getGET test w AJAX ', 3, function() {
 
     var opts = {
         q: 'SELECT 1',
         args: [1, 'abc'],
         format: 'json-easy'
     };
-    var u = $.getGET(opts);
+    var u = Rdbhost.getGET(opts);
 
     var p = $.ajax({
         url: u,
@@ -742,7 +742,7 @@ asyncTest('$.getGET test w AJAX ', 3, function() {
 });
 
 
-module('$.getPOST tests', {
+module('Rdbhost.getPOST tests', {
 
     setup: function () {
         $.rdbHostConfig( {
@@ -763,19 +763,19 @@ module('$.getPOST tests', {
     }
 });
 
-/* $.getPOST throws,  */
-test('$.getPOST test throws', function() {
+/* R.getPOST throws,  */
+test('Rdbhost.getPOST test throws', function() {
 
-    throws(function() {$.getPOST() }, 'always throws exception');
+    throws(function() {Rdbhost.getPOST() }, 'always throws exception');
 });
 
-/* $.getPOST ,  */
-test('$.getPOST test ', function() {
+/* Rdbhost.getPOST ,  */
+test('Rdbhost.getPOST test ', function() {
 
     var opts = {
         q: 'SELECT 1'
     };
-    var o = $.getPOST(opts),
+    var o = Rdbhost.getPOST(opts),
         u = o.url,
         d = o.data;
 
@@ -792,14 +792,14 @@ test('$.getPOST test ', function() {
 });
 
 
-/* $.getPOST ,  */
-test('$.getPOST test w args', function() {
+/* Rdbhost.getPOST ,  */
+test('Rdbhost.getPOST test w args', function() {
 
     var opts = {
         q: 'SELECT 1',
         args: [1, 'abc']
     };
-    var o = $.getPOST(opts),
+    var o = Rdbhost.getPOST(opts),
         u = o.url,
         d = o.data;
 
@@ -819,15 +819,15 @@ test('$.getPOST test w args', function() {
 });
 
 
-/* $.getPOST ,  */
-asyncTest('$.getPOST test w AJAX ', 3, function() {
+/* Rdbhost.getPOST ,  */
+asyncTest('Rdbhost.getPOST test w AJAX ', 3, function() {
 
     var opts = {
         q: 'SELECT 1',
         args: [1, 'abc'],
         format: 'json-easy'
     };
-    var u = $.getPOST(opts);
+    var u = Rdbhost.getPOST(opts);
 
     var p = $.ajax({
         method: 'POST',
@@ -852,8 +852,8 @@ asyncTest('$.getPOST test w AJAX ', 3, function() {
 });
 
 
-/* $.getPOST ,  */
-asyncTest('$.getPOST test 2 w AJAX ', 2, function() {
+/* Rdbhost.getPOST ,  */
+asyncTest('Rdbhost.getPOST test 2 w AJAX ', 2, function() {
 
     var opts = {
         userName: 'super',
@@ -862,7 +862,7 @@ asyncTest('$.getPOST test 2 w AJAX ', 2, function() {
         args: [1, 'abc'],
         format: 'json-easy'
     };
-    var u = $.getPOST(opts);
+    var u = Rdbhost.getPOST(opts);
 
     var p = $.ajax({
         method: 'POST',

@@ -33,7 +33,7 @@
  receives the data returned, and provides it to the callback.
  The form fields must be named arg000, arg001, etc
 
- $.loginOpenId provides various services related to OpenID logins.  It will
+ R.loginOpenID provides various services related to OpenID logins.  It will
  prep the form prior to submission, and handles hash values and cookies
  upon return from login process.  Call it in both the openId submit form,
  and in the follow up form.
@@ -79,7 +79,13 @@ function consoleLog(msg) {
 
 window.easyXDM = window.easyXDM || null;
 
+// namespace for Rdbhost functions
+window.Rdbhost = {};
+
+
 (function ($, window) {
+
+    var R = window.Rdbhost; // convenient 1 letter namespace name
 
     // function to load easyXDM on-demand during run-time
     //
@@ -90,7 +96,8 @@ window.easyXDM = window.easyXDM || null;
         if ( yn ) {
             yn({
                 load: easyXDMPath,
-                callback: fn
+                // callback: fn,
+                complete: fn
             })
         }
         else {
@@ -764,11 +771,11 @@ window.easyXDM = window.easyXDM || null;
     function roleName(acct, role) {
         return role.substring(0,1).toLowerCase() + ("000000000"+acct).slice(-10);
     }
-    $.role = function() {
+    R.role = function() {
         return roleName($.rdbHostConfig.opts.accountNumber, $.rdbHostConfig.opts.userName)
     };
 
-    $.rdbHostConfig = function (parms) {
+    R.rdbHostConfig = function (parms) {
 
         var inp = $.extend({}, opts, parms || {});
         if ( ! inp.accountNumber && roleNameTest.test(inp.userName) )
@@ -776,6 +783,8 @@ window.easyXDM = window.easyXDM || null;
 
         $.rdbHostConfig.opts = inp;
     };
+
+    $.rdbHostConfig = R.rdbHostConfig;
 
     function myExtend() {
 
@@ -802,7 +811,7 @@ window.easyXDM = window.easyXDM || null;
      param callback : function to call with json data
      param errback : function to call in case of error
      */
-    $.postData = function (parms) {
+    R.postData = function (parms) {
 
         assert(arguments.length <= 1, 'too many parms to postData');
         var inp = myExtend({}, $.rdbHostConfig.opts, parms || {});
@@ -820,6 +829,7 @@ window.easyXDM = window.easyXDM || null;
         return promise; // return promise
     };
 
+    $.postData = R.postData;
 
     /*
      eachRecord - calls 'eachrec' callback with each record,
@@ -830,7 +840,7 @@ window.easyXDM = window.easyXDM || null;
      param eachrec : function to call with each record
      param errback : function to call in case of error
      */
-    $.eachRecord = function (parms) {
+    R.eachRecord = function (parms) {
 
         assert(arguments.length <= 1, 'too many parms to eachRecord');
         assert(parms.eachrec, 'eachrec not provided');
@@ -851,6 +861,8 @@ window.easyXDM = window.easyXDM || null;
         return promise;
     };
 
+    $.eachRecord = R.eachRecord;
+
 
     /*
      postFormData should be called on a form BEFORE form is submitted.
@@ -859,7 +871,7 @@ window.easyXDM = window.easyXDM || null;
      param q : query to post data
      param kw : query-keyword to post data
      */
-    $.postFormData = function (that, parms) {
+    R.postFormData = function (that, parms) {
 
         assert(arguments.length <= 2, 'too many parms to postFormData');
         var $form = $(that).closest('form'),
@@ -896,6 +908,8 @@ window.easyXDM = window.easyXDM || null;
         return promise;
     };
 
+    $.postFormData = R.postFormData;
+
 
     /*
      postData submits some data (in the options object) to the server
@@ -904,7 +918,7 @@ window.easyXDM = window.easyXDM || null;
      param q : query to post data
      param kw : query-keyword to post data
      */
-    $.withResults = $.postData;
+    $.withResults = $.postData = R.postData;
 
 
     /*
@@ -913,7 +927,7 @@ window.easyXDM = window.easyXDM || null;
      * param options: usual options
      * return: string-url
      */
-    $.getGET = function(inp) {
+    R.getGET = function(inp) {
 
         assert(arguments.length <= 1, 'too many parms to getGET');
         var parms = myExtend({}, $.rdbHostConfig.opts, inp || {});
@@ -956,7 +970,7 @@ window.easyXDM = window.easyXDM || null;
      * param options: usual options
      * return: 2-element array [string-url, params-object]
      */
-    $.getPOST = function(inp) {
+    R.getPOST = function(inp) {
 
         assert(arguments.length <= 1, 'too many parms to getPOST');
         var parms = myExtend({}, $.rdbHostConfig.opts, inp || {});
@@ -1001,7 +1015,7 @@ window.easyXDM = window.easyXDM || null;
      * param options: usual options
      * return: 2-element array [string-url, params-object]
      */
-    $.getBin = function(inp) {
+    R.getBin = function(inp) {
 
         assert(arguments.length <= 1, 'too many parms to getBin');
         var parms = myExtend({}, $.rdbHostConfig.opts, inp || {});
@@ -1039,7 +1053,7 @@ window.easyXDM = window.easyXDM || null;
      *      negotiation
      *
      */
-    $.loginOpenId = function (inp) {
+    R.loginOpenId = function (inp) {
 
         /*
          * default values for each attribute
@@ -1228,12 +1242,14 @@ window.easyXDM = window.easyXDM || null;
         }
     };
 
+    $.loginOpenID = R.loginOpenId;
+
 
     /*
      loginAjax submits login info, gets list of roles / authcodes
 
      */
-    $.loginAjax = function (parms) {
+    R.loginAjax = function (parms) {
 
         var inp = myExtend({}, $.rdbHostConfig.opts, parms || {});
 
@@ -1245,12 +1261,13 @@ window.easyXDM = window.easyXDM || null;
         return sqlEngine.loginAjax(inp);
     };
 
+    $.loginAjax = R.loginAjax; // backward compat
 
     /*
      trainAjax submits login info, establishes training mode for 8 seconds
 
      */
-    $.trainAjax = function (parms) {
+    R.trainAjax = function (parms) {
 
         var inp = myExtend({}, $.rdbHostConfig.opts, parms || {});
 
@@ -1263,12 +1280,451 @@ window.easyXDM = window.easyXDM || null;
     };
 
 
-    /*
-     rdbhostSubmit is .submit() but waits for cross-domain socket to be ready
+  /*
+   * superLogin - logs into server using email and password; returns object like:
+   *    { 'preauth': [ 'p0000000002', '' ], 'super': [ 's0000000002', '?????..??' ] }
+   */
+  R.superLogin = function(opts) {
 
-     Use in lieu of $('#formid').submit(), where form has been prepared with
-     $.postFormData
+    /*
+     * email,
+     * password,
+     * acctId,
+     *
+     * callback,
+     * errback
      */
+
+    function _callback (json) {
+
+      var rType = { 'r': 'read', 's': 'super', 'p': 'preauth', 'a': 'auth' };
+
+      var hash = {},
+        rowCt = json.row_count[0],
+        rows = rowCt ? json.records.rows : [];
+
+      for ( var r in rows ) {
+
+        if ( rows.hasOwnProperty(r) ) {
+          var row = rows[r],
+            roleType = rType[row['role'].substring(0,1).toLowerCase()];
+          hash[roleType] = [ row['role'], row['authcode'] === '-'? '' : row['authcode'] ];
+        }
+      }
+
+      if ( savedCallback )
+        return savedCallback(hash);
+      else
+        return hash;
+    }
+
+    if ( ! opts.password || opts.password.length < 3 ) {
+
+      var def = $.Deferred(),
+        d2 = def.then(function(h) {
+
+          // login with password
+          opts.email = h.email;
+          opts.password = h.password;
+          return Rdbhost.superLogin(opts);
+        });
+
+      drawLoginDialog('Login for Super Role', opts.email, function(h) {
+
+        // pass email and password from form to handler
+        def.resolve(h)
+      });
+
+      return d2.promise();
+
+    }
+    else {
+
+      var savedCallback = opts.callback;
+      opts.callback = _callback;
+
+      return $.loginAjax(opts);
+    }
+  };
+
+
+  var superAuthcode = null,
+    superAuthcodeTimer = null;
+
+  R._authcodeStored = function() { return !!superAuthcode; };
+
+  R.superPostData = function(opts) {
+
+    /*
+     * same as postData
+     *   if no authcode, logs in to get super authcode
+     *   sets timeout to clear authcode
+     */
+
+    function _callback(res) {
+
+      clearTimeout(superAuthcodeTimer);
+      superAuthcode = res.super[1];
+      superAuthcodeTimer = setTimeout(function() { superAuthcode = null; }, 8000);
+      opts['callback'] = savedCallback;
+      return Rdbhost.superPostData(opts);
+    }
+
+    if ( superAuthcode ) {
+
+      opts['authcode'] = superAuthcode;
+      opts['userName'] = 'super';
+      return $.postData(opts);
+    }
+    else {
+
+      var liOpts = { email: $.rdbHostConfig.opts.acctEmail };
+      var savedCallback = opts['callback'];
+      liOpts['callback'] = _callback;
+
+      return Rdbhost.superLogin(liOpts);
+    }
+  };
+
+
+  R.superPostFormData = function(formId, opts) {
+
+    /*
+     * opts same as postFormData
+     */
+
+    function _callback(res) {
+
+      clearTimeout(superAuthcodeTimer);
+      superAuthcode = res.super[1];
+      superAuthcodeTimer = setTimeout(function() {
+        superAuthcode = null;
+      }, 8000);
+
+      opts['callback'] = savedCallback;
+      return Rdbhost.superPostFormData(formId, opts);
+    }
+
+    if ( superAuthcode ) {
+
+      opts['authcode'] = superAuthcode;
+      opts['userName'] = 'super';
+      return $.postFormData(formId, opts);
+    }
+    else {
+
+      var liOpts = { email: $.rdbHostConfig.opts.acctEmail };
+      var savedCallback = opts['callback'];
+      liOpts['callback'] = _callback;
+
+      return Rdbhost.superLogin(liOpts);
+    }
+  };
+
+
+  R.preauthPostData = function(opts) {
+
+    /*
+     * same as postData
+     *   if get error...
+     */
+
+    opts['userName'] = 'preauth';
+    var savedErrback = opts['errback'];
+    delete opts['errback'];
+
+    // promise 'p' waits for final resolution
+    // promise pD handles first try
+    var p = $.Deferred(),
+      pD = $.postData(opts);
+
+    pD.done(function(args) {
+
+      p.resolve(args);
+    });
+
+    pD.fail(function(err) {
+
+      var errCode = err[0], errMsg = err[1];
+
+      if ( errCode === 'rdb10' ) {
+
+        // alert('preauth collision');
+
+        function doIt(h) {
+
+          return $.trainAjax({
+
+            email: h.email,
+            password: h.password,
+            userName: opts.userName,
+
+            callback: function(res) {
+
+              // training mode has been inited, good for 8 seconds
+
+              // promise pD2 handles retry of postData
+              var pD2 = $.postData(opts);
+
+              pD2.done(function(resp) {
+
+                p.resolve(resp);
+              });
+              pD2.fail(function(err) {
+
+                p.reject(err);
+              })
+            },
+
+            errback: function (e) {
+
+              // training mode not inited, for some reason
+              if (savedErrback)
+                return savedErrback(e);
+              else
+                return e;
+            }
+          })
+        }
+
+        // show login dialog
+        drawLoginDialog('Preauth Login', opts.email,
+
+          function(h) { doIt(h) },
+          function(err) { p.reject(err) }
+        );
+      }
+      else {
+
+        // initial postData failed for reason other than white-list failure
+        p.reject(err);
+      }
+    });
+
+    // return promise that waits for final resolution
+    return p.promise();
+  };
+
+
+  R.preauthPostFormData = function(that, opts) {
+
+    /*
+     * same as postData
+     *   if get error...
+     */
+
+    opts['userName'] = 'preauth';
+    var p = $.Deferred(),
+      pFD = $.postFormData(that, opts),
+      savedErrback = opts['errback'];
+    delete opts['errback'];
+
+    pFD.done(function(resp) {
+
+      p.resolve(resp);
+    });
+
+    pFD.fail(function(err) {
+
+      var errCode = err[0], errMsg = err[1];
+
+      if (errCode === 'rdb10') {
+
+        function doIt(h) {
+
+          return $.trainAjax({
+
+            email: h.email,
+            password: h.password,
+            userName: opts.userName,
+
+            callback: function(res) {
+
+              // training mode has been inited, good for 8 seconds
+
+              // resubmit form
+              var pD2 = $.postFormData(that, opts);
+              $(that).submit();
+
+              pD2.done(function(resp) {
+
+                p.resolve(resp);
+              });
+              pD2.fail(function(err) {
+
+                p.reject(err);
+              })
+            },
+
+            errback: function (e) {
+
+              // training mode not inited, for some reason
+              if (savedErrback)
+                return savedErrback(e);
+              else
+                return e;
+            }
+          })
+        }
+
+        // show login dialog
+        drawLoginDialog('Preauth Login', opts.email,
+
+          function(h) { doIt(h) },
+          function(err) { p.reject(err) }
+        );
+      }
+      else {
+
+        p.reject(err);
+      }
+    });
+
+    return p.promise();
+  };
+
+
+  R.provideSuperPOST = function(opts, f) {
+
+    var dfr = $.Deferred();
+
+    if ( ! opts.userName || opts.userName.charAt(0) !== 's' )
+      opts.userName = 'super';
+
+    if ( ! opts.authcode ) {
+
+      if ( superAuthcode ) {
+
+        opts['authcode'] = superAuthcode;
+        return R.provideSuperPOST.apply($, arguments);
+      }
+      else {
+
+        function _cBack(res) {
+
+          clearTimeout(superAuthcodeTimer);
+          superAuthcode = res.super[1];
+          superAuthcodeTimer = setTimeout(function() {
+            superAuthcode = null;
+          }, 8000);
+
+          opts['authcode'] = superAuthcode;
+          var pd = R.getPOST(opts);
+          dfr.resolve(pd);
+        }
+
+        function _eBack(err) {
+
+          dfr.reject(err);
+        }
+
+        var liOpts = { email: $.rdbHostConfig.opts.acctEmail };
+        liOpts['callback'] = _cBack;
+        liOpts['errback'] = _eBack;
+
+        Rdbhost.superLogin(liOpts);
+      }
+    }
+    else {
+      // have authcode
+      var pd = R.getPOST(opts);
+      dfr.resolve(pd);
+    }
+
+    if ( f )
+      return dfr.then(f).promise();
+    else
+      return dfr.promise();
+  };
+
+
+  function drawLoginDialog(title, email, onSubmit, onCancel) {
+
+    var $liDialog, hgt = 100, width = 200,
+      idVal = 'rdbhost-super-login-form';
+
+    $liDialog = $('<div id="xxxx"><form>                                                ' +
+      '  <span id="title">t </span> <a href="" class="cancel">x</a>         ' +
+      '    <br />                                                           ' +
+      '    <input name="email" type="text" placeholder="email"/>            ' +
+      '    <input name="password" type="password" placeholder="password" /> ' +
+      '    <input type="submit" />                                          ' +
+      '</form></div>                                                        ');
+
+    $liDialog.attr('id',idVal);
+    $liDialog.css({
+
+      'position': 'fixed',
+      'width': width + 'px',
+      'height': hgt + 'px',
+      'margin-top': Math.round(hgt/-2) + 'px',
+      'margin-right': '0',
+      'margin-bottom': '0',
+      'margin-left': Math.round(width/-2) + 'px',
+      'left': '50%',
+      'top': '50%',
+      'display': 'none',
+      'z-index': 10,
+      'background': '#dacba2',
+      'padding': '12px',
+      'border': 'solid #850e45 8px'
+    });
+    $liDialog.find('span').css({
+
+      'font-size': 'larger',
+      'color': '#850e45'
+    });
+    $liDialog.find('input').css({
+
+      'color': '#850e45'
+    });
+
+    $liDialog.find('a').css('float', 'right');
+    $liDialog.find('#title').text(title);
+
+    if ( $('#'+idVal).length === 0 )
+      $('body').append($liDialog);
+    else
+      $liDialog = $('#'+idVal);
+    $liDialog.show();
+
+    $liDialog.on('submit', function(ev) {
+
+      var h = {};
+      h.email = $('input[name="email"]').val();
+      h.password = $('input[name="password"]').val();
+
+      $liDialog.hide();
+      onSubmit(h);
+      return false;
+    });
+
+    $liDialog.find('a').on('click', function(ev) {
+
+      var h = {};
+      h.email = $('#email').val();
+      h.password = $('#password').val();
+
+      $liDialog.hide();
+      if ( onCancel )
+        onCancel(h);
+      return false;
+    })
+  }
+
+
+  /**
+   *  the following methods act on jQuery selections.
+   *
+   */
+
+
+  /*
+   rdbhostSubmit is .submit() but waits for cross-domain socket to be ready
+
+   Use in lieu of $('#formid').submit(), where form has been prepared with
+   $.postFormData
+   */
     $.fn.rdbhostSubmit = function () {
 
         var $that = this,

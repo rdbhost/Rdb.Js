@@ -111,7 +111,7 @@ It is also recommended to explicitly set 'enctype' and 'method' attributes on th
 
 * *$.loginAjax:* sends your email and password to server, gets list of roles and authcodes.
 
-* *$.loginOpenId enables logging users in via OpenID logins.  This handles your users logging in to your app, not you logging in to your Rdbhost account.
+* *$.loginOpenID enables logging users in via OpenID logins.  This handles your users logging in to your app, not you logging in to your Rdbhost account.
 
 
 [see demo here](http://www.paginaswww.com/rdb/examples/openid-login.html)

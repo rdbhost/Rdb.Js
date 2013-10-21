@@ -19,7 +19,7 @@
         $('a').click(function (ev) {
 
             //$.drawLoginDialog('super login', '', alert);
-            var p = $.superPostData({q: 'SELECT 1'});
+            var p = Rdbhost.superPostData({q: 'SELECT 1'});
             p.then(
               function(h) {
                 alert(JSON.stringify(h, null, '    '));
@@ -30,7 +30,7 @@
             return false;
         });
 
-        var q = $.superPostFormData('form', {});
+        var q = Rdbhost.superPostFormData('form', {});
         q.then(
           function(resp) {
 

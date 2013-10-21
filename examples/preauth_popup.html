@@ -19,7 +19,7 @@
         $('a').click(function (ev) {
 
             //$.drawLoginDialog('super login', '', alert);
-            var p = $.preauthPostData({q: 'SELECT 1'});
+            var p = Rdbhost.preauthPostData({q: 'SELECT 1'});
             p.then(
               function(h) {
                 alert(JSON.stringify(h, null, '    '));
@@ -33,7 +33,7 @@
 
         function doform() {
 
-            var q = $.preauthPostFormData('form', {});
+            var q = Rdbhost.preauthPostFormData('form', {});
             q.then(
                     function(resp) {
 

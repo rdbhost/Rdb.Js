@@ -62,7 +62,7 @@ asyncTest('superLogin', 4, function() {
 
     var demo_password = gPassword || prompt('provide password');
 
-    $.superLogin({
+    Rdbhost.superLogin({
 
         email: demo_email,
         password: demo_password,
@@ -84,7 +84,7 @@ asyncTest('superLogin - dialog', 4, function() {
 
   var demo_password = '';
 
-  $.superLogin({
+  Rdbhost.superLogin({
 
     email: demo_email,
     password: demo_password,
@@ -105,7 +105,7 @@ asyncTest('superLogin - dialog', 4, function() {
 // verify superPostData
 asyncTest('verify superPostData - promise', 2, function() {
 
-    var p = $.superPostData({
+    var p = Rdbhost.superPostData({
 
         userName: demo_s_role,
 
@@ -140,7 +140,7 @@ var form = "<form id=\"qunit_form2\" method='post' enctype=\"multipart/form-data
     "<input name=\"q\" value=\"SELECT 199 AS col\" />"+
     "</form>";
 
-module('$.superPostFormData tests', {
+module('Rdbhost.superPostFormData tests', {
 
     setup: function () {
 
@@ -170,14 +170,14 @@ module('$.superPostFormData tests', {
 });
 
 // verify setup is ok
-test('$.superPostFormData setup verification', function() {
+test('Rdbhost.superPostFormData setup verification', function() {
     equal($('#qunit_form2').length, 1, 'test form appended '+$('#qunit_form2').length);
 });
 
 
 asyncTest('$.superPostFornData dialog', 4+1, function() {
 
-  $.superPostFormData($('#qunit_form2'), {
+  Rdbhost.superPostFormData($('#qunit_form2'), {
 
     userName: demo_s_role,
     format: 'json-easy',
@@ -383,7 +383,7 @@ asyncTest('research', 2, function() {
 */
 
 
-module('$.provideSuperPOST tests', {
+module('Rdbhost.provideSuperPOST tests', {
 
   setup: function () {
     $.rdbHostConfig( {
@@ -407,13 +407,13 @@ module('$.provideSuperPOST tests', {
 });
 
 
-/* $.provideSuperPOST ,  */
-asyncTest('$.provideSuperPOST test ', 9, function() {
+/* Rdbhost.provideSuperPOST ,  */
+asyncTest('Rdbhost.provideSuperPOST test ', 9, function() {
 
   var opts = {
     q: 'SELECT 1'
   };
-  var d = $.provideSuperPOST(opts, function(pd) {
+  var d = Rdbhost.provideSuperPOST(opts, function(pd) {
 
     var u = pd.url,
         d = pd.data;
@@ -434,13 +434,13 @@ asyncTest('$.provideSuperPOST test ', 9, function() {
 });
 
 
-/* $.provideSuperPOST ,  */
-asyncTest('$.provideSuperPOST test promise ', 8, function() {
+/* Rdbhost.provideSuperPOST ,  */
+asyncTest('Rdbhost.provideSuperPOST test promise ', 8, function() {
 
   var opts = {
     q: 'SELECT 1'
   };
-  var d = $.provideSuperPOST(opts);
+  var d = Rdbhost.provideSuperPOST(opts);
   d.then(function(pd) {
 
     var u = pd.url,
@@ -469,15 +469,15 @@ asyncTest('stalling for authcode timeout', 0, function() {
 
 
 */
-/* $.provideSuperPOST ,  *//*
+/* Rdbhost.provideSuperPOST ,  *//*
 
-asyncTest('$.provideSuperPOST test promise err ', 2, function() {
+asyncTest('Rdbhost.provideSuperPOST test promise err ', 2, function() {
 
   var opts = {
     q: 'SELECT 1',
     accountNumber: acct_number+1 // introduce error
   };
-  var d = $.provideSuperPOST(opts);
+  var d = Rdbhost.provideSuperPOST(opts);
   d.fail(function(pd) {
 
     var code = pd[0], msg = pd[1];
@@ -491,14 +491,14 @@ asyncTest('$.provideSuperPOST test promise err ', 2, function() {
 */
 
 
-/* $.provideSuperPOST ,  */
-asyncTest('$.provideSuperPOST test w args', 12, function() {
+/* Rdbhost.provideSuperPOST ,  */
+asyncTest('Rdbhost.provideSuperPOST test w args', 12, function() {
 
   var opts = {
     q: 'SELECT 1',
     args: [1, 'abc']
   };
-  var d = $.provideSuperPOST(opts, function(pd) {
+  var d = Rdbhost.provideSuperPOST(opts, function(pd) {
 
     var u = pd.url,
         d = pd.data;
@@ -522,15 +522,15 @@ asyncTest('$.provideSuperPOST test w args', 12, function() {
 });
 
 
-/* $.provideSuperPOST ,  */
-asyncTest('$.provideSuperPOST test w AJAX ', 3, function() {
+/* Rdbhost.provideSuperPOST ,  */
+asyncTest('Rdbhost.provideSuperPOST test w AJAX ', 3, function() {
 
   var opts = {
     q: 'SELECT 1',
     args: [1, 'abc'],
     format: 'json-easy'
   };
-  var d = $.provideSuperPOST(opts, function(u) {
+  var d = Rdbhost.provideSuperPOST(opts, function(u) {
 
     var p = $.ajax({
       method: 'POST',
@@ -556,8 +556,8 @@ asyncTest('$.provideSuperPOST test w AJAX ', 3, function() {
 });
 
 
-/* $.provideSuperPOST ,  */
-asyncTest('$.provideSuperPOST err test w AJAX ', 2, function() {
+/* Rdbhost.provideSuperPOST ,  */
+asyncTest('Rdbhost.provideSuperPOST err test w AJAX ', 2, function() {
 
   var opts = {
     userName: 'super',
@@ -566,7 +566,7 @@ asyncTest('$.provideSuperPOST err test w AJAX ', 2, function() {
     args: [1, 'abc'],
     format: 'json-easy'
   };
-  var d = $.provideSuperPOST(opts, function(u) {
+  var d = Rdbhost.provideSuperPOST(opts, function(u) {
 
     var p = $.ajax({
       method: 'POST',
