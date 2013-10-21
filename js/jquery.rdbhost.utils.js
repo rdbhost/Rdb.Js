@@ -496,10 +496,11 @@
         }
         else {
 
+          var liOpts = { email: $.rdbHostConfig.opts.acctEmail };
           var savedCallback = opts['callback'];
-          opts['callback'] = _callback;
+          liOpts['callback'] = _callback;
 
-          return $.superLogin(opts);
+          return $.superLogin(liOpts);
         }
     };
 
@@ -530,10 +531,11 @@
       }
       else {
 
+        var liOpts = { email: $.rdbHostConfig.opts.acctEmail };
         var savedCallback = opts['callback'];
-        opts['callback'] = _callback;
+        liOpts['callback'] = _callback;
 
-        return $.superLogin(opts);
+        return $.superLogin(liOpts);
       }
     };
 
@@ -700,7 +702,116 @@
     };
 
 
-    function drawLoginDialog(title, email, onSubmit, onCancel) {
+    $.provideSuperPOST = function(opts, f) {
+
+      var dfr = $.Deferred();
+
+      if ( ! opts.userName || opts.userName.charAt(0) !== 's' )
+        opts.userName = 'super';
+
+      if ( ! opts.authcode ) {
+
+        if ( superAuthcode ) {
+
+          opts['authcode'] = superAuthcode;
+          return $.provideSuperPOST.apply($, arguments);
+        }
+        else {
+
+          function _cBack(res) {
+
+            clearTimeout(superAuthcodeTimer);
+            superAuthcode = res.super[1];
+            superAuthcodeTimer = setTimeout(function() {
+              superAuthcode = null;
+            }, 8000);
+
+            opts['authcode'] = superAuthcode;
+            var pd = $.getPOST(opts);
+            dfr.resolve(pd);
+          }
+
+          function _eBack(err) {
+
+            dfr.reject(err);
+          }
+
+          var liOpts = { email: $.rdbHostConfig.opts.acctEmail };
+          liOpts['callback'] = _cBack;
+          liOpts['errback'] = _eBack;
+
+          $.superLogin(liOpts);
+        }
+      }
+      else {
+        // have authcode
+        var pd = $.getPOST(opts);
+        dfr.resolve(pd);
+      }
+
+      if ( f )
+        return dfr.then(f).promise();
+      else
+        return dfr.promise();
+    };
+
+
+  $.provideSuperGET = function(opts, f) {
+
+    var dfr = $.Deferred();
+
+    if ( ! opts.userName || opts.userName.charAt(0) !== 's' )
+      opts.userName = 'super';
+
+    if ( ! opts.authcode ) {
+
+      if ( superAuthcode ) {
+
+        opts['authcode'] = superAuthcode;
+        return $.provideSuperGET.apply($, arguments);
+      }
+      else {
+
+        function _cBack(res) {
+
+          clearTimeout(superAuthcodeTimer);
+          superAuthcode = res.super[1];
+          superAuthcodeTimer = setTimeout(function() {
+            superAuthcode = null;
+          }, 8000);
+
+          opts['authcode'] = superAuthcode;
+          var gd = $.getGET(opts);
+          dfr.resolve(gd);
+        }
+
+        function _eBack(err) {
+
+          dfr.reject(err);
+        }
+
+        var liOpts = { email: $.rdbHostConfig.opts.acctEmail };
+        liOpts['callback'] = _cBack;
+        liOpts['errback'] = _eBack;
+
+        $.superLogin(liOpts);
+      }
+    }
+    else {
+
+      // have authcode
+      var gd = $.getGET(opts);
+      dfr.resolve(gd);
+    }
+
+    if ( f )
+      return dfr.then(f);
+    else
+      return dfr.promise();
+  };
+
+
+  function drawLoginDialog(title, email, onSubmit, onCancel) {
 
         var $liDialog, hgt = 100, width = 200,
             idVal = 'rdbhost-super-login-form';
@@ -716,7 +827,7 @@
         $liDialog.attr('id',idVal);
         $liDialog.css({
 
-            'position': 'absolute',
+            'position': 'fixed',
             'width': width + 'px',
             'height': hgt + 'px',
             'margin-top': Math.round(hgt/-2) + 'px',

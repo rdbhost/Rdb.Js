@@ -665,7 +665,7 @@ module('$.getGET tests', {
 /* $.getGET throws,  */
 test('$.getGET test throws', function() {
 
-    throws(function() {$.getGET() }, 'always throws exception');
+    throws(function() { $.getGET() }, 'always throws exception');
 });
 
 /* $.getGET ,  */
@@ -881,7 +881,8 @@ asyncTest('$.getPOST test 2 w AJAX ', 2, function() {
 
         // for ajax calls, even errors are returned as done(), only http level errors are fail()
         ok(data.error, 'error occurred');
-        ok(data.error[1] && ~data.error[1].indexOf('Auth fail'), 'error occurred'+data.error[1]);
+        ok(data.error[1] && ~data.error[1].indexOf('Auth fail') || ~data.error[1].indexOf('bad authcode'),
+          'error occurred'+data.error[1]);
         start();
     });
 });

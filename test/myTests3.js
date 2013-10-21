@@ -147,7 +147,7 @@ module('$.superPostFormData tests', {
         $.rdbHostConfig( {
             'domain': domain,
             'format': 'json-easy',
-            'userName': demo_r_role,
+            'userName': demo_s_role,
             'authcode': '-'
         });
 
@@ -383,4 +383,212 @@ asyncTest('research', 2, function() {
 */
 
 
+module('$.provideSuperPOST tests', {
+
+  setup: function () {
+    $.rdbHostConfig( {
+      'domain': domain,
+      'format': 'json-easy',
+      'userName': demo_s_role,
+      accountNumber: acct_number,
+      'authcode': '-'
+    });
+  },
+
+  teardown: function () {
+    $.rdbHostConfig( {
+      'domain': undefined,
+      'format': undefined,
+      'userName': undefined,
+      accountNumber: undefined,
+      'authcode': '-'
+    });
+  }
+});
+
+
+/* $.provideSuperPOST ,  */
+asyncTest('$.provideSuperPOST test ', 9, function() {
+
+  var opts = {
+    q: 'SELECT 1'
+  };
+  var d = $.provideSuperPOST(opts, function(pd) {
+
+    var u = pd.url,
+        d = pd.data;
+
+    ok(!~u.indexOf('format'), 'url has no format string');
+    ok(!~u.indexOf('SELECT'), 'url has no query string');
+    ok(~u.indexOf('rdbhost.'), 'url has host string');
+    ok(!~u.indexOf(' '), 'has no white space');
+    ok(~u.indexOf(demo_s_role), 'rolename in url');
+
+    ok(d.q, 'query in data');
+    ok(!d.arg000, 'no arg000 in data');
+    ok(!d.arg001, 'no arg001 in data');
+    ok(!d.argtype000, 'no argtype000 in data');
+
+    start();
+  });
+});
+
+
+/* $.provideSuperPOST ,  */
+asyncTest('$.provideSuperPOST test promise ', 8, function() {
+
+  var opts = {
+    q: 'SELECT 1'
+  };
+  var d = $.provideSuperPOST(opts);
+  d.then(function(pd) {
+
+    var u = pd.url,
+      d = pd.data;
+
+    ok(!~u.indexOf('SELECT'), 'url has no query string');
+    ok(~u.indexOf('rdbhost.'), 'url has host string');
+    ok(!~u.indexOf(' '), 'has no white space');
+    ok(~u.indexOf(demo_s_role), 'rolename in url');
+
+    ok(d.q, 'query in data');
+    ok(!d.arg000, 'no arg000 in data');
+    ok(!d.arg001, 'no arg001 in data');
+    ok(!d.argtype000, 'no argtype000 in data');
+
+    start();
+  });
+});
+
+
+/*
+asyncTest('stalling for authcode timeout', 0, function() {
+
+  setTimeout(start, 10000);
+});
+
+
+*/
+/* $.provideSuperPOST ,  *//*
+
+asyncTest('$.provideSuperPOST test promise err ', 2, function() {
+
+  var opts = {
+    q: 'SELECT 1',
+    accountNumber: acct_number+1 // introduce error
+  };
+  var d = $.provideSuperPOST(opts);
+  d.fail(function(pd) {
+
+    var code = pd[0], msg = pd[1];
+
+    ok(code, 'error code returned');
+    ok(msg, 'error msg returned');
+
+    start();
+  });
+});
+*/
+
+
+/* $.provideSuperPOST ,  */
+asyncTest('$.provideSuperPOST test w args', 12, function() {
+
+  var opts = {
+    q: 'SELECT 1',
+    args: [1, 'abc']
+  };
+  var d = $.provideSuperPOST(opts, function(pd) {
+
+    var u = pd.url,
+        d = pd.data;
+
+    ok(!~u.indexOf('format'), 'url has no format string');
+    ok(!~u.indexOf('SELECT'), 'url has no query string');
+    ok(~u.indexOf('rdbhost.'), 'url has host string');
+    ok(!~u.indexOf(' '), 'has no white space');
+    ok(~u.indexOf(demo_s_role), 'rolename in url');
+
+    ok(d.q, 'query in data');
+    ok(d.arg000 === 1, 'arg000 is correct in data');
+    ok(d.arg001 === 'abc', 'arg001 is correct in data');
+    ok(d.argtype000 === 'NUMBER', 'argtype000 is correct in data '+ d.argtype000);
+    ok(d.argtype001 === 'STRING', 'argtype001 is correct in data ' + d.argtype001);
+    ok(!d.arg002, 'no arg002 in data');
+    ok(!d.argtype002, 'no argtype002 in data');
+
+    start();
+  });
+});
+
+
+/* $.provideSuperPOST ,  */
+asyncTest('$.provideSuperPOST test w AJAX ', 3, function() {
+
+  var opts = {
+    q: 'SELECT 1',
+    args: [1, 'abc'],
+    format: 'json-easy'
+  };
+  var d = $.provideSuperPOST(opts, function(u) {
+
+    var p = $.ajax({
+      method: 'POST',
+      url: u.url,
+      data: u.data,
+      dataType: 'json'
+    });
+
+    p.fail(function(errArray) {
+
+      ok(false, 'AJAX test failed ' + errArray[0] + ' ' + errArray[1]);
+      start();
+    });
+
+    p.done(function(data) {
+
+      ok(data, 'AJAX test succeeded');
+      ok(data.status[1].toLowerCase() === 'ok', 'status ' + data.status[1]);
+      ok(data.row_count[0] === 1, 'row count ' + data.row_count);
+      start();
+    });
+  });
+});
+
+
+/* $.provideSuperPOST ,  */
+asyncTest('$.provideSuperPOST err test w AJAX ', 2, function() {
+
+  var opts = {
+    userName: 'super',
+    authcode: 'abcdef',
+    q: 'SELECT 1',
+    args: [1, 'abc'],
+    format: 'json-easy'
+  };
+  var d = $.provideSuperPOST(opts, function(u) {
+
+    var p = $.ajax({
+      method: 'POST',
+      url: u.url,
+      data: u.data,
+      dataType: 'json'
+    });
+
+    p.fail(function(errArray) {
+
+      ok(false, 'AJAX test failed ' + errArray[0] + ' ' + errArray[1]);
+      start();
+    });
+
+    p.done(function(data) {
+
+      // for ajax calls, even errors are returned as done(), only http level errors are fail()
+      ok(data.error, 'error occurred');
+      ok(data.error[1] && ~data.error[1].indexOf('Auth fail') || ~data.error[1].indexOf('bad auth'),
+        'error occurred'+data.error[1]);
+      start();
+    });
+  });
+});
 
