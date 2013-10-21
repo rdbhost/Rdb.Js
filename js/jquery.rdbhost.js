@@ -1326,7 +1326,7 @@ window.Rdbhost = {};
           // login with password
           opts.email = h.email;
           opts.password = h.password;
-          return Rdbhost.superLogin(opts);
+          return R.superLogin(opts);
         });
 
       drawLoginDialog('Login for Super Role', opts.email, function(h) {
@@ -1367,7 +1367,7 @@ window.Rdbhost = {};
       superAuthcode = res.super[1];
       superAuthcodeTimer = setTimeout(function() { superAuthcode = null; }, 8000);
       opts['callback'] = savedCallback;
-      return Rdbhost.superPostData(opts);
+      return R.superPostData(opts);
     }
 
     if ( superAuthcode ) {
@@ -1382,7 +1382,7 @@ window.Rdbhost = {};
       var savedCallback = opts['callback'];
       liOpts['callback'] = _callback;
 
-      return Rdbhost.superLogin(liOpts);
+      return R.superLogin(liOpts);
     }
   };
 
@@ -1402,7 +1402,7 @@ window.Rdbhost = {};
       }, 8000);
 
       opts['callback'] = savedCallback;
-      return Rdbhost.superPostFormData(formId, opts);
+      return R.superPostFormData(formId, opts);
     }
 
     if ( superAuthcode ) {
@@ -1417,7 +1417,7 @@ window.Rdbhost = {};
       var savedCallback = opts['callback'];
       liOpts['callback'] = _callback;
 
-      return Rdbhost.superLogin(liOpts);
+      return R.superLogin(liOpts);
     }
   };
 
@@ -1622,7 +1622,7 @@ window.Rdbhost = {};
         liOpts['callback'] = _cBack;
         liOpts['errback'] = _eBack;
 
-        Rdbhost.superLogin(liOpts);
+        R.superLogin(liOpts);
       }
     }
     else {
@@ -1712,6 +1712,7 @@ window.Rdbhost = {};
     })
   }
 
+  R.drawLoginDialog = drawLoginDialog;
 
   /**
    *  the following methods act on jQuery selections.

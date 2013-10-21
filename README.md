@@ -16,6 +16,7 @@ This document attempts to provide an overview of the module, and tell you enough
 
 A prettier version of this content is at: [noservercoding.rdbhost.com](http://noservercoding.rdbhost.com)
 
+
 Some features of the service:
 
 * binary uploads
@@ -26,6 +27,8 @@ Some features of the service:
 
 ### The Plugin ###
 Included are five _functions_ (called on the jQuery object) and four _methods_ (called on selection sets).  Most of them take option objects as their only or second parameter.
+
+The _functions_ are on a global 'Rdbhost' or 'window.Rdbhost' namespace.  The _methods_ are on the jQuery _$_ namespace, as they act on jQuery selection sets.  Some of the _functions_ are aliased to the _$_ namespace as well.
 
 ### Options ###
 Before we discuss the functions and methods themselves, let's go over the options.  Some are required, some optional (a _required_ _option_ ? yep).  A default can be set for each, via the $.rdbHostConfig function, or included in each function or method call.
@@ -85,9 +88,9 @@ The _q_ query string (or the on-server query string referenced by _kw_) may incl
 
 * *$.postFormData:* used to submit data to server, where the data is in an html form. Call this function before the form gets submitted, not from a *submit* or *click* handler on the form:
 
-            $.postFormData($('#demo-form'),
-                           {'kw':'updater',
-                            'callback':redisplay});
+        $.postFormData($('#demo-form'),
+                        {'kw':'updater',
+                         'callback':redisplay});
 
     The above example assumes that _userName_, and _authcode_ have been set as defaults. _kw_ could have been provided as a field value in the form.  _redisplay_ is a function that does some appropriate followup action.
 
@@ -109,9 +112,34 @@ It is also recommended to explicitly set 'enctype' and 'method' attributes on th
 
 * *$.eachRecord:* sends query to server, gets results, calls _errback_ if status is 'error', otherwise, calls _eachrec_ callback with each record.  By default, the _jsond-easy_ format is used, and each record is an object with named attribute for each record field.
 
+* *R.getGET:* returns a string with url containing the query; can be requested using $.ajax or $http...  (with GET method)
+
+* *R.getPOST:* returns an object containing a url and a data object; can be requested using $.ajax or $htt... (with POST method)
+
+* *R.provideSuperPOST:* like $.getPost, but returns a promise instead of the object.  If necessary, will prompt for email/pass and use R.superLogin to retrieve authcode.
+
 * *$.loginAjax:* sends your email and password to server, gets list of roles and authcodes.
 
-* *$.loginOpenID enables logging users in via OpenID logins.  This handles your users logging in to your app, not you logging in to your Rdbhost account.
+* *$.loginOpenID:* enables logging users in via OpenID logins.  This handles your users logging in to your app, not you logging in to your Rdbhost account.
+
+* *R.trainAjax:* sends your email and password to server, puts server account in training mode for a few seconds only, for your client IP.
+
+* *R.superLogin:* similar to $.loginAjax, except will prompt (with html dialog) for missing email and password.
+
+* *R.superPostData:* like $.postData with _super_ role, but will prompt using superLogin to get authcode if necessary.
+
+* *R.superPostFormData:* like $.postFormData with _super_ role, but will prompt using superLogin to get authcode if necessary.
+
+* *R.preauthPostData:* like $.postData with _preauth_ role, but will prompt for email/pass and use R.trainAjax to temporarily start training mode if necessary.
+
+* *R.preauthPostFormData:* like $.postFormData with _preauth_ role, but will prompt for email/pass and use R.trainAjax to temporarily start training mode if necessary.
+
+* *R.drawLoginDialog:* draws dialog box, calls callback function with entered input.
+
+
+
+
+
 
 
 [see demo here](http://www.paginaswww.com/rdb/examples/openid-login.html)
