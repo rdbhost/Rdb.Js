@@ -1,4 +1,4 @@
-﻿
+﻿ 
 ## The Javascript Module for Accessing Rdbhost
 ## jquery.rdbhost.js ##
 
