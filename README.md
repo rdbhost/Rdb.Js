@@ -10,7 +10,7 @@ Use with Internet Explorer 7 requires json2.js also.
 The module includes a class, *SQLEngine*, that encapsulates the interactions with the server, and a
 jQuery plugin.  The class can be used directly, without the plugin, but the plugin is intended to be easier. This document describes the plugin.  For help in using the SQLEngine object directly, there is decent commenting in the source.
 
-There were recently three different versions of this module.  There is now one, and it will dynamically use ajax in browsers that support CORS, and easyXDM otherwise.  If easyXDM is not loaded, but yepnope.js is, then easyXDM will be dynamically loaded as necessary.
+There were recently three different versions of this module.  There is now one, and it will dynamically use ajax in browsers that support CORS, and easyXDM otherwise.  If easyXDM is not loaded, but yepnope.js or Modernizr is, then easyXDM will be dynamically loaded as necessary.
 
 This document attempts to provide an overview of the module, and tell you enough to do useful things with the library.  There is much more to know about the service, documented on the site:
 
@@ -88,25 +88,25 @@ The _q_ query string (or the on-server query string referenced by _kw_) may incl
 
 * *$.postFormData:* used to submit data to server, where the data is in an html form. Call this function before the form gets submitted, not from a *submit* or *click* handler on the form:
 
-        $.postFormData($('#demo-form'),
-                        {'kw':'updater',
-                         'callback':redisplay});
+        $.postFormData($('#demo-form'), {
+            'kw': 'updater',
+            'callback': redisplay
+        });
 
     The above example assumes that _userName_, and _authcode_ have been set as defaults. _kw_ could have been provided as a field value in the form.  _redisplay_ is a function that does some appropriate followup action.
 
-The form *must* include a unique _id_.  Form fields can include _q_, _kw_, _format_, _arg###_ (where ### is a 3 digit number, '0' padded, starting with '000'), and _argtype###_.
-The _q_ query string (or the on-server query string referenced by _kw_) may include '%s' substition tokens,
-and an _arg###_ field may be provided for each such token.
-_arg###_ fields may be *file* fields, and this is the surest way to submit binary data with the query.
-The _argtype###_ fields are optional, but (if provided) should be numbered to match _arg###_ fields, and each value should be a Python DB API type string ('STRING', 'NUMBER', 'BINARY', ...). These are used by the server to typecast the argument values before passing them to PostgreSQL.
+    The form *must* include a unique _id_.  Form fields can include _q_, _kw_, _format_, _arg###_ (where ### is a 3 digit number, '0' padded, starting with '000'), and _argtype###_.
+    The _q_ query string (or the on-server query string referenced by _kw_) may include '%s' substition tokens, and an _arg###_ field may be provided for each such token.
+    _arg###_ fields may be *file* fields, and this is the surest way to submit binary data with the query.
+    The _argtype###_ fields are optional, but (if provided) should be numbered to match _arg###_ fields, and each value should be a Python DB API type string ('STRING', 'NUMBER', 'BINARY', ...). These are used by the server to typecast the argument values before passing them to PostgreSQL.
 
-Response data from the server will be passed to the callback.
+    Response data from the server will be passed to the callback.
 
-Remember to avoid the use of '.preventDefault()' and 'return false', as the form itself does get submitted.
+    Remember to avoid the use of '.preventDefault()' and 'return false', as the form itself does get submitted.
 
-It is also recommended to explicitly set 'enctype' and 'method' attributes on the form.
+    It is also recommended to explicitly set 'enctype' and 'method' attributes on the form.
 
-[see demo here](http://www.paginaswww.com/rdb/examples/jq_rdbhost_exdm_postbyform.html)
+    [see demo here](http://www.paginaswww.com/rdb/examples/jq_rdbhost_exdm_postbyform.html)
 
 * *$.withResults:* functionally identical to $.postData.
 
@@ -114,21 +114,118 @@ It is also recommended to explicitly set 'enctype' and 'method' attributes on th
 
 * *R.getGET:* returns a string with url containing the query; can be requested using $.ajax or $http...  (with GET method)
 
+        $.ready(function () {
+
+            $.ajax({
+                url : R.getGET({
+                          userName: 'preauth',
+                          q: 'INSERT INTO status (event) VALUES(%S)',
+                          args: [ 'test page loaded' ],
+                          format: 'json-easy'
+                        },
+                method: 'GET',
+                callback: function(resp) { ... }
+            });
+        });
+
 * *R.getPOST:* returns an object containing a url and a data object; can be requested using $.ajax or $htt... (with POST method)
+
+        $.ready(function () {
+
+            var postDataObj = R.getPOST({
+                userName: 'super',
+                q: 'INSERT INTO status (event) VALUES(%S)',
+                args: [ 'test page loaded' ],
+                format: 'json-easy',
+                authcode: 'abc~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~xyz'
+            });
+
+            $.ajax({
+                url: postDataObj.url,
+                method: 'POST',
+                data: postDataObj.data,
+                callback: function(resp) { ... }
+            });
+        });
 
 * *R.provideSuperPOST:* like $.getPost, but returns a promise instead of the object.  If necessary, will prompt for email/pass and use R.superLogin to retrieve authcode.
 
+        var options = {
+            userName: 'super',
+            q: 'INSERT INTO status (event) VALUES(%S)',
+            args: [ 'test page loaded' ],
+            format: 'json-easy',
+            authcode: '' // to be obtained interactively by provideSuperPOST
+        };
+
+        R.provideSuperPOST(options, function(postDataObj) {
+
+            $.ajax({
+                url: postDataObj.url,
+                method: 'POST',
+                data: postDataObj.data,
+                callback: function(resp) { ... }
+            });
+        })
+
 * *$.loginAjax:* sends your email and password to server, gets list of roles and authcodes.
 
-* *$.loginOpenID:* enables logging users in via OpenID logins.  This handles your users logging in to your app, not you logging in to your Rdbhost account.
+        $.ready(function() {
 
-* *R.trainAjax:* sends your email and password to server, puts server account in training mode for a few seconds only, for your client IP.
+            function logIn(resp) { // resp is ordinary Rdbhost results object
+
+              var recs = resp.results.rows;
+              ... do something with rolename/authcode data
+            };
+
+            var liPromise = $.loginAjax({
+
+                email: 'dkeeney@rdbhost.com',
+                password: '~~~',
+            });
+
+            liPromise.then(logIn, alert); // when data available, pass to function logIn.
+        });
+
+    R.superLogin is generally easier to use, with the same utility.
+
+
+* *$.loginOpenID:* enables logging users in via OpenID logins.  This handles your users logging in to your app, not you logging in to your Rdbhost account.  This function does NOT return a promise, so you need to provide a callback.
+
+    This function should be called early in your ready function, or after the form is loaded, before any user interaction or need for user id.  It has two distinct functions: 1) if page is being loaded on return from OpenID provider site, the function pulls the user's key and identifier from hash or cookie (depending on which is available), and provides those to the callback; and 2) if page load is before the login, it prepares the provided form for a login.
+
+        var userId = 'anonymous';
+
+        function logUserIn(identifier, key) { // identifier is OpenID identifier, key is
+                                              //  secret from local user db, originally random
+            // user identification can be stored in cookies.
+            $.cookie('loginKeyName', key);
+            $.cookie('loginIdentifier', identifier);
+            userId = identifier;
+            $('#userId').text(userId);
+        };
+
+        $.ready(function() {
+
+            $.loginOpenID({
+
+                loginForm: 'formname', // id of html form in page
+                callback: logUserIn
+            });
+        });
+
+
+    [see demo here](http://www.paginaswww.com/rdb/examples/openid-login.html)
+
+* *R.trainAjax:* sends your email and password to server, puts server account in training mode for a few seconds only, for your client IP.  Using this directly will rarely be required, in that R.preauthPostData and R.preauthPostFormData are easier methods for the common use-cases.
 
 * *R.superLogin:* similar to $.loginAjax, except will prompt (with html dialog) for missing email and password.
 
-* *R.superPostData:* like $.postData with _super_ role, but will prompt using superLogin to get authcode if necessary.
+* *R.superPostData:* like $.postData with _super_ role, but will prompt using R.superLogin to get authcode if
+necessary.
 
-* *R.superPostFormData:* like $.postFormData with _super_ role, but will prompt using superLogin to get authcode if necessary.
+* *R.superPostFormData:* like $.postFormData with _super_ role, but will prompt using R.superLogin to get authcode
+if necessary.
 
 * *R.preauthPostData:* like $.postData with _preauth_ role, but will prompt for email/pass and use R.trainAjax to temporarily start training mode if necessary.
 
@@ -136,13 +233,6 @@ It is also recommended to explicitly set 'enctype' and 'method' attributes on th
 
 * *R.drawLoginDialog:* draws dialog box, calls callback function with entered input.
 
-
-
-
-
-
-
-[see demo here](http://www.paginaswww.com/rdb/examples/openid-login.html)
 
 
 ### Methods ###
