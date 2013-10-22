@@ -1,4 +1,4 @@
-﻿ 
+ 
 ## The Javascript Module for Accessing Rdbhost
 ## jquery.rdbhost.js ##
 
@@ -26,7 +26,7 @@ Some features of the service:
 
 
 ### The Plugin ###
-Included are fourteen _functions_ (called on the jQuery object) and four _methods_ (called on selection sets).  Most of them take option objects as their only or second parameter.
+Included are fourteen _functions_ (called on the Rdbhost global object) and four _methods_ (called on jQuery selection sets).  Most of them take option objects as their only or second parameter.
 
 The _functions_ are on a global 'Rdbhost' or 'window.Rdbhost' namespace.  The _methods_ are on the jQuery _$_ namespace, as they act on jQuery selection sets.  Some of the _functions_ are aliased to the _$_ namespace as well.
 
