@@ -31,6 +31,8 @@
 
 <script>
 
+    var R = window.Rdbhost;
+
     $(document).ready(function() {
 
         $.rdbHostConfig({
@@ -46,7 +48,7 @@
                 acctemail = $emailForm.find('#acctemail').val(),
                 webmaster = $emailForm.find('#webmaster').val();
 
-            var p = $.setupEmail({
+            var p = R.setupEmail({
 
                 service: svc,
                 apikey: apikey,

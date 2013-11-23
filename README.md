@@ -7,8 +7,7 @@ This module requires jQuery.  Version 1.5 or greater is recommended.
 Use with Internet Explorer 7 requires json2.js also.
 
 ### Overview ###
-The module includes a class, *SQLEngine*, that encapsulates the interactions with the server, and a
-jQuery plugin.  The class can be used directly, without the plugin, but the plugin is intended to be easier. This document describes the plugin.  For help in using the SQLEngine object directly, there is decent commenting in the source.
+The module includes a class, *SQLEngine*, that encapsulates the interactions with the server, and a jQuery plugin.  The class can be used directly, without the plugin, but the plugin is intended to be easier. This document describes the plugin.  For help in using the SQLEngine object directly, there is decent commenting in the source.
 
 There were recently three different versions of this module.  There is now one, and it will dynamically use ajax in browsers that support CORS, and easyXDM otherwise.  If easyXDM is not loaded, but yepnope.js or Modernizr is, then easyXDM will be dynamically loaded as necessary.
 
@@ -28,7 +27,7 @@ Some features of the service:
 ### The Plugin ###
 Included are fourteen _functions_ (called on the Rdbhost global object) and four _methods_ (called on jQuery selection sets).  Most of them take option objects as their only or second parameter.
 
-The _functions_ are on a global 'Rdbhost' or 'window.Rdbhost' namespace.  The _methods_ are on the jQuery _$_ namespace, as they act on jQuery selection sets.  Some of the _functions_ are aliased to the _$_ namespace as well.
+The _functions_ are on a global 'Rdbhost' or 'window.Rdbhost' namespace.  The _methods_ are on the jQuery _$_ namespace, as they act on jQuery selection sets.  Some of the _functions_ are aliased to the _$_ namespace as well.  The examples below assume the global Rdbhost object has been aliased to a variable R, as in 'var R = window.Rdbhost;'.
 
 ### Options ###
 Before we discuss the functions and methods themselves, let's go over the options.  Some are required, some optional (a _required_ _option_ ? yep).  A default can be set for each, via the $.rdbHostConfig function, or included in each function or method call.
@@ -148,7 +147,7 @@ The _q_ query string (or the on-server query string referenced by _kw_) may incl
             });
         });
 
-* *R.provideSuperPOST:* like $.getPost, but returns a promise instead of the object.  If necessary, will prompt for email/pass and use R.superLogin to retrieve authcode.
+* *R.provideSuperPOST:* like $.getPOST, but returns a promise instead of the object.  If necessary, will prompt for email/pass and use R.superLogin to retrieve authcode.
 
         var options = {
             userName: 'super',

@@ -7,8 +7,9 @@
 
 (function ($, window) {
 
+    var R = window.Rdbhost;
 
-    $.emailWebmaster = function(opts) {
+    R.emailWebmaster = function(opts) {
 
         /*
          *  to,
@@ -33,7 +34,7 @@
             "  FROM auth.apis AS api WHERE service = 'postmark'         \n"+
             "LIMIT 1                                                      ";
 
-        return Rdbhost.preauthPostData({
+        return R.preauthPostData({
 
             userName:   'preauth',
 
@@ -54,7 +55,7 @@
     /*
      * Email group of users, content from
      */
-    $.emailAllUsers = function(opts) {
+    R.emailAllUsers = function(opts) {
 
       /*
        *
@@ -102,7 +103,7 @@
     };
 
 
-    $.setupEmail = function(opts) {
+    R.setupEmail = function(opts) {
 
         /*
          * service,
@@ -144,7 +145,7 @@
 
         function createAuthSchema() {
 
-            return Rdbhost.superPostData({
+            return R.superPostData({
 
                 userName:    opts.userName,
                 q:           qCreateAuthSchema
@@ -162,9 +163,9 @@
 
         function grantSchemaPrivs() {
 
-            var uName = $.role().replace('s','p');
+            var uName = R.role().replace('s','p');
             var q = qGrantAuthSchemaPrivs.replace('%s',uName);
-            return Rdbhost.superPostData({
+            return R.superPostData({
 
                 userName: opts.userName,
                 q: q
@@ -181,7 +182,7 @@
 
         function createAPITable() {
 
-            return Rdbhost.superPostData({
+            return R.superPostData({
 
                 userName: opts.userName,
                 q:        qCreateAPITable
@@ -190,7 +191,7 @@
 
         function qInsertFunc() {
 
-            return Rdbhost.superPostData({
+            return R.superPostData({
 
                 userName:    opts.userName,
                 q:           qInsert,
@@ -261,7 +262,7 @@
 
 
 
-    $.chargeCard = function(opts) {
+    R.chargeCard = function(opts) {
 
         /*
          *  cardNum,
@@ -367,7 +368,7 @@
               'VALUES(%(service),%(apikey),%(webmaster),%(acctemail));   ';
 
 
-      var p = Rdbhost.superPostData({
+      var p = R.superPostData({
 
         userName: opts.userName,
         q:        qCreateAPITable
@@ -375,7 +376,7 @@
 
       return p.finally(function() {
 
-          var p1 = Rdbhost.superPostData({
+          var p1 = R.superPostData({
 
             userName:    opts.userName,
             q:           qInsert,
@@ -388,7 +389,7 @@
             }
           });
 
-          var p2 = Rdbhost.superPostData({
+          var p2 = R.superPostData({
 
             userName:    opts.userName,
             q:           qCreateChargeResultsTables

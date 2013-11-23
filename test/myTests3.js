@@ -175,7 +175,7 @@ test('Rdbhost.superPostFormData setup verification', function() {
 });
 
 
-asyncTest('$.superPostFornData dialog', 4+1, function() {
+asyncTest('R.superPostFornData dialog', 4+1, function() {
 
   Rdbhost.superPostFormData($('#qunit_form2'), {
 
@@ -197,7 +197,7 @@ asyncTest('$.superPostFornData dialog', 4+1, function() {
 
 
 
-module('$.emailWebmaster tests', {
+module('Rdbhost.emailWebmaster tests', {
 
     setup: function () {
 
@@ -221,9 +221,9 @@ module('$.emailWebmaster tests', {
 });
 
 
-asyncTest('$.emailWebmaster test', 4, function() {
+asyncTest('Rdbhost.emailWebmaster test', 4, function() {
 
-    var p = $.emailWebmaster({
+    var p = Rdbhost.emailWebmaster({
 
         bodyString: 'test email',
         replyTo: 'dkeeney@travelbyroad.net',
@@ -247,9 +247,9 @@ asyncTest('$.emailWebmaster test', 4, function() {
 });
 
 
-asyncTest('$.emailAllUsers test', 4, function() {
+asyncTest('Rdbhost.emailAllUsers test', 4, function() {
 
-    var p = $.emailAllUsers({
+    var p = Rdbhost.emailAllUsers({
         emailid: 'test'
     });
 
@@ -271,7 +271,7 @@ asyncTest('$.emailAllUsers test', 4, function() {
 
 
 
-module('$.creditCardCharge tests', {
+module('R.creditCardCharge tests', {
 
   setup: function () {
 
@@ -296,9 +296,9 @@ module('$.creditCardCharge tests', {
 });
 
 
-asyncTest('$.ccCharge test (refused)', 4, function() {
+asyncTest('R.ccCharge test (refused)', 4, function() {
 
-  var p = $.chargeCard({
+  var p = Rdbhost.chargeCard({
 
     amount: 10.09,
     cc_num: '4242424242424000',
@@ -325,9 +325,9 @@ asyncTest('$.ccCharge test (refused)', 4, function() {
 });
 
 
-asyncTest('$.ccCharge test (good)', 4, function() {
+asyncTest('R.ccCharge test (good)', 4, function() {
 
-  var p = $.chargeCard({
+  var p = Rdbhost.chargeCard({
 
     amount: 10.09,
     cc_num: '4242424242424242',
@@ -383,7 +383,7 @@ asyncTest('research', 2, function() {
 */
 
 
-module('Rdbhost.provideSuperPOST tests', {
+module('R.provideSuperPOST tests', {
 
   setup: function () {
     $.rdbHostConfig( {
@@ -408,7 +408,7 @@ module('Rdbhost.provideSuperPOST tests', {
 
 
 /* Rdbhost.provideSuperPOST ,  */
-asyncTest('Rdbhost.provideSuperPOST test ', 9, function() {
+asyncTest('R.provideSuperPOST test ', 9, function() {
 
   var opts = {
     q: 'SELECT 1'
@@ -435,7 +435,7 @@ asyncTest('Rdbhost.provideSuperPOST test ', 9, function() {
 
 
 /* Rdbhost.provideSuperPOST ,  */
-asyncTest('Rdbhost.provideSuperPOST test promise ', 8, function() {
+asyncTest('R.provideSuperPOST test promise ', 8, function() {
 
   var opts = {
     q: 'SELECT 1'
@@ -492,7 +492,7 @@ asyncTest('Rdbhost.provideSuperPOST test promise err ', 2, function() {
 
 
 /* Rdbhost.provideSuperPOST ,  */
-asyncTest('Rdbhost.provideSuperPOST test w args', 12, function() {
+asyncTest('R.provideSuperPOST test w args', 12, function() {
 
   var opts = {
     q: 'SELECT 1',
@@ -523,7 +523,7 @@ asyncTest('Rdbhost.provideSuperPOST test w args', 12, function() {
 
 
 /* Rdbhost.provideSuperPOST ,  */
-asyncTest('Rdbhost.provideSuperPOST test w AJAX ', 3, function() {
+asyncTest('R.provideSuperPOST test w AJAX ', 3, function() {
 
   var opts = {
     q: 'SELECT 1',
@@ -557,7 +557,7 @@ asyncTest('Rdbhost.provideSuperPOST test w AJAX ', 3, function() {
 
 
 /* Rdbhost.provideSuperPOST ,  */
-asyncTest('Rdbhost.provideSuperPOST err test w AJAX ', 2, function() {
+asyncTest('R.provideSuperPOST err test w AJAX ', 2, function() {
 
   var opts = {
     userName: 'super',
