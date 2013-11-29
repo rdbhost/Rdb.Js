@@ -1330,11 +1330,16 @@ window.Rdbhost = {};
           return R.superLogin(opts);
         });
 
-      drawLoginDialog('Login for Super Role', opts.email, function (h) {
-
-        // pass email and password from form to handler
-        def.resolve(h)
-      });
+      drawLoginDialog('Login for Super Role', opts.email,
+          function (h) {
+            // pass email and password from form to handler
+            def.resolve(h)
+          },
+          function (h) {
+              var err = ['cancel', 'dialog box closed by user'];
+              def.reject(err)
+          }
+      );
 
       return d2.promise();
 
@@ -1484,7 +1489,10 @@ window.Rdbhost = {};
         drawLoginDialog('Preauth Login', opts.email,
 
             function (h) { doIt(h) },
-            function (err) { p.reject(err) }
+            function (h) {
+                var err = ['cancel', 'dialog box closed by user'];
+                p.reject(err)
+            }
         );
       }
       else {
@@ -1567,7 +1575,10 @@ window.Rdbhost = {};
         drawLoginDialog('Preauth Login', opts.email,
 
             function (h) { doIt(h) },
-            function (err) { p.reject(err) }
+            function (h) {
+                var err = ['cancel', 'dialog box closed by user'];
+                p.reject(err)
+            }
         );
       }
       else {
