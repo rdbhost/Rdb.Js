@@ -1,0 +1,122 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <title>RdbHost Plugin openid login </title>
+  <script language="javascript" type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.js"></script>
+  <script language="javascript" type="text/javascript" src="http://www.rdbhost.com/js/easyxdm/easyXDM.debug.js"></script>
+  <script language="javascript" type="text/javascript" src="../js/jquery.rdbhost.js"></script>
+  <script src="http://www.rdbhost.com/js/jquery.cookie.js"></script>
+  <script language="javascript" type="text/javascript" src="../js/json2.js"></script>
+  <script>
+
+    var myKeyName = 'openId',
+        loginKeyName = 'LOGIN_KEY';
+
+    function loggedIn(ck) {
+
+      var ckParts = ck.split(' ');
+      loginId = ckParts[0];
+      keyVal = ckParts[1];
+      $('#loginDiv').hide();
+      $('#okDiv').show();
+      $('#uid').text(loginId);
+      //alert('logged in');
+    }
+
+    function notLoggedIn() {
+
+      $('#loginDiv').show();
+      $('#okDiv').hide();
+      initForm();
+      //alert('not logged in');
+    }
+
+    // login - runs when user has logged in.
+    //
+    function login() {
+
+      var ck = $.cookie(myKeyName);
+      if ( ck ) {
+
+        loggedIn(ck);
+      }
+      else {
+
+        notLoggedIn();
+      }
+    }
+
+    function logout() {
+
+      $.cookie(myKeyName,'');
+      notLoggedIn();
+    }
+
+    // set up openId login form
+    //
+    function initForm() {
+
+      $.loginOpenID({
+
+        loginForm : 'openidForm',
+        offsiteHosting : true,
+        domain : 'www.rdbhost.com',
+        userName: 'r0000000012',
+
+        errback : function () {},
+        callback : function(key, ident) {
+
+          loginId = ident;
+          var key = $.cookie(loginKeyName);
+          $.cookie(myKeyName,ident+' '+key);
+          $.cookie(loginKeyName,'');
+          login();
+        }
+      });
+    }
+
+    $(document).ready(function () {
+
+      // login user in, load sidebar
+      //
+      login();
+
+      // initialize the form
+      initForm();
+
+      $('#logoutBtn').click(logout);
+
+    });
+  </script>
+</head>
+<body>
+<h3>jQuery.Rdbhost openId login example</h3>
+<p>~~~~.</p>
+
+<!-- login form -->
+<div id="loginDiv">
+  <form id="openidForm"  action="~" method="post">
+    <p>Provide your OpenId identifier, complete with http: <br/>
+      Examples: <ul><li>http://example.livejournal.com</li>
+    <li>http://example.myopenid.com</li></ul>,
+    or click one of the host buttons below.
+    </p>
+    OpenID Identifier URL<input name="openidurl" size="75"/>  <br/>
+    <input type="submit" class="btn" />
+    <div>
+      <input type="submit" value="Google" id="google" class="btn" />
+      <input type="submit" value="Yahoo" id="yahoo" class="btn" />
+    </div>
+  </form>
+</div>
+
+<div id="okDiv">
+  You are logged in as <span id="uid"></span>
+  <input type="button" id="logoutBtn" value="Logout" />
+</div>
+
+
+<div class="targets"><pre id="target"></pre></div>
+</body>
+</html>

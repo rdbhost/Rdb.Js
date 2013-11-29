@@ -1,0 +1,50 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+	<title>RdbHost Plugin example</title>
+    <script language="javascript" type="text/javascript"
+				src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.js"></script>
+    <script language="javascript" type="text/javascript"
+        src="http://www.rdbhost.com/js/easyxdm/easyXDM.debug.js"></script>
+    <script language="javascript" type="text/javascript" src="../js/jquery.rdbhost.js"></script>
+    <script language="javascript" type="text/javascript" src="../js/json2.js"></script>
+		<script>
+    $(document).ready(function () {
+		    $.rdbHostConfig({
+          userName : "r0000000012",
+					authcode : "-",
+					domain : 'www.rdbhost.com'
+        });
+        var q = 'SELECT * FROM capitols';
+				$('#inform').populateForm({q : q});
+    })
+    </script>
+</head>
+<body>
+  <h3>jQuery.Rdbhost .populateForm Demo</h3>
+	<p>This form is populated from a database record.</p>
+	<p>This is a live demo, but is not interactive. </p>
+
+	<div style="border-style:double; width:400px">
+		<form action='' method='post' id='inform' enctype="multipart/form-data" >
+			<table>
+				<tr>
+					<td>City</td><td><input type="text" size="30" id="city" name="city" /></td>
+				</tr>
+				<tr>
+					<td>Country</td><td><input type="text" size="30" id="country" name="country" /></td>
+				</tr>
+				<tr>
+					<td>Pop</td><td><input type="text" size="30" id="population" name="population" /></td>
+				</tr>
+				<tr>
+					<td colspan="2">
+						<input type="submit" value="go" />
+					</td>
+				</tr>
+			</table>
+		</form>
+	</div>
+</body>
+</html>

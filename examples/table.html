@@ -1,0 +1,47 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+	<title>RdbHost Plugin .populateTable example (EasyXDM)</title>
+    <script language="javascript" type="text/javascript"
+				src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.js"></script>
+    <script language="javascript" type="text/javascript"
+        src="http://www.rdbhost.com/js/easyxdm/easyXDM.debug.js"></script>
+    <script language="javascript" type="text/javascript"
+        src="/rdb/js/jquery.rdbhost.js"></script>
+    <script language="javascript" type="text/javascript" src="../js/json2.js"></script>
+		<script>
+    $(document).ready(function () {
+		    $.rdbHostConfig({
+          'userName' : "r0000000012",
+					'authcode' : "-",
+          'domain'   : 'www.rdbhost.com'
+        });
+        var q = 'SELECT * FROM capitols';
+				$('.targets').populateTable({q : q});
+    })
+    </script>
+</head>
+<body>
+  <h3>jQuery.Rdbhost .populateTable Demo</h3>
+	<p>This table is populated from the database.  Demonstrates individual
+	  formatting of individual fields, and field selection.</p>
+	<table id="targettab" class="targets">
+		<thead>
+			<tr>
+				<th>City</th>
+				<th>Country</th>
+				<th>Pop</th>
+			</tr>
+		</thead>
+		<tbody>
+			<tr>
+				<td class="city">ABC</td>
+				<td class="country" style="color:red;">DEF</td>
+				<td class="population" style="color:blue;"></td>
+			</tr>
+		</tbody>
+	</table>
+
+</body>
+</html>

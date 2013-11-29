@@ -1,0 +1,32 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+	<title>RdbHost Plugin .populateTable example</title>
+    <script language="javascript" type="text/javascript"
+				src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.js"></script>
+    <script language="javascript" type="text/javascript"
+        src="http://www.rdbhost.com/js/easyxdm/easyXDM.debug.js"></script>
+    <script language="javascript" type="text/javascript" src="../js/jquery.rdbhost.js"></script>
+    <script language="javascript" type="text/javascript" src="../js/json2.js"></script>
+		<script>
+    $(document).ready(function () {
+		    $.rdbHostConfig({
+          'userName' : "r0000000012",
+					'authcode' : "-",
+          domain : 'www.rdbhost.com'
+        });
+        var q = 'SELECT * FROM capitols';
+				$('.targets').datadump({q : q});
+    })
+    </script>
+</head>
+<body>
+  <h3>jQuery.Rdbhost .datadump Demo</h3>
+	<p>This div is populated from the database.  Format is just stringified JSON.</p>
+	<div>
+		<pre class="targets"></pre>
+	</div>
+
+</body>
+</html>

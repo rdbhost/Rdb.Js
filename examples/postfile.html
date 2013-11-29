@@ -1,0 +1,57 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<html>
+<head>
+	<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+	<title>RdbHost Plugin $.postByForm example</title>
+    <script language="javascript" type="text/javascript"
+				src="http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.js"></script>
+    <script language="javascript" type="text/javascript"
+        src="http://www.rdbhost.com/js/easyxdm/easyXDM.debug.js"></script>
+    <script language="javascript" type="text/javascript" src="../js/jquery.rdbhost.js"></script>
+    <script language="javascript" type="text/javascript" src="../js/json2.js"></script>
+		<script>
+    $(document).ready(function () {
+      $.rdbHostConfig({domain : 'www.rdbhost.com'});
+      function showdump(json) {
+        if (json && json.row_count) {
+          $('#target').html(json.status[0]);
+        }
+        else {
+          alert('no data');
+        }
+      }
+      $.postFormData($('#demo-form'),
+                    { 'userName' : 'p0000000012',
+                      'authcode' : '-',
+                      'callback' : showdump });
+    })
+    </script>
+</head>
+<body>
+  <h3>jQuery.Rdbhost $.postFormData File Upload Demo</h3>
+	<p>This is a live demo, so go ahead and submit an entry, and see the result 'status' value.</p>
+
+	<div class="targets">Result: <span id="target">?</span></div>
+
+	<div style="border-style:double; width:400px">
+		<form action='' method='post' id='demo-form' enctype="multipart/form-data" >
+			<table>
+				<tr>
+					<td>Filename</td><td><input type="text" size="30" id="arg000" name="arg000" /></td>
+				</tr>
+				<tr>
+					<td>Image File</td><td><input type="file" size="30" id="arg001" name="arg001" /></td>
+				</tr>
+				<tr>
+					<td colspan="2">
+						<input type="submit" value="go" />
+						<input type="hidden" name="kw" id="kw" value="addpicture" />
+            <input type="hidden" name="q" id="q" value="INSERT INTO pictures (picture_name, picture) VALUES(%s, %s);" />
+					</td>
+				</tr>
+			</table>
+		</form>
+	</div>
+
+</body>
+</html>
