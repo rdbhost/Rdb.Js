@@ -60,7 +60,7 @@ asyncTest('verifysetup', 1, function() {
 
 asyncTest('superLogin', 4, function() {
 
-    var demo_password = gPassword || prompt('provide password');
+    var demo_password = gPassword = gPassword || prompt('provide password');
 
     Rdbhost.superLogin({
 
@@ -82,28 +82,75 @@ asyncTest('superLogin', 4, function() {
 
 asyncTest('superLogin - dialog', 4, function() {
 
-  var demo_password = '';
+    var demo_password = gPassword = gPassword || prompt('provide password');
+    Rdbhost._clearAuthcode();
 
-  Rdbhost.superLogin({
+    Rdbhost.superLogin({
 
-    email: demo_email,
-    password: demo_password,
+        email: demo_email,
+        password: '',
 
-    callback: function(json) {
+        callback: function(json) {
 
-      ok(json.preauth[0] === 'p0000000012');
-      ok(json.super[0] === 's0000000012');
-      ok(json.preauth[1] === '');
-      ok(json.super[1].length > 25);
-      start();
-    }
-  });
+            ok(json.preauth[0] === 'p0000000012');
+            ok(json.super[0] === 's0000000012');
+            ok(json.preauth[1] === '');
+            ok(json.super[1].length > 25);
+            start();
+        },
+
+        errback: function(err) {
+
+            ok(false);
+            start();
+        }
+    });
+
+    setTimeout(function() {
+        $('#rdbhost-super-login-form [name="password"]').val(demo_password);
+        $('#rdbhost-super-login-form').submit();
+    },5);
+
+});
+
+
+asyncTest('superLogin - dialog - fail', 1, function() {
+
+    var demo_password = gPassword = gPassword || prompt('provide password');
+    Rdbhost._clearAuthcode();
+
+    Rdbhost.superLogin({
+
+        email: demo_email,
+        password: '',
+
+        callback: function(json) {
+
+            ok(false, '');
+            start();
+        },
+
+        errback: function(err) {
+
+            ok(~err[1].indexOf('bad email'));
+            start();
+        }
+    });
+
+    setTimeout(function() {
+        $('#rdbhost-super-login-form [name="password"]').val(demo_password+'-not');
+        $('#rdbhost-super-login-form').submit();
+    },5);
+
 });
 
 
 
 // verify superPostData
 asyncTest('verify superPostData - promise', 2, function() {
+
+    var demo_password = gPassword = gPassword || prompt('provide password');
+    Rdbhost._clearAuthcode();
 
     var p = Rdbhost.superPostData({
 
@@ -130,6 +177,13 @@ asyncTest('verify superPostData - promise', 2, function() {
         ok(m,'promise fail called');
         start();
     });
+
+    setTimeout(function() {
+        $('#rdbhost-super-login-form [name="email"]').val('js@travelbyroad.net');
+        $('#rdbhost-super-login-form [name="password"]').val(demo_password);
+        $('#rdbhost-super-login-form').submit();
+    },5);
+
 });
 
 
@@ -177,7 +231,10 @@ test('Rdbhost.superPostFormData setup verification', function() {
 
 asyncTest('R.superPostFornData dialog', 4+1, function() {
 
-  Rdbhost.superPostFormData($('#qunit_form2'), {
+    var demo_password = gPassword = gPassword || prompt('provide password');
+    Rdbhost._clearAuthcode();
+
+    Rdbhost.superPostFormData($('#qunit_form2'), {
 
     userName: demo_s_role,
     format: 'json-easy',
@@ -193,6 +250,13 @@ asyncTest('R.superPostFornData dialog', 4+1, function() {
   });
 
   $('#qunit_form2').rdbhostSubmit();
+
+    setTimeout(function() {
+        $('#rdbhost-super-login-form [name="email"]').val('js@travelbyroad.net');
+        $('#rdbhost-super-login-form [name="password"]').val(demo_password);
+        $('#rdbhost-super-login-form').submit();
+    },5);
+
 });
 
 
@@ -223,6 +287,9 @@ module('Rdbhost.emailWebmaster tests', {
 
 asyncTest('Rdbhost.emailWebmaster test', 4, function() {
 
+    var demo_password = gPassword = gPassword || prompt('provide password');
+    Rdbhost._clearAuthcode();
+
     var p = Rdbhost.emailWebmaster({
 
         bodyString: 'test email',
@@ -244,10 +311,26 @@ asyncTest('Rdbhost.emailWebmaster test', 4, function() {
     .then(function() { start(); },
           function() { start(); }
     );
+
+    setTimeout(function _tof() {
+        if ( $('#rdbhost-super-login-form').length ) {
+
+            $('#rdbhost-super-login-form [name="email"]').val('js@travelbyroad.net');
+            $('#rdbhost-super-login-form [name="password"]').val(demo_password);
+            $('#rdbhost-super-login-form').submit();
+        }
+        else {
+            setTimeout(_tof, 50);
+        }
+    },250);
+
 });
 
 
 asyncTest('Rdbhost.emailAllUsers test', 4, function() {
+
+    var demo_password = gPassword = gPassword || prompt('provide password');
+    Rdbhost._clearAuthcode();
 
     var p = Rdbhost.emailAllUsers({
         emailid: 'test'
@@ -259,7 +342,8 @@ asyncTest('Rdbhost.emailAllUsers test', 4, function() {
         ok(resp.status[1].toLowerCase() == 'ok', 'status is not ok: '+resp.status[1]); // 1st assert
         ok(resp.row_count[0] > 0, 'data row found');
         ok(resp.records.rows[0]['result'] === 'Success', 'data is not Success: '+resp.records.rows[0]['result']);
-    }, function(errArry) {
+    },
+    function(errArry) {
 
         ok(false,'should not see this '+errArry[1]);
     })
@@ -267,6 +351,18 @@ asyncTest('Rdbhost.emailAllUsers test', 4, function() {
     .then(function() { start(); },
         function() { start(); }
     );
+
+    setTimeout(function _tof() {
+        if ( $('#rdbhost-super-login-form').length ) {
+
+            $('#rdbhost-super-login-form [name="email"]').val('js@travelbyroad.net');
+            $('#rdbhost-super-login-form [name="password"]').val(demo_password);
+            $('#rdbhost-super-login-form').submit();
+        }
+        else {
+            setTimeout(_tof, 50);
+        }
+    },250);
 });
 
 
@@ -298,7 +394,10 @@ module('R.creditCardCharge tests', {
 
 asyncTest('R.ccCharge test (refused)', 4, function() {
 
-  var p = Rdbhost.chargeCard({
+    var demo_password = gPassword = gPassword || prompt('provide password');
+    Rdbhost._clearAuthcode();
+
+    var p = Rdbhost.chargeCard({
 
     amount: 10.09,
     cc_num: '4242424242424000',
@@ -322,35 +421,63 @@ asyncTest('R.ccCharge test (refused)', 4, function() {
   .then(function() { start(); },
       function() { start(); }
   );
+
+    setTimeout(function _tof() {
+        if ( $('#rdbhost-super-login-form').length ) {
+
+            $('#rdbhost-super-login-form [name="email"]').val('js@travelbyroad.net');
+            $('#rdbhost-super-login-form [name="password"]').val(demo_password);
+            $('#rdbhost-super-login-form').submit();
+        }
+        else {
+            setTimeout(_tof, 50);
+        }
+    },250);
 });
 
 
 asyncTest('R.ccCharge test (good)', 4, function() {
 
-  var p = Rdbhost.chargeCard({
+    var demo_password = gPassword = gPassword || prompt('provide password');
+    Rdbhost._clearAuthcode();
 
-    amount: 10.09,
-    cc_num: '4242424242424242',
-    cc_cvc: '100',
-    exp_mon: '10',
-    exp_yr: '18',
-    cardholder: 'Joe User'
-  });
+    var p = Rdbhost.chargeCard({
 
-  p.then(function (resp) {
+        amount: 10.09,
+        cc_num: '4242424242424242',
+        cc_cvc: '100',
+        exp_mon: '10',
+        exp_yr: '18',
+        cardholder: 'Joe User'
+    });
 
-    ok(typeof resp === 'object', 'response is object'); // 0th assert
-    ok(resp.status[1].toLowerCase() == 'ok', 'status is not ok: '+resp.status[1]); // 1st assert
-    ok(resp.row_count[0] > 0, 'data row found');
-    var firstResult = resp.records.rows[0]['result'];
-    ok( firstResult.toLowerCase() === 'success', 'Success? '+resp.records.rows[0]['result']);
-  }, function(errArry) {
+    p.then(function (resp) {
 
-    ok(false,'should not see this '+errArry[1]);
-  })
-  .then(function() { start(); },
-      function() { start(); }
-  );
+        ok(typeof resp === 'object', 'response is object'); // 0th assert
+        ok(resp.status[1].toLowerCase() == 'ok', 'status is not ok: '+resp.status[1]); // 1st assert
+        ok(resp.row_count[0] > 0, 'data row found');
+        var firstResult = resp.records.rows[0]['result'];
+        ok( firstResult.toLowerCase() === 'success', 'Success? '+resp.records.rows[0]['result']);
+    },
+    function(errArry) {
+
+        ok(false,'should not see this '+errArry[1]);
+     })
+    .then(function() { start(); },
+        function() { start(); }
+    );
+
+    setTimeout(function _tof() {
+        if ( $('#rdbhost-super-login-form').length ) {
+
+            $('#rdbhost-super-login-form [name="email"]').val('js@travelbyroad.net');
+            $('#rdbhost-super-login-form [name="password"]').val(demo_password);
+            $('#rdbhost-super-login-form').submit();
+        }
+        else {
+            setTimeout(_tof, 50);
+        }
+    },250);
 });
 
 
@@ -410,9 +537,12 @@ module('R.provideSuperPOST tests', {
 /* Rdbhost.provideSuperPOST ,  */
 asyncTest('R.provideSuperPOST test ', 9, function() {
 
-  var opts = {
-    q: 'SELECT 1'
-  };
+    var demo_password = gPassword = gPassword || prompt('provide password');
+    Rdbhost._clearAuthcode();
+
+    var opts = {
+        q: 'SELECT 1'
+    };
   var d = Rdbhost.provideSuperPOST(opts, function(pd) {
 
     var u = pd.url,
@@ -431,6 +561,13 @@ asyncTest('R.provideSuperPOST test ', 9, function() {
 
     start();
   });
+
+    setTimeout(function() {
+        $('#rdbhost-super-login-form [name="email"]').val('js@travelbyroad.net');
+        $('#rdbhost-super-login-form [name="password"]').val(demo_password);
+        $('#rdbhost-super-login-form').submit();
+    },5);
+
 });
 
 

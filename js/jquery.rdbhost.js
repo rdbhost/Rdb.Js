@@ -1358,6 +1358,7 @@ window.Rdbhost = {};
     superAuthcodeTimer = null;
 
   R._authcodeStored = function () { return !!superAuthcode; };
+  R._clearAuthcode = function() { superAuthcode = null; };
 
   R.superPostData = function (opts) {
 
@@ -1371,7 +1372,7 @@ window.Rdbhost = {};
 
       clearTimeout(superAuthcodeTimer);
       superAuthcode = res.super[1];
-      superAuthcodeTimer = setTimeout(function () { superAuthcode = null; }, 8000);
+      superAuthcodeTimer = setTimeout(function () { R._clearAuthcode(); }, 8000);
       opts['callback'] = savedCallback;
       return R.superPostData(opts);
     }
@@ -1387,6 +1388,8 @@ window.Rdbhost = {};
       var liOpts = { email: $.rdbHostConfig.opts.acctEmail };
       var savedCallback = opts['callback'];
       liOpts['callback'] = _callback;
+      if ( opts['errback'] )
+        liOpts['errback'] = opts['errback'];
 
       return R.superLogin(liOpts);
     }
@@ -1653,95 +1656,96 @@ window.Rdbhost = {};
   };
 
 
-  function drawLoginDialog(title, email, onSubmit, onCancel) {
+    function drawLoginDialog(title, email, onSubmit, onCancel) {
 
-    var $liDialog, hgt = 150, width = 250,
-      idVal = 'rdbhost-super-login-form';
+        var $liDialog, hgt = 150, width = 250,
+            idVal = 'rdbhost-super-login-form';
 
-    $liDialog = $(
-      '<div id="xxxx"><form>                                                ' +
-      '  <span id="title">t </span> <a href="" class="cancel">x</a>         ' +
-      '    <br />                                                           ' +
-      '    <input name="email" type="text" placeholder="email"/>            ' +
-      '    <input name="password" type="password" placeholder="password" /> ' +
-      '    <input id="submit" type="submit" />                              ' +
-      '</form></div>                                                        ');
+        $liDialog = $(
+            '<div id="xxxx"><form>                                                ' +
+                '  <span id="title">t </span> <a href="" class="cancel">x</a>         ' +
+                '    <br />                                                           ' +
+                '    <input name="email" type="text" placeholder="email"/>            ' +
+                '    <input name="password" type="password" placeholder="password" /> ' +
+                '    <input id="submit" type="submit" />                              ' +
+                '</form></div>                                                        ');
 
-    $liDialog.attr('id', idVal);
-    $liDialog.css({
-      'position': 'fixed',
-      'width': width + 'px',
-      'height': hgt + 'px',
-      'margin-top': Math.round(hgt / -2) + 'px',
-      'margin-right': '0',
-      'margin-bottom': '0',
-      'margin-left': Math.round(width / -2) + 'px',
-      'left': '50%',
-      'top': '50%',
-      'display': 'none',
-      'z-index': 10,
-      'background': '#dacba2',
-      'padding': '12px',
-      'border': 'solid #850e45 8px',
-      'font-size': '12pt'
-    });
-    $liDialog.find('span').css({
-      'font-size': 'larger',
-      'color': '#850e45'
-    });
-    $liDialog.find('input').css({
-      'color': '#850e45',
-      'border': '1px solid #ccc',
-      'margin-bottom': '6px',
-      'padding': '5px',
-      'font-size': '14px',
-      'width': '90%'
-    });
-    $liDialog.find('#submit').css({
-      'border': '1px solid #ccc',
-      'color': '#000',
-      'padding': '7px 10px',
-      'font-size': '14px',
-      'width':'auto'
-    });
+        $liDialog.attr('id', idVal);
+        $liDialog.css({
+            'position': 'fixed',
+            'width': width + 'px',
+            'height': hgt + 'px',
+            'margin-top': Math.round(hgt / -2) + 'px',
+            'margin-right': '0',
+            'margin-bottom': '0',
+            'margin-left': Math.round(width / -2) + 'px',
+            'left': '50%',
+            'top': '50%',
+            'display': 'none',
+            'z-index': 10,
+            'background': '#dacba2',
+            'padding': '12px',
+            'border': 'solid #850e45 8px',
+            'font-size': '12pt'
+        });
+        $liDialog.find('span').css({
+            'font-size': 'larger',
+            'color': '#850e45'
+        });
+        $liDialog.find('input').css({
+            'color': '#850e45',
+            'border': '1px solid #ccc',
+            'margin-bottom': '6px',
+            'padding': '5px',
+            'font-size': '14px',
+            'width': '90%'
+        });
+        $liDialog.find('#submit').css({
+            'border': '1px solid #ccc',
+            'color': '#000',
+            'padding': '7px 10px',
+            'font-size': '14px',
+            'width': 'auto'
+        });
 
-    $liDialog.find('a').css('float', 'right');
+        $liDialog.find('a').css('float', 'right');
 
-    if ($('#' + idVal).length === 0)
-      $('body').append($liDialog);
-    else
-      $liDialog = $('#' + idVal);
+        if ($('#' + idVal).length === 0)
+            $('body').append($liDialog);
+        else
+            $liDialog = $('#' + idVal);
 
-    $liDialog.show();
-    $liDialog.find('#title').text(title);
+        $liDialog.show();
+        $liDialog.find('#title').text(title);
+        $liDialog.find('input[name="email"]').val(email);
 
-    $liDialog.on('submit', function (ev) {
+        $liDialog.on('submit', function (ev) {
 
-      var h = {};
-      h.email = $('input[name="email"]').val();
-      h.password = $('input[name="password"]').val();
+            var h = {};
+            h.email = $('input[name="email"]').val();
+            h.password = $('input[name="password"]').val();
 
-      $liDialog.hide();
-      onSubmit(h);
-      return false;
-    });
+            $liDialog.hide();
+            onSubmit(h);
+            return false;
+        });
 
-    $liDialog.find('a').on('click', function (ev) {
+        $liDialog.find('a').on('click', function (ev) {
 
-      var h = {};
-      h.email = $('#email').val();
-      h.password = $('#password').val();
+            var h = {};
+            h.email = $('#email').val();
+            h.password = $('#password').val();
 
-      $liDialog.hide();
-      if (onCancel)
-        onCancel(h);
-      return false;
-    })
-  }
+            $liDialog.hide();
+            if (onCancel)
+                onCancel(h);
+            return false;
+        })
+    }
 
-  R.drawLoginDialog = drawLoginDialog;
+    R.drawLoginDialog = drawLoginDialog;
 
-  /**
+    /**
    *  the following methods act on jQuery selections.
    *
    */

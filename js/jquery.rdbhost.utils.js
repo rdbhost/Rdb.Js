@@ -78,7 +78,7 @@
             "   AND oid.identifier LIKE \'%%@%%\'                          \n";  // exclude non-email identifiers
 
 
-        return $.postData({
+        return R.preauthPostData({
 
             userName:   'preauth',
 
@@ -90,15 +90,6 @@
                 emailid: opts.emailid
             }
 
-/*
-            callback: function(resp) {
-                return resp;
-            },
-
-            errback: function(err, errmsg) {
-                return arguments;
-            }
-*/
         });
     };
 
@@ -295,7 +286,7 @@
             "WHERE apis.service = 'stripe'                                            ";
 
 
-        return $.postData({
+        return R.preauthPostData({
 
           userName:   'preauth',
 
