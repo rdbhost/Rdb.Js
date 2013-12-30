@@ -8,7 +8,7 @@
 if ( ! 'Rdbhost' in window )
     window.Rdbhost = {};
 
-var rdbhostMod = angular.module('rdbhost', []);
+var rdbhostMod = angular.module('rdbhost', ['ngResource']);
 
 
 
@@ -24,13 +24,12 @@ rdbhostMod.config(['$httpProvider', function($httpProvider) {
 /*
     // Remove X-Requested-With header to avoid browser making OPTIONS request
     delete $httpProvider.defaults.headers.common['X-Requested-With'];
-
+*/
     // Override $http service's default transformRequest
     $httpProvider.defaults.transformRequest = [function(data) {
 
         return angular.isObject(data) && String(data) !== '[object File]' ? $.param(data) : data;
     }];
-*/
 }]);
 
 
@@ -209,16 +208,15 @@ rdbhostMod.factory('rdbResource', ['$resource', 'rdbhostTransformResponseFactory
             paramDefaults = {};
         }
 
-        if ( ! paramDefaults.userName ) {
-
+        if ( ! paramDefaults.userName )
             paramDefaults.userName = 'p' + ('000000000' + $.rdbHostConfig.opts.accountNumber).substr(-10);
+        if ( ! paramDefaults.domain )
             paramDefaults.domain = R.rdbHostConfig.opts.domain;
-        }
 
         angular.forEach(actions, function(v, k) {
 
             v.method = v.method || 'GET';
-            v.format = 'json-easy';
+            v.params.format = 'json-easy';
 
             if (v.params.namedParams) {
                 var orig_namedParams = v.params.namedParams;
