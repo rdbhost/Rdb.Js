@@ -463,7 +463,7 @@ asyncTest('use namedParams Date - fail', 2, function () {
 
   var q = 'CREATE TEMP TABLE t ( t TIMESTAMP );\n'+
           'INSERT INTO t (t) VALUES (%(ts));',
-      dt = new Date('foo');
+      dt = 'foo';
 
   this.e.query({
 
@@ -481,7 +481,7 @@ asyncTest('use namedParams Date - fail', 2, function () {
     errback: function(err) {
 
       ok(true, "errback was called");
-      equal(err[0], 'rdb21', "errorval: "+err[0]);
+      equal(err[0], '22007', "errorval: "+err[0]);
       clearTimeout(to);
       start();
     }
