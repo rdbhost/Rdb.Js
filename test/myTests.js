@@ -11,10 +11,10 @@ module('SQLEngine pre-test');
 // create engine
 test('createEngine', function() {
 
-  var e = new SQLEngine(demo_r_role,'-',domain);
+  var e = new SQLEngine(demo_r_role, '-', domain);
   ok(e, 'SQLEngine created');
   ok(e.query, 'engine has query method ');
-  ok(typeof e.query === 'function', 'e.query is type: '+(typeof e.query));
+  ok(typeof e.query === 'function', 'e.query is type: ' + (typeof e.query));
 });
 
 module('SQLEngine AJAX tests', {
@@ -41,11 +41,17 @@ asyncTest('ajax SELECT', 4, function() {
       callback: function (resp) {
 
             ok(typeof resp === 'object', 'response is object'); // 0th assert
-            ok(resp.status[1].toLowerCase() == 'ok', 'status is not ok: '+resp.status[1]); // 1st assert
+            ok(resp.status[1].toLowerCase() == 'ok', 'status is not ok: ' + resp.status[1]); // 1st assert
             ok(resp.row_count[0] > 0, 'data row found');
-            ok(resp.records.rows[0]['one'] === 1, 'data is '+resp.records.rows[0]['one']);
+            ok(resp.records.rows[0]['one'] === 1, 'data is ' + resp.records.rows[0]['one']);
             start();
-          }
+          },
+
+      errback: function(err) {
+
+          ok(false, 'errback called ' + err[0] + ' ' + err[1]);
+          start();
+      }
     });
 });
 
@@ -60,7 +66,7 @@ asyncTest('ajax SELECT promise', 5, function() {
     callback: function (resp) {
 
       ok(typeof resp === 'object', 'response is object'); // 0th assert
-      ok(resp.status[1].toLowerCase() == 'ok', 'status is not ok: '+resp.status[1]); // 1st assert
+      ok(resp.status[1].toLowerCase() == 'ok', 'status is not ok: ' + resp.status[1]); // 1st assert
       ok(resp.row_count[0] > 0, 'data row found');
       ok(resp.records.rows[0]['one'] === 1, 'data is '+resp.records.rows[0]['one']);
     }
@@ -84,7 +90,7 @@ asyncTest('ajax SELECT promise chained', 4, function() {
     callback: function (resp) {
 
       ok(typeof resp === 'object', 'response is object'); // 0th assert
-      ok(resp.status[1].toLowerCase() == 'ok', 'status is ok: '+resp.status[1]); // 1st assert
+      ok(resp.status[1].toLowerCase() == 'ok', 'status is ok: ' + resp.status[1]); // 1st assert
 
       return {'pumpkin' :'pie'};
     }
@@ -110,9 +116,9 @@ asyncTest('ajax SELECT + repeat', 4, function() {
         callback: function (resp) {
 
             ok(typeof resp === 'object', 'response is object'); // 0th assert
-            ok(resp.status[1].toLowerCase() == 'ok', 'status is not ok: '+resp.status[1]); // 1st assert
+            ok(resp.status[1].toLowerCase() == 'ok', 'status is not ok: '  +resp.status[1]); // 1st assert
             ok(resp.result_sets && resp.result_sets.length > 2, 'data sets found');
-            ok(resp.result_sets[2].records.rows[0]['one'] === 1, 'data is '+resp.result_sets[2].records.rows[0]['one']);
+            ok(resp.result_sets[2].records.rows[0]['one'] === 1, 'data is ' + resp.result_sets[2].records.rows[0]['one']);
             start();
         }
     });

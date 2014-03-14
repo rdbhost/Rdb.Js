@@ -211,10 +211,10 @@ asyncTest('rdbResource + lifecycle', 3, function() {
                 update: {
                     method: 'POST',
                     params: {
-                        q: 'UPDATE angular.test SET count = %(count) WHERE owner = %[REMOTE_ADDR]',
-                        namedParams: {
-                            count: '@count'
-                        }
+                        q: 'UPDATE angular.test SET count = %(count) WHERE owner = %[REMOTE_ADDR]' //,
+                        // namedParams: {
+                        //    count: '@count'
+                        //}
                     }
                 }
             }
@@ -230,7 +230,7 @@ asyncTest('rdbResource + lifecycle', 3, function() {
                 res.get(
                   function(json2) {
                       ok(json2.$update(), 'has $update');
-                      ok(json2.count === count+1, 'good count ' + json2.count);
+                      ok(json2.count === count+1, 'good count ' + json2.count + ' ' + (count+1));
 
                       start()
                   },

@@ -210,6 +210,12 @@ window.Rdbhost = {};
   //
   var cors_ajaxer = function (url, data, defer, plainTextJson) {
 
+      // remove undefined elements from data object
+      $.each(['mode', 'kw', 'q'], function(i, v) {
+          if ( typeof(data[v]) == 'undefined' )
+              delete data[v];
+      });
+
     // super callback that checks for server side errors, calls errback
     //  where appropriate
     function qCallback(json) {
@@ -1139,7 +1145,8 @@ window.Rdbhost = {};
      */
     function useHash() {
 
-      var hashRe = new RegExp('#http[^#]{32,}');
+      //var hashRe = new RegExp('#http[^#]{32,}');
+      var hashRe = new RegExp('#[^/\! ]*%26[^/\! ]{32,}');
 
       if (window.location.hash) {
 
@@ -1971,4 +1978,4 @@ window.Rdbhost = {};
     }
   }
 
-}(jQuery, window));
+}(window.jQuery || window.Zepto, window));
