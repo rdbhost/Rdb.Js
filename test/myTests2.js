@@ -447,7 +447,7 @@ asyncTest('$.postFornData test fail promise', 2+1, function() {
    start();
  });
 
- $('#qunit_form2 input:text').val('SELECTY');
+ $('#qunit_form2').find('input').val('SELECTY');
  $('#qunit_form2').rdbhostSubmit();
 
 });
@@ -468,7 +468,7 @@ asyncTest('$.postFornData test fail promise', 2+1, function() {
    });
 
   p.done(function(m) {
-      ok(m === 456,'promise done called');
+      ok(m === 456, 'promise done called');
       start();
     });
 
@@ -866,6 +866,7 @@ asyncTest('Rdbhost.getPOST test 2 w AJAX ', 2, function() {
 
     var p = $.ajax({
         method: 'POST',
+        type: 'POST', // keep Zepto happy
         url: u.url,
         data: u.data,
         dataType: 'json'
@@ -882,7 +883,7 @@ asyncTest('Rdbhost.getPOST test 2 w AJAX ', 2, function() {
         // for ajax calls, even errors are returned as done(), only http level errors are fail()
         ok(data.error, 'error occurred');
         ok(data.error[1] && ~data.error[1].indexOf('Auth fail') || ~data.error[1].indexOf('bad authcode'),
-          'error occurred'+data.error[1]);
+          'error occurred' + data.error[1]);
         start();
     });
 });

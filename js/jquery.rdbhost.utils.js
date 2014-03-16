@@ -389,5 +389,5 @@
 
     };
 
-}(jQuery, window));
+}(window.jQuery || window.Zepto, window));
 

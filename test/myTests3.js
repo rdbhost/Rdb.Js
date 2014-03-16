@@ -671,6 +671,7 @@ asyncTest('R.provideSuperPOST test w AJAX ', 3, function() {
 
     var p = $.ajax({
       method: 'POST',
+      type: 'POST', // placate Zepto
       url: u.url,
       data: u.data,
       dataType: 'json'
@@ -707,6 +708,7 @@ asyncTest('R.provideSuperPOST err test w AJAX ', 2, function() {
 
     var p = $.ajax({
       method: 'POST',
+      type: 'POST', // placate Zepto
       url: u.url,
       data: u.data,
       dataType: 'json'
