@@ -104,6 +104,15 @@ The _q_ query string (or the on-server query string referenced by _kw_) may incl
             'kw': 'updater',
             'callback': redisplay
         });
+        
+  or, using promises:
+  
+        var p = $.postFormData($('#demo-form'), {
+            'kw': 'updater' 
+        });
+        
+        p.done(redisplay);
+        
 
     The above example assumes that _userName_, and _authcode_ have been set as defaults. _kw_ could have been provided as a field value in the form.  _redisplay_ is a function that does some appropriate followup action.
 
