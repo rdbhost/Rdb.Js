@@ -76,10 +76,23 @@ Requires _callback_ and _q_ or _kw_.
         $.ready(function () {
             $.postData( { kw : 'logthispage',
                           args : [ 'test page loaded' ],
-                          callback : function(){} });
+                          callback : function(){ ... } });
         });
 
-    The above example assumes that _userName_, and _authcode_ have been set as defaults.
+  or, using promises,
+
+        $.ready(function () {
+        
+            var p = $.postData( {kw: 'logthispage',
+                                 args: ['test page loaded']  });
+        
+            p.done(function() { ... });
+        
+        });
+        
+
+
+    The above examples assumes that _userName_, and _authcode_ have been set as defaults.
 The _q_ query string (or the on-server query string referenced by _kw_) may include '%s' substition tokens, and an _args_ options must then be provided, with an element for each such token. Any response data from the server will be passed to the callback.
 
 
