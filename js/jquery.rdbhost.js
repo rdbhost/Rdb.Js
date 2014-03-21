@@ -328,7 +328,7 @@ window.Rdbhost = {};
   function SQLEngine(dbRole, authcode, domain) {
 
     this.prototype = this.prototype || {};
-    this.version = this.prototype.version = 'jquery.rdbhost.js 0.9.1';
+    this.version = this.prototype.version = 'jquery.rdbhost.js 1.1';
 
     // store engine config info
     var remote = 'https://' + domain,
