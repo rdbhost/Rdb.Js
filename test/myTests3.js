@@ -69,8 +69,8 @@ asyncTest('superLogin', 4, function() {
 
         callback: function(json) {
 
-            ok(json.preauth[0] === 'p0000000012');
-            ok(json.super[0] === 's0000000012');
+            ok(json.preauth[0] === demo_p_role);
+            ok(json.super[0] === demo_s_role);
             ok(json.preauth[1] === '');
             ok(json.super[1].length > 25);
             start();
@@ -92,8 +92,8 @@ asyncTest('superLogin - dialog', 4, function() {
 
         callback: function(json) {
 
-            ok(json.preauth[0] === 'p0000000012');
-            ok(json.super[0] === 's0000000012');
+            ok(json.preauth[0] === demo_p_role);
+            ok(json.super[0] === demo_s_role);
             ok(json.preauth[1] === '');
             ok(json.super[1].length > 25);
             start();
@@ -179,7 +179,7 @@ asyncTest('verify superPostData - promise', 2, function() {
     });
 
     setTimeout(function() {
-        $('#rdbhost-super-login-form [name="email"]').val('js@travelbyroad.net');
+        $('#rdbhost-super-login-form [name="email"]').val(demo_email);
         $('#rdbhost-super-login-form [name="password"]').val(demo_password);
         $('#rdbhost-super-login-form').submit();
     },5);
@@ -242,9 +242,9 @@ asyncTest('R.superPostFornData dialog', 4+1, function() {
     callback: function (resp) {
 
       ok(typeof resp === 'object', 'response is object'); // 0th assert
-      ok(resp.status[1].toLowerCase() == 'ok', 'status is not ok: '+resp.status[1]); // 1st assert
+      ok(resp.status[1].toLowerCase() == 'ok', 'status is not ok: ' + resp.status[1]); // 1st assert
       ok(resp.row_count[0] > 0, 'data row found');
-      ok(resp.records.rows[0]['col'] === 199, 'data is not 199: '+resp.records.rows[0]['col']);
+      ok(resp.records.rows[0]['col'] === 199, 'data is not 199: ' + resp.records.rows[0]['col']);
       start();
     }
   });
@@ -252,7 +252,7 @@ asyncTest('R.superPostFornData dialog', 4+1, function() {
   $('#qunit_form2').rdbhostSubmit();
 
     setTimeout(function() {
-        $('#rdbhost-super-login-form [name="email"]').val('js@travelbyroad.net');
+        $('#rdbhost-super-login-form [name="email"]').val(demo_email);
         $('#rdbhost-super-login-form [name="password"]').val(demo_password);
         $('#rdbhost-super-login-form').submit();
     },5);
@@ -300,9 +300,9 @@ asyncTest('Rdbhost.emailWebmaster test', 4, function() {
     p.then(function (resp) {
 
         ok(typeof resp === 'object', 'response is object'); // 0th assert
-        ok(resp.status[1].toLowerCase() == 'ok', 'status is not ok: '+resp.status[1]); // 1st assert
+        ok(resp.status[1].toLowerCase() == 'ok', 'status is not ok: ' + resp.status[1]); // 1st assert
         ok(resp.row_count[0] > 0, 'data row found');
-        ok(resp.records.rows[0]['result'] === 'Success', 'data is not Success: '+resp.records.rows[0]['result']);
+        ok(resp.records.rows[0]['result'] === 'Success', 'data is not Success: ' + resp.records.rows[0]['result']);
     }, function(errArry) {
 
         ok(false,'should not see this '+errArry);
@@ -315,7 +315,7 @@ asyncTest('Rdbhost.emailWebmaster test', 4, function() {
     setTimeout(function _tof() {
         if ( $('#rdbhost-super-login-form').length ) {
 
-            $('#rdbhost-super-login-form [name="email"]').val('js@travelbyroad.net');
+            $('#rdbhost-super-login-form [name="email"]').val(demo_email);
             $('#rdbhost-super-login-form [name="password"]').val(demo_password);
             $('#rdbhost-super-login-form').submit();
         }
@@ -339,9 +339,9 @@ asyncTest('Rdbhost.emailAllUsers test', 4, function() {
     p.then(function (resp) {
 
         ok(typeof resp === 'object', 'response is object'); // 0th assert
-        ok(resp.status[1].toLowerCase() == 'ok', 'status is not ok: '+resp.status[1]); // 1st assert
+        ok(resp.status[1].toLowerCase() == 'ok', 'status is not ok: ' + resp.status[1]); // 1st assert
         ok(resp.row_count[0] > 0, 'data row found');
-        ok(resp.records.rows[0]['result'] === 'Success', 'data is not Success: '+resp.records.rows[0]['result']);
+        ok(resp.records.rows[0]['result'] === 'Success', 'data is not Success: ' + resp.records.rows[0]['result']);
     },
     function(errArry) {
 
@@ -355,7 +355,7 @@ asyncTest('Rdbhost.emailAllUsers test', 4, function() {
     setTimeout(function _tof() {
         if ( $('#rdbhost-super-login-form').length ) {
 
-            $('#rdbhost-super-login-form [name="email"]').val('js@travelbyroad.net');
+            $('#rdbhost-super-login-form [name="email"]').val(demo_email);
             $('#rdbhost-super-login-form [name="password"]').val(demo_password);
             $('#rdbhost-super-login-form').submit();
         }
@@ -425,7 +425,7 @@ asyncTest('R.ccCharge test (refused)', 4, function() {
     setTimeout(function _tof() {
         if ( $('#rdbhost-super-login-form').length ) {
 
-            $('#rdbhost-super-login-form [name="email"]').val('js@travelbyroad.net');
+            $('#rdbhost-super-login-form [name="email"]').val(demo_email);
             $('#rdbhost-super-login-form [name="password"]').val(demo_password);
             $('#rdbhost-super-login-form').submit();
         }
@@ -470,7 +470,7 @@ asyncTest('R.ccCharge test (good)', 4, function() {
     setTimeout(function _tof() {
         if ( $('#rdbhost-super-login-form').length ) {
 
-            $('#rdbhost-super-login-form [name="email"]').val('js@travelbyroad.net');
+            $('#rdbhost-super-login-form [name="email"]').val(demo_email);
             $('#rdbhost-super-login-form [name="password"]').val(demo_password);
             $('#rdbhost-super-login-form').submit();
         }
@@ -563,7 +563,7 @@ asyncTest('R.provideSuperPOST test ', 9, function() {
   });
 
     setTimeout(function() {
-        $('#rdbhost-super-login-form [name="email"]').val('js@travelbyroad.net');
+        $('#rdbhost-super-login-form [name="email"]').val(demo_email);
         $('#rdbhost-super-login-form [name="password"]').val(demo_password);
         $('#rdbhost-super-login-form').submit();
     },5);
