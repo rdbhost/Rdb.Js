@@ -598,35 +598,6 @@ asyncTest('R.provideSuperPOST test promise ', 8, function() {
 });
 
 
-/*
-asyncTest('stalling for authcode timeout', 0, function() {
-
-  setTimeout(start, 10000);
-});
-
-
-*/
-/* Rdbhost.provideSuperPOST ,  *//*
-
-asyncTest('Rdbhost.provideSuperPOST test promise err ', 2, function() {
-
-  var opts = {
-    q: 'SELECT 1',
-    accountNumber: acct_number+1 // introduce error
-  };
-  var d = Rdbhost.provideSuperPOST(opts);
-  d.fail(function(pd) {
-
-    var code = pd[0], msg = pd[1];
-
-    ok(code, 'error code returned');
-    ok(msg, 'error msg returned');
-
-    start();
-  });
-});
-*/
-
 
 /* Rdbhost.provideSuperPOST ,  */
 asyncTest('R.provideSuperPOST test w args', 12, function() {
@@ -649,7 +620,7 @@ asyncTest('R.provideSuperPOST test w args', 12, function() {
     ok(d.q, 'query in data');
     ok(d.arg000 === 1, 'arg000 is correct in data');
     ok(d.arg001 === 'abc', 'arg001 is correct in data');
-    ok(d.argtype000 === 'NUMBER', 'argtype000 is correct in data '+ d.argtype000);
+    ok(d.argtype000 === 'NUMBER', 'argtype000 is correct in data ' + d.argtype000);
     ok(d.argtype001 === 'STRING', 'argtype001 is correct in data ' + d.argtype001);
     ok(!d.arg002, 'no arg002 in data');
     ok(!d.argtype002, 'no argtype002 in data');

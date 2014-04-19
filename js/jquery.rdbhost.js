@@ -328,7 +328,7 @@ window.Rdbhost = {};
   function SQLEngine(dbRole, authcode, domain) {
 
     this.prototype = this.prototype || {};
-    this.version = this.prototype.version = 'jquery.rdbhost.js 1.1';
+    this.version = this.prototype.version = 'jquery.rdbhost.js 1.2';
 
     // store engine config info
     var remote = 'https://' + domain,
@@ -446,6 +446,8 @@ window.Rdbhost = {};
         mode: parms.mode,
         authcode: parms.authcode || authcode
       };
+      if (parms['super-authcode'])
+        data['super-authcode'] = parms['super-authcode'];
 
       // attach provided handlers (if any) to deferred
       //
@@ -500,8 +502,11 @@ window.Rdbhost = {};
      */
     this.queryRows = function (parms) {
 
-      var callback = parms.callback,
+      var opts = $.extend({}, parms),
+          callback = parms.callback,
           incomplete_callback = parms.incomplete || callback;
+      delete opts.callback;
+      delete opts.incomplete;
 
       function cb(json) {
         var rows = json.records.rows || [],
@@ -515,8 +520,8 @@ window.Rdbhost = {};
         }
       }
 
-      parms.callback = cb;
-      return this.query(parms);
+      opts.callback = cb;
+      return this.query(opts);
     };
 
 
@@ -548,9 +553,10 @@ window.Rdbhost = {};
 
      call this prior to form click, not from click handler.
      */
-    this.queryByForm = function (parms) {
+    this.queryByForm = function (parms0) {
 
-      var formId = parms.formId,
+      var parms = $.extend({}, parms0),
+          formId = parms.formId,
           plainTextJson = parms.plainTextJson,
           defer = $.Deferred(),
           formatType = 'json-exdm',
@@ -636,7 +642,6 @@ window.Rdbhost = {};
       }
 
       $form.attr('target', '');
-      // var targettag = 'request_target_' + dbRole.substring(1);
       CONNECTIONS[easyXDMAjaxHandle].remoteRpc.createTargetIframe(
 
           function (targettag) {
@@ -655,6 +660,10 @@ window.Rdbhost = {};
 
             $form.attr('target', targettag);
             $form.attr('action', dbUrl);
+
+            // set super-authcode for preauth whitelist
+            if ( parms['super-authcode'] )
+                add_hidden_field($form, 'super-authcode', parms['super-authcode']);
           }
       );
 
@@ -699,18 +708,13 @@ window.Rdbhost = {};
     };
 
     /*
-     parms is object containing various options
+      !!!!!! deprecated - do not use.              opts['dialog_title'] = 'Enter Account Login to Whitelist';
+     var pSL = R.superLogin(opts);
+     pSL.done(_rePost);
+     pSL.fail(function(m) {
+     p.reject(m);
+     });
 
-     email :
-     password :
-
-     callback : function to call with data from successful query
-     errback : function to call with error object from query failure
-
-     plainTextJson : true if JSON parsing to be skipped, instead
-     returning the JSON plaintext
-
-     returns a promise
      */
     this.trainAjax = function (_parms) {
 
@@ -1274,6 +1278,9 @@ window.Rdbhost = {};
   /*
    trainAjax submits login info, establishes training mode for 8 seconds
 
+   !!!!! deprecated. do not use.
+   Instead, use preauthPostData
+
    */
   R.trainAjax = function (parms) {
 
@@ -1292,7 +1299,7 @@ window.Rdbhost = {};
    * superLogin - logs into server using email and password; returns object like:
    *    { 'preauth': [ 'p0000000002', '' ], 'super': [ 's0000000002', '?????..??' ] }
    */
-  R.superLogin = function (opts) {
+  R.superLogin = function (parms) {
 
     /*
      * email,
@@ -1326,6 +1333,8 @@ window.Rdbhost = {};
         return hash;
     }
 
+    var opts = $.extend({}, parms);
+
     if (!opts.password || opts.password.length < 3) {
 
       var def = $.Deferred(),
@@ -1337,7 +1346,8 @@ window.Rdbhost = {};
           return R.superLogin(opts);
         });
 
-      drawLoginDialog('Login for Super Role', opts.email,
+      var dialog_title = opts.dialog_title || 'Login for Super Role';
+      drawLoginDialog(dialog_title, opts.email,
           function (h) {
             // pass email and password from form to handler
             def.resolve(h)
@@ -1355,6 +1365,10 @@ window.Rdbhost = {};
 
       var savedCallback = opts.callback;
       opts.callback = _callback;
+      opts.errback = function(e) {
+        console.log('login failed ', e[0], e[1]);
+        return e;
+      };
 
       return $.loginAjax(opts);
     }
@@ -1367,7 +1381,7 @@ window.Rdbhost = {};
   R._authcodeStored = function () { return !!superAuthcode; };
   R._clearAuthcode = function() { superAuthcode = null; };
 
-  R.superPostData = function (opts) {
+  R.superPostData = function (parms) {
 
     /*
      * same as postData
@@ -1383,6 +1397,8 @@ window.Rdbhost = {};
       opts['callback'] = savedCallback;
       return R.superPostData(opts);
     }
+
+    var opts = $.extend({}, parms);
 
     if (superAuthcode) {
 
@@ -1403,7 +1419,7 @@ window.Rdbhost = {};
   };
 
 
-  R.superPostFormData = function (formId, opts) {
+  R.superPostFormData = function (formId, parms) {
 
     /*
      * opts same as postFormData
@@ -1420,6 +1436,8 @@ window.Rdbhost = {};
       opts['callback'] = savedCallback;
       return R.superPostFormData(formId, opts);
     }
+
+    var opts = $.extend({}, parms);
 
     if (superAuthcode) {
 
@@ -1438,19 +1456,27 @@ window.Rdbhost = {};
   };
 
 
-  R.preauthPostData = function (opts) {
+  R.preauthPostData = function (parms) {
 
     /*
      * same as postData
      *   if get error...
      */
 
+    var opts = $.extend({}, parms);
+
     opts['userName'] = 'preauth';
 
     // promise 'p' waits for final resolution
     // promise pD handles first try
     var p = $.Deferred(),
-        pD = $.postData(opts);
+        savedCallback = opts['callback'],
+        savedErrback = opts['errback'];
+
+    delete opts['callback'];
+    delete opts['errback'];
+
+    var pD = $.postData(opts);
 
     pD.done(function (args) {
 
@@ -1463,47 +1489,37 @@ window.Rdbhost = {};
 
       if (errCode === 'rdb10') {
 
-        function doIt(h) {
-
-          return R.trainAjax({
-
-            email: h.email,
-            password: h.password,
-            userName: opts.userName,
-
-            callback: function (res) {
-
-              // training mode has been inited, good for 8 seconds
-
-              // promise pD2 handles retry of postData
-              var pD2 = $.postData(opts);
-
-              pD2.done(function (resp) {
-
-                p.resolve(resp);
+          if ( superAuthcode ) {
+              opts['super-authcode'] = superAuthcode;
+              var psA = R.postData(opts);
+              psA.done(function(m) {
+                  p.resolve(m);
               });
-              pD2.fail(function (err) {
+              psA.fail(function(m) {
+                  p.reject(m);
+              });
+          }
+          else {
 
-                p.reject(err);
-              })
-            },
+              function _rePost(json) {
 
-            errback: function (e) {
+                  opts['super-authcode'] = json.super[1];
+                  var pRP = R.postData(opts);
+                  pRP.done(function(m) {
+                      p.resolve(m);
+                  });
+                  pRP.fail(function(m) {
+                      p.reject(m);
+                  });
+              }
 
-              p.reject(e);
-            }
-          })
-        }
-
-        // show login dialog
-        drawLoginDialog('Preauth Login', opts.email,
-
-            function (h) { doIt(h) },
-            function (h) {
-                var err = ['cancel', 'dialog box closed by user'];
-                p.reject(err)
-            }
-        );
+              opts['dialog_title'] = 'Enter Account Login to Whitelist';
+              var pSL = R.superLogin(opts);
+              pSL.done(_rePost);
+              pSL.fail(function(m) {
+                  p.reject(m);
+              });
+          }
       }
       else {
 
@@ -1513,9 +1529,9 @@ window.Rdbhost = {};
     });
 
     // return promise that waits for final resolution
-    if (opts.errback || opts.callback) {
+    if (savedCallback || savedErrback) {
 
-      return p.then(opts.callback, opts.errback).promise();
+      return p.then(savedCallback, savedErrback).promise();
     }
     else {
 
@@ -1524,18 +1540,24 @@ window.Rdbhost = {};
   };
 
 
-  R.preauthPostFormData = function (that, opts) {
+  R.preauthPostFormData = function (that, parms) {
 
     /*
      * same as postData
      *   if get error...
      */
 
+    var opts = $.extend({}, parms);
+
     opts['userName'] = 'preauth';
     var p = $.Deferred(),
-        pFD = $.postFormData(that, opts); //,
-    // savedErrback = opts['errback'];
-    // delete opts['errback'];
+        savedErrback = opts['errback'],
+        savedCallback = opts['callback'];
+
+    delete opts['errback'];
+    delete opts['callback'];
+
+    var pFD = $.postFormData(that, opts);
 
     pFD.done(function (resp) {
 
@@ -1548,48 +1570,44 @@ window.Rdbhost = {};
 
       if (errCode === 'rdb10') {
 
-        function doIt(h) {
+          if ( superAuthcode ) {
 
-          return R.trainAjax({
+              opts['super-authcode'] = superAuthcode;
 
-            email: h.email,
-            password: h.password,
-            userName: opts.userName,
-
-            callback: function (res) {
-
-              // training mode has been inited, good for 8 seconds
-
-              // resubmit form
-              var pD2 = $.postFormData(that, opts);
-              $(that).submit();
-
-              pD2.done(function (resp) {
-
-                p.resolve(resp);
+              var psA = R.postFormData(that, opts);
+              psA.done(function(m) {
+                  p.resolve(m);
               });
-              pD2.fail(function (err) {
+              psA.fail(function(m) {
+                  p.reject(m);
+              });
 
-                p.reject(err);
-              })
-            },
+              that.rdbhostSubmit();
+          }
+          else {
 
-            errback: function (e) {
+              function _rePost(json) {
 
-              p.reject(err);
-            }
-          })
-        }
+                  opts['super-authcode'] = json.super[1];
 
-        // show login dialog
-        drawLoginDialog('Preauth Login', opts.email,
+                  var pRP = R.postFormData(that, opts);
+                  pRP.done(function(m) {
+                      p.resolve(m);
+                  });
+                  pRP.fail(function(m) {
+                      p.reject(m);
+                  });
 
-            function (h) { doIt(h) },
-            function (h) {
-                var err = ['cancel', 'dialog box closed by user'];
-                p.reject(err)
-            }
-        );
+                  that.rdbhostSubmit();
+              }
+
+              opts['dialog_title'] = 'Enter Account Login to Whitelist';
+              var pSL = R.superLogin(opts);
+              pSL.done(_rePost);
+              pSL.fail(function(m) {
+                  p.reject(m);
+              });
+          }
       }
       else {
 
@@ -1598,9 +1616,9 @@ window.Rdbhost = {};
     });
 
     // return promise that waits for final resolution
-    if (opts.errback || opts.callback) {
+    if (savedCallback || savedErrback) {
 
-      return p.then(opts.callback, opts.errback).promise();
+      return p.then(savedCallback, savedErrback).promise();
     }
     else {
 
@@ -1723,8 +1741,8 @@ window.Rdbhost = {};
             $liDialog = $('#' + idVal);
 
         $liDialog.show();
-        $liDialog.find('#title').text(title);
-        $liDialog.find('input[name="email"]').val(email);
+        $liDialog.find('#title').text(title || '');
+        $liDialog.find('input[name="email"]').val(email || '');
 
         $liDialog.on('submit', function (ev) {
 
