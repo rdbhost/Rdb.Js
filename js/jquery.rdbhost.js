@@ -480,7 +480,6 @@ window.Rdbhost = {};
 
           lateLoadEasyXDM(function () {
 
-            // todo - verify createconn not needed
             ajaxer = easyxdm_ajaxer_creator(easyXDMAjaxHandle);
           });
         }
