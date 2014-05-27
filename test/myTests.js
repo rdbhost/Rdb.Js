@@ -505,6 +505,48 @@ asyncTest('use namedParams Date & SELECT', 4, function () {
 });
 
 
+// use namedParams Date param, and get date value back
+//
+asyncTest('use true Date & SELECT', 4, function () {
+
+    var q = 'CREATE TEMP TABLE t ( t TIMESTAMP );\n'+
+            'INSERT INTO t (t) VALUES (%(ts));\n' +
+            'SELECT * FROM t;',
+        dt = new Date();
+
+    this.e.query({
+
+        q : q,
+        format: 'json-easy',
+        namedParams: { 'ts': dt },
+
+        callback: function (resp) {
+
+            ok(typeof resp === 'object', 'response is object'); // 0th assert
+            ok(resp.status[1].toLowerCase() == 'ok', 'status is not ok: ' + resp.status[1]); // 1st assert
+            ok(resp.result_sets[1].row_count[0] > 0, 'data row found');
+            var res = resp.result_sets[2].records;
+            ok(res.rows.length > 0, 'records were returned');
+            clearTimeout(to);
+            start();
+        },
+
+        errback: function(err) {
+
+            ok(true, "errback was called");
+            clearTimeout(to);
+            start();
+        }
+    });
+
+    // ends async test at 2 seconds.
+    var to = setTimeout(function() {
+        start();
+    }, 2000);
+
+});
+
+
 // use namedParams Date param - fail on bad format
 //
 asyncTest('use namedParams Date - fail', 2, function () {

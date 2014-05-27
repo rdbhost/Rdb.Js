@@ -259,6 +259,8 @@ window.Rdbhost = {};
       case 'object':
         if ($.type(d) == 'date')
           return 'DATETIME';
+        else if ($.type(d) == 'null')
+          return 'NONE';
         else
           return 'STRING';
       case 'undefined':
@@ -1362,23 +1364,34 @@ window.Rdbhost = {};
     }
     else {
 
-      var savedCallback = opts.callback;
+      var savedCallback = opts.callback,
+          savedErrback = opts.errback;
       opts.callback = _callback;
       opts.errback = function(e) {
         console.log('login failed ', e[0], e[1]);
-        return e;
+        if (savedErrback)
+            savedErrback(e);
       };
 
       return $.loginAjax(opts);
     }
   };
 
-
   var superAuthcode = null,
-    superAuthcodeTimer = null;
+      superAuthcodeTimer = null;
 
   R._authcodeStored = function () { return !!superAuthcode; };
   R._clearAuthcode = function() { superAuthcode = null; };
+
+  /*
+   * stores authcode to private variable, and sets timeout to clear authcode later
+   */
+  function storeAuthcodeToCache(aCode) {
+
+      clearTimeout(superAuthcodeTimer);
+      superAuthcode = aCode;
+      superAuthcodeTimer = setTimeout(function() { superAuthcode = null; }, 8000);
+  }
 
   R.superPostData = function (parms) {
 
@@ -1390,9 +1403,7 @@ window.Rdbhost = {};
 
     function _callback(res) {
 
-      clearTimeout(superAuthcodeTimer);
-      superAuthcode = res.super[1];
-      superAuthcodeTimer = setTimeout(function () { R._clearAuthcode(); }, 8000);
+      storeAuthcodeToCache(res.super[1]);
       opts['callback'] = savedCallback;
       return R.superPostData(opts);
     }
@@ -1426,12 +1437,7 @@ window.Rdbhost = {};
 
     function _callback(res) {
 
-      clearTimeout(superAuthcodeTimer);
-      superAuthcode = res.super[1];
-      superAuthcodeTimer = setTimeout(function () {
-        superAuthcode = null;
-      }, 8000);
-
+      storeAuthcodeToCache(res.super[1]);
       opts['callback'] = savedCallback;
       return R.superPostFormData(formId, opts);
     }
@@ -1454,6 +1460,18 @@ window.Rdbhost = {};
     }
   };
 
+  var preauthAuthcode = null,
+      preauthAuthcodeTimer = null;
+
+  /*
+   * stores authcode to private variable, and sets timeout to clear authcode later
+   */
+  function storePreauthcodeToCache(aCode) {
+
+      clearTimeout(preauthAuthcodeTimer);
+      preauthAuthcode = aCode;
+      preauthAuthcodeTimer = setTimeout(function() { preauthAuthcode = null; }, 8000);
+  }
 
   R.preauthPostData = function (parms) {
 
@@ -1465,6 +1483,7 @@ window.Rdbhost = {};
     var opts = $.extend({}, parms);
 
     opts['userName'] = 'preauth';
+    opts['authcode'] = '-';
 
     // promise 'p' waits for final resolution
     // promise pD handles first try
@@ -1488,8 +1507,10 @@ window.Rdbhost = {};
 
       if (errCode === 'rdb10') {
 
-          if ( superAuthcode ) {
-              opts['super-authcode'] = superAuthcode;
+          if ( preauthAuthcode ) {
+
+              opts['super-authcode'] = preauthAuthcode;
+
               var psA = R.postData(opts);
               psA.done(function(m) {
                   p.resolve(m);
@@ -1502,7 +1523,9 @@ window.Rdbhost = {};
 
               function _rePost(json) {
 
-                  opts['super-authcode'] = json.super[1];
+                  storePreauthcodeToCache(json.super[1]);
+                  opts['super-authcode'] = preauthAuthcode;
+
                   var pRP = R.postData(opts);
                   pRP.done(function(m) {
                       p.resolve(m);
@@ -1549,6 +1572,8 @@ window.Rdbhost = {};
     var opts = $.extend({}, parms);
 
     opts['userName'] = 'preauth';
+    opts['authcode'] = '-';
+
     var p = $.Deferred(),
         savedErrback = opts['errback'],
         savedCallback = opts['callback'];
@@ -1569,9 +1594,9 @@ window.Rdbhost = {};
 
       if (errCode === 'rdb10') {
 
-          if ( superAuthcode ) {
+          if ( preauthAuthcode ) {
 
-              opts['super-authcode'] = superAuthcode;
+              opts['super-authcode'] = preauthAuthcode;
 
               var psA = R.postFormData(that, opts);
               psA.done(function(m) {
@@ -1587,7 +1612,8 @@ window.Rdbhost = {};
 
               function _rePost(json) {
 
-                  opts['super-authcode'] = json.super[1];
+                  storePreauthcodeToCache(json.super[1]);
+                  opts['super-authcode'] = preauthAuthcode;
 
                   var pRP = R.postFormData(that, opts);
                   pRP.done(function(m) {
@@ -1644,12 +1670,7 @@ window.Rdbhost = {};
 
         function _cBack(res) {
 
-          clearTimeout(superAuthcodeTimer);
-          superAuthcode = res.super[1];
-          superAuthcodeTimer = setTimeout(function () {
-            superAuthcode = null;
-          }, 8000);
-
+          storeAuthcodeToCache(res.super[1]);
           opts['authcode'] = superAuthcode;
           var pd = R.getPOST(opts);
           dfr.resolve(pd);
