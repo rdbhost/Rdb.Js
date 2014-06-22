@@ -71,7 +71,6 @@
  */
 
 /*
-/*
  logging
  */
 function consoleLog(msg) {
@@ -285,42 +284,46 @@ window.Rdbhost = {};
    */
   function consolidateParams(params, args, namedParams) {
 
-    var nm, typNm, num;
+      var nm, typNm, num;
 
-    // if params are provided, convert to named form 'arg000', 'arg001'...
-    for (var i = 0; i < args.length; i += 1) {
+      // if params are provided, convert to named form 'arg000', 'arg001'...
+      for (var i = 0; i < args.length; i += 1) {
 
-      num = '000' + i;
-      nm = 'arg' + num.substr(num.length - 3);
-      params[nm] = args[i];
-      typNm = 'argtype' + num.substr(num.length - 3);
-      params[typNm] = apiType(args[i]);
-    }
-
-    // if cookie tokens found in sql, convert to namedParams
-    var ckTestRe = /%\{([^\}]+)\}/;
-
-    while (ckTestRe.test(params.q)) {
-
-      var ckArray = ckTestRe.exec(params.q),
-          ck = ckArray[0],
-          ckV = ckArray[1],
-          newNm = '_ck_' + ckV,
-          ckValue = $.cookie(ckV);
-      params.q = params.q.replace(ck, '%(' + newNm + ')');
-      namedParams[newNm] = ckValue;
-    }
-
-    // if keyword params are provided, convert to named form 'arg:name'.
-    for (var kw in namedParams) {
-      if (namedParams.hasOwnProperty(kw)) {
-
-        nm = 'arg:' + kw;
-        params[nm] = namedParams[kw];
-        typNm = 'argtype:' + kw;
-        params[typNm] = apiType(namedParams[kw]);
+          num = '000' + i;
+          nm = 'arg' + num.substr(num.length - 3);
+          typNm = 'argtype' + num.substr(num.length - 3);
+          params[typNm] = apiType(args[i]);
+          if (params[typNm] === 'DATETIME')
+              args[i] = args[i].toISOString();
+          params[nm] = args[i];
       }
-    }
+
+      // if cookie tokens found in sql, convert to namedParams
+      var ckTestRe = /%\{([^\}]+)\}/;
+
+      while (ckTestRe.test(params.q)) {
+
+          var ckArray = ckTestRe.exec(params.q),
+              ck = ckArray[0],
+              ckV = ckArray[1],
+              newNm = '_ck_' + ckV,
+              ckValue = $.cookie(ckV);
+          params.q = params.q.replace(ck, '%(' + newNm + ')');
+          namedParams[newNm] = ckValue;
+      }
+
+      // if keyword params are provided, convert to named form 'arg:name'.
+      for (var kw in namedParams) {
+          if (namedParams.hasOwnProperty(kw)) {
+
+              nm = 'arg:' + kw;
+              typNm = 'argtype:' + kw;
+              params[typNm] = apiType(namedParams[kw]);
+              if (params[typNm] === 'DATETIME')
+                  namedParams[kw] = namedParams[kw].toISOString();
+              params[nm] = namedParams[kw];
+          }
+      }
   }
 
 
@@ -473,22 +476,23 @@ window.Rdbhost = {};
       if (hasCORS()) {
 
         ajaxer = cors_ajaxer;
+        ajaxer(url, data, defer);
       }
       else {
         if (easyXDM) {
 
           ajaxer = easyxdm_ajaxer_creator(easyXDMAjaxHandle);
+          ajaxer(url, data, defer);
         }
         else {
 
           lateLoadEasyXDM(function () {
 
             ajaxer = easyxdm_ajaxer_creator(easyXDMAjaxHandle);
+            ajaxer(url, data, defer);
           });
         }
       }
-
-      ajaxer(url, data, defer);
 
       // return promise object from deferred, so client can add additional handlers
       //  as necessary
@@ -1406,7 +1410,7 @@ window.Rdbhost = {};
 
     function _callback(res) {
 
-      storeAuthcodeToCache(res.super[1]);
+      storeAuthcodeToCache(res['super'][1]);
       opts['callback'] = savedCallback;
       return R.superPostData(opts);
     }
@@ -1440,7 +1444,7 @@ window.Rdbhost = {};
 
     function _callback(res) {
 
-      storeAuthcodeToCache(res.super[1]);
+      storeAuthcodeToCache(res['super'][1]);
       opts['callback'] = savedCallback;
       return R.superPostFormData(formId, opts);
     }
@@ -1526,7 +1530,7 @@ window.Rdbhost = {};
 
               function _rePost(json) {
 
-                  storePreauthcodeToCache(json.super[1]);
+                  storePreauthcodeToCache(json['super'][1]);
                   opts['super-authcode'] = preauthAuthcode;
 
                   var pRP = R.postData(opts);
@@ -1615,7 +1619,7 @@ window.Rdbhost = {};
 
               function _rePost(json) {
 
-                  storePreauthcodeToCache(json.super[1]);
+                  storePreauthcodeToCache(json['super'][1]);
                   opts['super-authcode'] = preauthAuthcode;
 
                   var pRP = R.postFormData(that, opts);
@@ -1673,7 +1677,7 @@ window.Rdbhost = {};
 
         function _cBack(res) {
 
-          storeAuthcodeToCache(res.super[1]);
+          storeAuthcodeToCache(res['super'][1]);
           opts['authcode'] = superAuthcode;
           var pd = R.getPOST(opts);
           dfr.resolve(pd);

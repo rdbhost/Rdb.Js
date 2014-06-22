@@ -533,7 +533,7 @@ asyncTest('use true Date & SELECT', 4, function () {
 
         errback: function(err) {
 
-            ok(true, "errback was called");
+            ok(true, "errback was called " + err[0] + ' ' + err[1]);
             clearTimeout(to);
             start();
         }
