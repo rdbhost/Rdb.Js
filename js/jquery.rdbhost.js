@@ -92,7 +92,7 @@ window.Rdbhost = {};
   var easyXDMPath = 'https://www.rdbhost.com/js/easyxdm/easyXDM.min.js';
   function lateLoadEasyXDM(fn) {
 
-    var yn = window.yepnope || (window.modernizr && window.modernizr.load) || null;
+    var yn = window.yepnope || (window.Modernizr && window.Modernizr.load) || null;
     if (yn) {
       yn({
         load: easyXDMPath,
@@ -102,7 +102,7 @@ window.Rdbhost = {};
     }
     else {
 
-      console.warn('easyXDM library not loaded.');
+      console.log('easyXDM library not loaded.');
       throw new Error('easyXDM library not loaded');
     }
   }
