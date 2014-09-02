@@ -88,6 +88,11 @@ window.Rdbhost = {};
   var R = window.Rdbhost; // convenient 1 letter namespace name
   var AUTHCODE_TIMEOUT = 8000; // milliseconds
 
+  R.extendAuthcodeTimeout = function(to) {
+    if (to >= 8000)
+      AUTHCODE_TIMEOUT = to;
+  };
+
   // function to load easyXDM on-demand during run-time
   //
   var easyXDMPath = 'https://www.rdbhost.com/js/easyxdm/easyXDM.min.js';
@@ -382,11 +387,6 @@ window.Rdbhost = {};
     if (dbRole && dbRole.length > 2) {
       this.setUserAuthentication(dbRole, authcode);
     }
-
-    this.extendAuthcodeTimeout = function(to) {
-      if (to >= 8000)
-        AUTHCODE_TIMEOUT = to;
-    };
 
     // return appropriate /db/ url for action attribute in form
     this.getQueryUrl = function (altPath) {
