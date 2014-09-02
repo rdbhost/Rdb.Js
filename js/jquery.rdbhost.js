@@ -86,6 +86,7 @@ window.Rdbhost = {};
 (function ($, window) {
 
   var R = window.Rdbhost; // convenient 1 letter namespace name
+  var AUTHCODE_TIMEOUT = 8000; // milliseconds
 
   // function to load easyXDM on-demand during run-time
   //
@@ -381,6 +382,11 @@ window.Rdbhost = {};
     if (dbRole && dbRole.length > 2) {
       this.setUserAuthentication(dbRole, authcode);
     }
+
+    this.extendAuthcodeTimeout = function(to) {
+      if (to >= 8000)
+        AUTHCODE_TIMEOUT = to;
+    };
 
     // return appropriate /db/ url for action attribute in form
     this.getQueryUrl = function (altPath) {
@@ -747,16 +753,16 @@ window.Rdbhost = {};
 
   // default generic callbacks
   //
-  function errback(err, msg) {
+  function errback(err) {
     var errCode = '-';
 
     try {
-      errCode = err.toString()
+      errCode = err[0].toString()
     }
     catch (e) {
     }
 
-    alert('<pre>' + errCode + ': ' + msg + '</pre>');
+    alert('<pre>' + errCode + ': ' + err[1] + '</pre>');
   }
 
   function dumper(json) {
@@ -840,7 +846,7 @@ window.Rdbhost = {};
     }
     catch (e) {
 
-      errback(e.name, e.message);
+      errback([e.name, e.message]);
     }
 
     return promise; // return promise
@@ -919,7 +925,7 @@ window.Rdbhost = {};
     }
     catch (e) {
 
-      errback(e.name, e.message);
+      errback([e.name, e.message]);
     }
 
     return promise;
@@ -1156,7 +1162,7 @@ window.Rdbhost = {};
     function useHash() {
 
       var hashRe0 = new RegExp('#http[^#]{32,}'),
-          hashRe1 = new RegExp('#[^/\! ]*%26[^/\! ]{32,}');
+          hashRe1 = new RegExp('#[^/\! ]*(%26|&)[^/\! ]{32,}');
 
       if (window.location.hash) {
 
@@ -1397,7 +1403,7 @@ window.Rdbhost = {};
 
       clearTimeout(superAuthcodeTimer);
       superAuthcode = aCode;
-      superAuthcodeTimer = setTimeout(function() { superAuthcode = null; }, 8000);
+      superAuthcodeTimer = setTimeout(function() { superAuthcode = null; }, AUTHCODE_TIMEOUT);
   }
 
   R.superPostData = function (parms) {
@@ -1477,7 +1483,7 @@ window.Rdbhost = {};
 
       clearTimeout(preauthAuthcodeTimer);
       preauthAuthcode = aCode;
-      preauthAuthcodeTimer = setTimeout(function() { preauthAuthcode = null; }, 8000);
+      preauthAuthcodeTimer = setTimeout(function() { preauthAuthcode = null; }, AUTHCODE_TIMEOUT);
   }
 
   R.preauthPostData = function (parms) {
