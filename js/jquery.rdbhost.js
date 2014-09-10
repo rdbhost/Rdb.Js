@@ -157,8 +157,8 @@ window.Rdbhost = {};
       }
     }, {
       local: {
-        returnResponse: function (response) {
-          CONNECTIONS[uid].handler(response);
+        returnResponse: function (response, tag) {
+          CONNECTIONS[uid].handler[tag](tag, response);
         }
       },
       remote: {
@@ -340,7 +340,7 @@ window.Rdbhost = {};
   function SQLEngine(dbRole, authcode, domain) {
 
     this.prototype = this.prototype || {};
-    this.version = this.prototype.version = 'jquery.rdbhost.js 1.2';
+    this.version = this.prototype.version = 'jquery.rdbhost.js 1.2.1';
 
     // store engine config info
     var remote = 'https://' + domain,
@@ -611,7 +611,11 @@ window.Rdbhost = {};
       }
 
       // internal callback function
-      function cBack(response) {
+      function uploadHandler(tag, response) {
+
+        setTimeout(function() {
+          delete CONNECTIONS[easyXDMAjaxHandle].handler[tag];
+        }, 15);
 
         if (!plainTextJson) {
 
@@ -619,29 +623,23 @@ window.Rdbhost = {};
             response = JSON.parse(response);
           }
           catch (e) {
-            delete CONNECTIONS[easyXDMAjaxHandle].handler;
             defer.reject(['json parse', response]);
             return;
           }
 
           if (response.status[0] === 'error') {
-            delete CONNECTIONS[easyXDMAjaxHandle].handler;
             defer.reject(response.error);
           }
           else {
-            delete CONNECTIONS[easyXDMAjaxHandle].handler;
             defer.resolve(response);
           }
         }
 
         else {
-          delete CONNECTIONS[easyXDMAjaxHandle].handler;
           // plaintext response
           defer.resolve(response);
         }
       }
-
-      CONNECTIONS[easyXDMAjaxHandle].handler = cBack;
 
       var fmt = parms.format || '';
       parms.format = ~fmt.toLowerCase().indexOf('easy') ? formatType + '-easy' : formatType;
@@ -657,6 +655,11 @@ window.Rdbhost = {};
       CONNECTIONS[easyXDMAjaxHandle].remoteRpc.createTargetIframe(
 
           function (targettag) {
+
+            // attach upload handler to tag
+            if (!CONNECTIONS[easyXDMAjaxHandle].handler)
+              CONNECTIONS[easyXDMAjaxHandle].handler = {};
+            CONNECTIONS[easyXDMAjaxHandle].handler[targettag] = uploadHandler;
 
             // init vars
             var dbUrl = that.getQueryUrl();

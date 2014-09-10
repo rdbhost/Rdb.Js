@@ -6,7 +6,7 @@
 *
 */
 module('SQLEngine pre-test');
-//var domain = 'dev.rdbhost.com';
+//var domain = 'www.rdbhost.com';
 
 // create engine
 test('createEngine', function() {
