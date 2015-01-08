@@ -702,3 +702,157 @@ asyncTest('R.provideSuperPOST err test w AJAX ', 2, function() {
   });
 });
 
+
+module('Rdbhost.proxy tests', {
+
+  setup: function () {
+
+    $.rdbHostConfig( {
+      'domain': domain,
+      'format': 'json-easy',
+      'userName': demo_r_role,
+      'authcode': '-'
+    });
+  },
+
+  teardown: function () {
+
+    $.rdbHostConfig( {
+      'domain': undefined,
+      'format': undefined,
+      'userName': undefined,
+      'authcode': '-'
+    });
+  }
+});
+
+
+asyncTest('Rdbhost.proxy test', 4, function() {
+
+  var demo_password = gPassword = gPassword || prompt('provide password');
+  Rdbhost._clearAuthcode();
+
+  var p = Rdbhost.preauthPostData({
+
+    q: "SELECT 'url', Null, 'GET', 'http://httpbin.org/get'",
+    mode: 'proxy'
+  });
+
+  p.then(function (resp) {
+
+    ok(typeof resp === 'object', 'response is object'); // 0th assert
+    ok(resp.status[1].toLowerCase() == 'ok', 'status is not ok: ' + resp.status[1]); // 1st assert
+    ok(resp.row_count[0] > 0, 'data row found');
+    ok(resp.records.rows[0]['result']['result'].indexOf('args') >=0, 'data is not json: ' + resp.records.rows[0]['result']);
+  }, function(errArry) {
+
+    ok(false,'should not see this '+errArry);
+  })
+
+    .then(function() { start(); },
+    function() { start(); }
+  );
+
+  setTimeout(function _tof() {
+    if ( $('#rdbhost-super-login-form').length ) {
+
+      $('#rdbhost-super-login-form [name="email"]').val(demo_email);
+      $('#rdbhost-super-login-form [name="password"]').val(demo_password);
+      $('#rdbhost-super-login-form').submit();
+    }
+    else {
+      setTimeout(_tof, 50);
+    }
+  },250);
+
+});
+
+
+asyncTest('Rdbhost.proxy postcall test', 4, function() {
+
+  var demo_password = gPassword = gPassword || prompt('provide password');
+  Rdbhost._clearAuthcode();
+
+  var p = Rdbhost.preauthPostData({
+
+    q: "SELECT 'url', Null, 'GET', 'http://httpbin.org/get' \n" +
+    "     UNION \n" +
+    "SELECT 'pragma', Null, 'postcall', 'SELECT ''bill'';';",
+    mode: 'proxy'
+  });
+
+
+  p.then(function (resp) {
+
+      ok(typeof resp === 'object', 'response is object'); // 0th assert
+      ok(resp.status[1].toLowerCase() == 'ok', 'status is not ok: ' + resp.status[1]); // 1st assert
+      ok(resp.row_count[0] > 0, 'data row found');
+      ok(resp.records.rows[0]['result']['result'][0][0].indexOf('bill') >= 0, 'data excludes bill: ');
+    },
+    function(errArry) {
+
+      ok(false,'should not see this '+errArry[1]);
+    })
+
+    .then(function() { start(); },
+    function() { start(); }
+  );
+
+  setTimeout(function _tof() {
+    if ( $('#rdbhost-super-login-form').length ) {
+
+      $('#rdbhost-super-login-form [name="email"]').val(demo_email);
+      $('#rdbhost-super-login-form [name="password"]').val(demo_password);
+      $('#rdbhost-super-login-form').submit();
+    }
+    else {
+      setTimeout(_tof, 50);
+    }
+  },250);
+});
+
+
+asyncTest('Rdbhost.proxy errcall test', 4, function() {
+
+  var demo_password = gPassword = gPassword || prompt('provide password');
+  Rdbhost._clearAuthcode();
+
+  var p = Rdbhost.preauthPostData({
+
+    q: "SELECT 'url', Null, 'GET', 'http://httpbin.org/get0' \n" +
+    "     UNION \n" +
+    "SELECT 'pragma', Null, 'errcall', 'SELECT ''tom'';';",
+    mode: 'proxy'
+  });
+
+
+  p.then(function (resp) {
+
+      ok(typeof resp === 'object', 'response is object'); // 0th assert
+      ok(resp.status[1].toLowerCase() == 'ok', 'status is not ok: ' + resp.status[1]); // 1st assert
+      ok(resp.row_count[0] > 0, 'data row found');
+      ok(resp.records.rows[0]['result']['error'].indexOf('tom') >= 0, 'data excludes tom: ');
+    },
+    function(errArry) {
+
+      ok(false,'should not see this '+errArry[1]);
+    })
+
+    .then(function() { start(); },
+    function() { start(); }
+  );
+
+  setTimeout(function _tof() {
+    if ( $('#rdbhost-super-login-form').length ) {
+
+      $('#rdbhost-super-login-form [name="email"]').val(demo_email);
+      $('#rdbhost-super-login-form [name="password"]').val(demo_password);
+      $('#rdbhost-super-login-form').submit();
+    }
+    else {
+      setTimeout(_tof, 50);
+    }
+  },250);
+});
+
+
