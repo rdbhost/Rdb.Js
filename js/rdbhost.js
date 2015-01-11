@@ -34,7 +34,7 @@
  *
  *
  *
- *    class Util({utilOpts})
+ *    class Login({loginOpts})
  *
  *      loginOpenId(id) -> id, code
  *
@@ -49,7 +49,7 @@
  *       authcode
  *     }
  *
- *     utilOpts {
+ *     loginOpts {
  *       accountId   (required)
  *       host
  *     }
@@ -101,129 +101,6 @@
         }
     }
 
-    function handleResponseData(msg, resolve, reject) {
-
-        if ( msg['status'][0] === 'error' ) {
-
-            // check for whitelist errors
-            if (msg['error'][0] === '') {
-
-                var p2 = getLoginEmailAndPassword()
-                        .then(function(EmlNPw) {
-                            var eml = emlNPw[0], pw = emlNPw[1];
-                        // todo - login here, get authcode, continue chain
-                        });
-                resolve(p2)
-            }
-            else {
-                reject(msg['error']);
-                // todo - add code to emit on errorHandler also
-            }
-        }
-        // 'incomplete' and 'complete' result-sets are handled as success
-        //  perhaps 'incomplete' should be an error
-        else {
-            resolve(msg);
-        }
-    }
-
-    function xhrPostAsync(url, formData) {
-
-        return new Promise(function (resolve, reject) {
-
-            function onHttpSuccess() {
-                try {
-                    var data = JSON.parse(xhr.responseText);
-                    handleResponseData(data, resolve, reject);
-                }
-                catch(e) {}
-            }
-            function onHttpFail(err) {
-                reject(err);
-            }
-
-            // var xhr = new XMLHttpRequest;
-            var xhr = getRequestObject();
-            xhr.addEventListener("error", onHttpFail);
-            xhr.addEventListener("load", onHttpSuccess);
-            xhr.open("POST", url);
-            xhr.send(formData);
-        });
-    }
-
-    function _login(url, formData) {
-
-        return new Promise(function (resolve, reject) {
-
-            function onHttpSuccess() {
-                try {
-                    var data = JSON.parse(xhr.responseText);
-                    if ( data.status[0] === 'error' )
-                        reject(data.status);
-                    else
-                        resolve(data.roles.s);
-                }
-                catch(e) {}
-            }
-            function onHttpFail(err) {
-                reject(err);
-            }
-
-            // var xhr = new XMLHttpRequest;
-            var xhr = getRequestObject();
-            xhr.addEventListener("error", onHttpFail);
-            xhr.addEventListener("load", onHttpSuccess);
-            xhr.open("POST", url);
-            xhr.send(formData);
-        });
-    }
-
-    // loginFromForm - login, taking data from form
-    //
-    function loginFromForm(url, form) {
-
-        var formData = new FormData(form);
-        return _login(url, formData);
-    }
-
-    // login - login using provided parameters.
-    //
-    function login(url, eml, passwd) {
-        var fD = new FormData();
-        fD.append('email', eml);
-        fD.append('password', passwd);
-        return _login(url, fD);
-    }
-
-    // loadLoginForm - reads login-dialog template file from disk, appends
-    //   it to the DOM, and hides it.
-    //   returns Promise only for sequencing, no content is provided to chain.
-    //
-    function loadLoginForm() {
-
-        var url = 'login_form.tpl.html';
-
-        return new Promise(function (resolve, reject) {
-
-            function onHttpSuccess() {
-                var div = document.createElement('div');
-                div.innerHTML = xhr.responseText;
-                document.body.appendChild(div);
-                resolve(true);
-            }
-            function onHttpFail(err) {
-                reject(err);
-            }
-
-            // var xhr = new XMLHttpRequest;
-            var xhr = getRequestObject();
-            xhr.addEventListener("error", onHttpFail);
-            xhr.addEventListener("load", onHttpSuccess);
-            xhr.open("GET", url);
-            xhr.send(null);
-        });
-    }
-
     // create xmlHttpRequest object
     //
     function getRequestObject() {
@@ -235,6 +112,16 @@
             }
             catch(e){}           // ignore each when it fails.
         }
+    }
+
+    function doXhrRequest(url, data, callback, errback) {
+
+        var xhr = getRequestObject();
+        xhr.addEventListener("error", errback);
+        xhr.addEventListener("load", callback);
+        xhr.open(data ? "POST" : "GET", url);
+        xhr.send(data ? data : null);
+        return xhr;
     }
 
     // create a connection object
@@ -306,7 +193,58 @@
         }
         _connect(wsurl);
 
+        // handle processing of response data, including calling of promise.resolve or promise.reject
+        //
+        function handleResponseData(msg, resolve, reject) {
 
+            if ( msg['status'][0] === 'error' ) {
+
+                // check for whitelist errors
+                if (msg['error'][0] === '') {
+
+                    var p2 = getLoginEmailAndPassword()
+                        .then(function(EmlNPw) {
+                            var eml = emlNPw[0], pw = emlNPw[1];
+                            // todo - login here, get authcode, continue chain
+                        });
+                    resolve(p2)
+                }
+                else {
+                    reject(msg['error']);
+                    errorHandler.emit('all', msg);
+                }
+            }
+            // 'incomplete' and 'complete' result-sets are handled as success
+            //  perhaps 'incomplete' should be an error
+            else {
+                resolve(msg);
+            }
+        }
+
+        // send request to server via XmlHttpRequest object, and url
+        //
+        function xhrPostAsync(url, formData) {
+
+            return new Promise(function (resolve, reject) {
+
+                function onHttpSuccess() {
+                    try {
+                        var data = JSON.parse(this.responseText);
+                        handleResponseData(data, resolve, reject);
+                    }
+                    catch(e) {}
+                }
+                function onHttpFail(err) {
+                    reject(err);
+                    errorHandler.emit('all', err);
+                }
+
+                doXhrRequest(url, formData, onHttpSuccess, onHttpFail);
+            });
+        }
+
+        // handle a server request via the websocket connection
+        //
         function request_ws(opts) {
 
             return new Promise(function(resolve, reject) {
@@ -330,6 +268,8 @@
         }
 
 
+        // handle a server request via direct http request
+        //
         function request_xhr(opts) {
 
             try {
@@ -404,10 +344,10 @@
 
             // event handlers are just pass-through
             //
-            'onError': errorHandler.on,
-            'offError': errorHandler.off,
-            'onInbound': inboundHandler.on,
-            'offInbound': inboundHandler.off,
+            'onError': errorHandler.on.bind(errorHandler),
+            'offError': errorHandler.off.bind(errorHandler),
+            'onInbound': inboundHandler.on.bind(inboundHandler),
+            'offInbound': inboundHandler.off.bind(inboundHandler),
 
             // expose some websocket properties
             //
@@ -416,18 +356,190 @@
             },
             'close': function() {
                 return conn.close.apply(conn, arguments);
-            },
-
-            // login
-            //
-            'login': function(eml, pw) {
-                return login(liurl, eml, pw);
             }
         };
     }
 
     window.RdbhostConnection = Connection;
 
+    function _login(url, formData) {
+
+        return new Promise(function (resolve, reject) {
+
+            function onHttpSuccess() {
+                try {
+                    var data = JSON.parse(this.responseText);
+                    if ( data.status[0] === 'error' )
+                        reject(data.error);
+                    else {
+                        data.records.rows.some(function(v, i) {
+                            if (v.role.substr(0, 1).toLowerCase() === 's') {
+                                resolve(v);
+                                return true;
+                            }
+                            return false;
+                        });
+                    }
+                }
+                catch(e) {}
+            }
+            function onHttpFail(err) {
+                reject(err);
+            }
+
+            doXhrRequest(url, formData, onHttpSuccess, onHttpFail);
+        });
+    }
+
+    // loginFromForm - login, taking data from form
+    //
+    function loginFromForm(url, form) {
+
+        var formData = new FormData(form);
+        return _login(url, formData);
+    }
+
+    // login - login using provided parameters.
+    //
+    function login(url, eml, passwd) {
+        var fD = new FormData();
+        fD.append('arg:email', eml);
+        fD.append('arg:password', passwd);
+        return _login(url, fD);
+    }
+
+    // loadLoginForm - reads login-dialog template file from disk, appends
+    //   it to the DOM, and hides it.
+    //   returns Promise only for sequencing, no content is provided to chain.
+    //
+    function loadLoginForm() {
+
+        var url = 'login_form.tpl.html';
+
+        return new Promise(function (resolve, reject) {
+
+            function onHttpSuccess() {
+                resolve(this.responseText);
+            }
+            function onHttpFail(err) {
+                reject(err);
+            }
+
+            doXhrRequest(url, null, onHttpSuccess, onHttpFail);
+        });
+    }
+
+    function Login(loginOpts) {
+
+        var accountId = loginOpts.accountId,
+            host = loginOpts.host || 'www.rdbhost.com',
+            liurl = 'https://' + host + '/accountlogin/00' + accountId,
+
+            TIMEOUT = 8000,
+            authcode, toHandle, loginFormFragment, emailCached;
+
+        function emailPasswordForm(opts) {
+
+            if (!opts) opts = {};
+            var formProvider;
+            if (loginFormFragment) {
+                formProvider = Promise.resolve(loginFormFragment.cloneNode(true));
+            }
+            else {
+                formProvider = loadLoginForm().then(function(html) {
+
+                    var div = document.createElement('div');
+                    div.innerHTML = html;
+                    var frag = document.createDocumentFragment();
+                    frag.appendChild(div.firstElementChild);
+                    loginFormFragment = frag;
+                    return loginFormFragment.cloneNode(true);
+                })
+            }
+
+            return formProvider
+                .then(function(frag) {
+                    document.body.appendChild(frag.cloneNode(true));
+                    var div = document.getElementById('rdbhost-super-login-form');
+                    if (emailCached || opts.email)
+                        div.getElementsByTagName('input').email.value = emailCached || opts.email;
+                    return div;
+                })
+                .then(function(div) {
+                    return new Promise(function(resolve, reject) {
+
+                        function forHandler(evt) {
+                            evt.stopPropagation();
+                            evt.preventDefault();
+                            sub.onclick = x.onclick = null;
+                            document.body.removeChild(div);
+                        }
+
+                        var sub = document.getElementById('rslf-submit');
+                        sub.onclick = function(evt) {
+                            forHandler(evt);
+                            var inputs = div.getElementsByTagName('input');
+                            emailCached = inputs.email.value;
+                            resolve([inputs.email.value, inputs.password.value]);
+                        };
+
+                        var x = div.getElementsByClassName('cancel')[0];
+                        x.onclick = function(evt) {
+                            forHandler(evt);
+                            reject(['-', 'cancelled']);
+                        }
+                    })
+                })
+        }
+
+        function rawLogin(eml, pw) {
+            return login(liurl, eml, pw)
+                .then(function(roleItem) {
+                    authCode(roleItem.authcode);
+                    return roleItem;
+                });
+        }
+
+        function authCode() {
+            if (arguments.length > 0) {
+                authcode = arguments[0];
+                if (toHandle)
+                    toHandle.cancel();
+                toHandle = setTimeout(function() {
+                    authcode = undefined;
+                    toHandle = undefined;
+                }, TIMEOUT)
+            }
+            return authcode;
+        }
+
+        return {
+
+            // login
+            //
+            'login': rawLogin,
+
+            // get email and password through presentation of form
+            //
+            'emailPasswdForm': emailPasswordForm,
+
+            // get authcode from server using email and password from form presentation.
+            //
+            'loginByForm':  function(opts) {
+
+                if ( !opts ) opts = {};
+                return emailPasswordForm(opts)
+                    .then(function(emlPw) {
+                        var email = emlPw[0], passwd = emlPw[1];
+                        return rawLogin(email, passwd)
+                    })
+            },
+
+            // get or set authcode
+            'authcode': authCode
+        }
+    }
+    window.RdbhostLogin = Login;
 
 })(window);
 
