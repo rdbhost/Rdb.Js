@@ -19,11 +19,6 @@
  *        request_ws({opts}) -> promise
  *
  *
- *      getGet({opts}) -> str
- *
- *      getPost({opts}) -> str, obj
- *
- *
  *      onError(errorName, func(d)) -> t
  *
  *      offError(errorName, [func]) -> t|f
@@ -40,27 +35,28 @@
  *
  *      login(email, passwd) -> str (authcode)
  *
+ *
  *   ----------------------------------------------------------------
  *
  *     connOpts {
- *       accountId  (required)
- *       roleType   (required)
+ *       accountId    (required)
+ *       roleType     (required)
  *       host
  *       authcode
  *     }
  *
  *     loginOpts {
- *       accountId   (required)
+ *       accountId    (required)
  *       host
  *     }
  *
  *     opts {
- *       q           (required)
+ *       q            (required)
  *       authcode
  *       args
  *       namedParams
- *       form         form-element|FormData
- *       format       json|json-easy
+ *       form         form-element | FormData
+ *       format       json | json-easy
  *       mode
  *     }
  */
@@ -114,6 +110,8 @@
         }
     }
 
+    // send request via XmlHttpRequest object, give response to callback
+    //
     function doXhrRequest(url, data, callback, errback) {
 
         var xhr = getRequestObject();
@@ -139,6 +137,7 @@
             requestIdCtr = 0,
             errorHandler = new Jvent(),
             inboundHandler = new Jvent(),
+            loginMgr = Login({'accountId': accountId, host: host}),
             undefined, conn, sendQueue;
 
         // _connect opens websocket connection and installs handlers on it
@@ -160,17 +159,17 @@
             conn.onmessage = function (event) {
 
                 var msg = JSON.parse(event.data),
-                    rId, _r, resolve, reject;
+                    rId, _r, resolve, reject, retryWithAuthcode;
 
                 // filter for requested data, handle per-request
                 if ( msg['request-id'] ) {
                     rId = msg['request-id'];
                     if ( rId in requestHandlers ) {
                         _r = requestHandlers[rId];
-                        resolve = _r[0]; reject = _r[1];
+                        resolve = _r[0]; reject = _r[1]; retryWithAuthcode = _r[2];
                         delete requestHandlers[rId];
 
-                        handleResponseData(msg, resolve, reject);
+                        handleResponseData(msg, resolve, reject, retryWithAuthcode);
                     }
                     else
                         console.log('request-handler not found for '+rId);
@@ -195,19 +194,21 @@
 
         // handle processing of response data, including calling of promise.resolve or promise.reject
         //
-        function handleResponseData(msg, resolve, reject) {
+        function handleResponseData(msg, resolve, reject, retryWithAuthcode) {
 
             if ( msg['status'][0] === 'error' ) {
 
                 // check for whitelist errors
-                if (msg['error'][0] === '') {
+                if (msg['error'][0] === 'rdb02') {
 
-                    var p2 = getLoginEmailAndPassword()
-                        .then(function(EmlNPw) {
-                            var eml = emlNPw[0], pw = emlNPw[1];
-                            // todo - login here, get authcode, continue chain
+                    var p2 = loginMgr.loginByForm()
+                        .then(function(roleObj) {
+                            retryWithAuthcode(roleObj.authcode)
+                        })
+                        .catch(function(err) {
+                            reject(err);
+                            errorHandler.emit('all', msg);
                         });
-                    resolve(p2)
                 }
                 else {
                     reject(msg['error']);
@@ -227,10 +228,15 @@
 
             return new Promise(function (resolve, reject) {
 
+                function retryWithAuth(authcode) {
+                    formData.append('authcode', authcode);
+                    doXhrRequest(url, formData, onHttpSuccess, onHttpFail);
+                }
+
                 function onHttpSuccess() {
                     try {
                         var data = JSON.parse(this.responseText);
-                        handleResponseData(data, resolve, reject);
+                        handleResponseData(data, resolve, reject, retryWithAuth);
                     }
                     catch(e) {}
                 }
@@ -249,6 +255,19 @@
 
             return new Promise(function(resolve, reject) {
 
+                function retry(authcode) {
+                    opts['authcode'] = authcode;
+                    var body = JSON.stringify(opts);
+
+                    requestHandlers[requestIdCtr] = [resolve, reject, function(){}];
+                    if (sendQueue !== false) {
+                        sendQueue.push(body);
+                    }
+                    else {
+                        conn.send(body);
+                    }
+                }
+
                 if ( opts.form )
                     return reject('-', 'forms not permitted in request_ws');
 
@@ -256,7 +275,7 @@
                 opts['request-id'] = requestIdCtr;
                 var body = JSON.stringify(opts);
 
-                requestHandlers[requestIdCtr] = [resolve, reject];
+                requestHandlers[requestIdCtr] = [resolve, reject, retry];
 
                 if (sendQueue !== false) {
                     sendQueue.push(body);
@@ -537,6 +556,7 @@
 
             // get or set authcode
             'authcode': authCode
+
         }
     }
     window.RdbhostLogin = Login;

@@ -6,6 +6,19 @@
 *
 */
 
+var passwd;
+
+if (sessionStorage.getItem('passwd'))
+    passwd = sessionStorage.getItem('passwd');
+function getPasswd(passwd) {
+    passwd = passwd || sessionStorage.getItem('passwd');
+    if (!passwd) {
+        passwd = prompt('enter password for '+demo_email);
+        sessionStorage.setItem('passwd', passwd);
+    }
+    return passwd;
+}
+
 
 module('Connection Pre-test');
 
@@ -442,43 +455,92 @@ asyncTest('simple ws - errorHandler silent', function() {
 });
 
 
-/*
-module('Login Test');
+module('super need-auth tests');
 
-// create connection
-asyncTest('login ', function() {
+asyncTest('super xhr', 6, function() {
 
-    var e = RdbhostConnection({'accountId': acct_number, 'roleType': 'r'}),
-        pw = prompt('enter password for '+demo_email);
-    var p = e.login(demo_email, pw);
+    var e = RdbhostConnection({'accountId': acct_number, 'roleType': 's'});
+    ok(e.readyState() === 0, 'Bad ReadyState ' + e.readyState());
+    e.onError('all', function(msg) {
+        ok(false, 'onError handler shouldnt be called');
+    });
+
+    var fD = new FormData();
+    var p = e.execute({'q': 'SELECT 4 AS four', 'form': fD});
+    ok(p, 'Promise not Null ' + p);
     p.then(function(resp) {
-        ok(resp, 'data received');
-        ok(resp.role.substr(0,1).toLowerCase() === 's', 'bad role found');
-        ok(resp.authcode.length > 20, 'bad authcode found');
-        start();
-    })
-        .catch(function(err) {
-            ok(false, 'catch should not be called');
+            ok(resp, 'response received');
+            ok(resp.status[1].toLowerCase() == 'ok', 'status not ok '+ resp.status[1]);
+            ok(resp.row_count[0] > 0, 'data row found');
+            ok(resp.records.rows[0]['four'] === 4, 'data is ' + resp.records.rows[0]['four']);
+            e.close();
             start();
         })
+        .error(function(err) {
+            // err = msg['error'];
+            ok(false, 'errback called ' + err[0] + ' ' + err[1]);
+            e.close();
+            start();
+        })
+        .catch(function(err) {
+            ok(false, 'catch shouldnt be called');
+            e.close();
+            start();
+        });
+
+    setTimeout(function() {
+        var div = document.getElementById('rdbhost-super-login-form');
+        var inputs = div.getElementsByTagName('input');
+        inputs.email.value = demo_email;
+        inputs.password.value = getPasswd(passwd);
+        var submitBtn = document.getElementById('rslf-submit');
+        submitBtn.click();
+    }, 300);
+
 });
 
 
- // create connection
- asyncTest('login fail', function() {
+asyncTest('super ws', 6, function() {
 
- var e = RdbhostConnection({'accountId': acct_number, 'roleType': 'r'});
- var p = e.login(demo_email, 'not-pw');
- p.then(function(resp) {
- ok(false, 'data received');
- start();
- })
- .catch(function(err) {
- ok(err, 'login failed');
- start();
- })
- });
- */
+    var e = RdbhostConnection({'accountId': acct_number, 'roleType': 'r'});
+    ok(e.readyState() === 0, 'Bad ReadyState ' + e.readyState());
+    e.onError('all', function(msg) {
+        ok(false, 'onError handler called');
+    });
+
+    var p = e.execute({'q': 'SELECT 3 AS three'});
+    ok(p, 'Promise not Null '+ p);
+    p.then(function(resp) {
+            ok(resp, 'data received');
+            ok(resp.status[1].toLowerCase() == 'ok', 'status not ok '+ resp.status[1]);
+            ok(resp.row_count[0] > 0, 'data row found');
+            ok(resp.records.rows[0]['three'] === 3, 'data is ' + resp.records.rows[0]['three']);
+            e.close();
+            start();
+        })
+        .error(function(err){
+            ok(false, 'errback called ' + err[0] + ' ' + err[1]);
+            e.close();
+            start();
+        })
+        .catch(function(err) {
+            ok(false, 'catch shouldnt be called');
+            return err;
+        });
+
+    setTimeout(function() {
+        var div = document.getElementById('rdbhost-super-login-form');
+        if (div) {
+            var inputs = div.getElementsByTagName('input');
+            inputs.email.value = demo_email;
+            inputs.password.value = getPasswd(passwd);
+            var submitBtn = document.getElementById('rslf-submit');
+            submitBtn.click();
+        }
+    }, 300);
+
+});
+
 
 
 

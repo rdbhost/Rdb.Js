@@ -7,8 +7,18 @@
 */
 
 
-
 var passwd;
+
+if (sessionStorage.getItem('passwd'))
+    passwd = sessionStorage.getItem('passwd');
+function getPasswd(passwd) {
+    passwd = passwd || sessionStorage.getItem('passwd');
+    if (!passwd) {
+        passwd = prompt('enter password for '+demo_email);
+        sessionStorage.setItem('passwd', passwd);
+    }
+    return passwd;
+}
 
 
 module('Login Test');
@@ -17,7 +27,7 @@ module('Login Test');
 asyncTest('login ', function() {
 
     var e = RdbhostLogin({'accountId': acct_number});
-    passwd = passwd || prompt('enter password for '+demo_email);
+    passwd = getPasswd(passwd);
     var p = e.login(demo_email, passwd);
     p.then(function(resp) {
             ok(resp, 'data received');
@@ -53,7 +63,7 @@ asyncTest('login fail', function() {
 asyncTest('login timeout', function() {
 
     var e = RdbhostLogin({'accountId': acct_number});
-    passwd = passwd || prompt('enter password for '+demo_email);
+    passwd = getPasswd(passwd);
     var p = e.login(demo_email, passwd);
     p.delay(10000).then(function(resp) {
             ok(resp, 'data received');
@@ -191,11 +201,10 @@ asyncTest('login by form - fail', function() {
 });
 
 
-
 // create Login object, load login form
 asyncTest('login by form - ok', function() {
 
-    passwd = passwd || prompt('enter password for '+demo_email);
+    passwd = getPasswd(passwd);
 
     var e = RdbhostLogin({'accountId': acct_number});
     var p = e.loginByForm();
