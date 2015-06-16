@@ -209,7 +209,7 @@
                             reject(err);
                             errorHandler.emit('all', msg);
                         });
-                }
+                }  // todo - add test for preauth role white-list error
                 else {
                     reject(msg['error']);
                     errorHandler.emit('all', msg);
@@ -433,7 +433,7 @@
     //
     function loadLoginForm() {
 
-        var url = 'login_form.tpl.html';
+        var url = 'login_form.tpl.html'; // todo - provide permanent home, fix this url
 
         return new Promise(function (resolve, reject) {
 
