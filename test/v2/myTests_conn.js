@@ -71,7 +71,7 @@ asyncTest('simple ws', function() {
             ok(resp, 'ok');
             ok(resp.status[1].toLowerCase() == 'ok', 'status not ok '+ resp.status[1]);
             ok(resp.row_count[0] > 0, 'data row found');
-            ok(resp.records.rows[0]['one'] === 1, 'data is ' + resp.records.rows[0]['one']);
+            ok(resp.records.rows[0]['one'] === '1', 'data is ' + resp.records.rows[0]['one']);
             e.close();
             start();
         });
@@ -95,7 +95,7 @@ asyncTest('simple ws - queued', function() {
         ok(resp, 'ok');
         ok(resp.status[1].toLowerCase() == 'ok', 'status not ok '+ resp.status[1]);
         ok(resp.row_count[0] > 0, 'data row found');
-        ok(resp.records.rows[0]['two'] === 2, 'data is ' + resp.records.rows[0]['two']);
+        ok(resp.records.rows[0]['two'] === '2', 'data is ' + resp.records.rows[0]['two']);
         e.close();
         start();
     });
@@ -118,7 +118,7 @@ asyncTest('simple ws - args', function() {
         ok(resp, 'ok');
         ok(resp.status[1].toLowerCase() == 'ok', 'status not ok '+ resp.status[1]);
         ok(resp.row_count[0] > 0, 'data row found');
-        ok(resp.records.rows[0]['two'] === 2, 'data is ' + resp.records.rows[0]['two']);
+        ok(resp.records.rows[0]['two'] === '2', 'data is ' + resp.records.rows[0]['two']);
         e.close();
         start();
     });
@@ -141,7 +141,7 @@ asyncTest('simple ws - namedParams', function() {
         ok(resp, 'ok');
         ok(resp.status[1].toLowerCase() == 'ok', 'status not ok '+ resp.status[1]);
         ok(resp.row_count[0] > 0, 'data row found');
-        ok(resp.records.rows[0]['two'] === 2, 'data is ' + resp.records.rows[0]['two']);
+        ok(resp.records.rows[0]['two'] === '2', 'data is ' + resp.records.rows[0]['two']);
         e.close();
         start();
     });
@@ -514,7 +514,7 @@ asyncTest('super ws', 6, function() {
             ok(resp, 'data received');
             ok(resp.status[1].toLowerCase() == 'ok', 'status not ok '+ resp.status[1]);
             ok(resp.row_count[0] > 0, 'data row found');
-            ok(resp.records.rows[0]['three'] === 3, 'data is ' + resp.records.rows[0]['three']);
+            ok(resp.records.rows[0]['three'] === '3', 'data is ' + resp.records.rows[0]['three']);
             e.close();
             start();
         })
