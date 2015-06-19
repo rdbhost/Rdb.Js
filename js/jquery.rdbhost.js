@@ -1029,7 +1029,7 @@ window.Rdbhost = {};
      */
     function useHash(cookieName) {
 
-        var hashRe = new RegExp('[^#]{32,}');
+        var hashRe = new RegExp('#(loggedin[^#]{32,}|cancelled|error)');
 
         if (window.location.hash) {
 
@@ -1038,28 +1038,47 @@ window.Rdbhost = {};
             if (t && t[0]) {
 
                 var hash = decodeURIComponent(t[0]),
-                    hp = hash.split('&', 2),
-                    ident, key;
+                    first = hash.substr(1,5).toLowerCase(); // 1 to skip #
+                if (first === 'logge') {
 
-                if (hp.length >= 2) {
+                    var hp = hash.substr('#loggedin'.length).split('&', 2),
+                        ident, key;
 
-                    ident = hp[0];
-                    key = hp[1];
+                    if (hp.length >= 2) {
 
-                    if (ident.indexOf('#') === 0)
-                        ident = ident.substr(1);
+                        ident = hp[0];
+                        key = hp[1];
 
-                    // sometimes changing has causes framework to re-init, so save login in cookie
-                    $.cookie(cookieName, key);
-                    $.cookie('OPENID_KEY', ident + '&' + key);
+                        if (ident.indexOf('#') === 0)
+                            ident = ident.substr(1);
+
+                        // sometimes changing has causes framework to re-init, so save login in cookie
+                        $.cookie(cookieName, key);
+                        $.cookie('OPENID_KEY', ident + '&' + key);
+
+                        // remove auth value from url hash
+                        window.location.hash = window.location.hash.replace(t[0],'');
+
+                        return [ident, key];
+                    }
+                    else {
+                        // remove auth value from url hash
+                        window.location.hash = window.location.hash.replace(t[0], '');
+                        return 'error';
+                    }
+                }
+                else if (first === 'cance') {
 
                     // remove auth value from url hash
-                    window.location.hash = window.location.hash.replace(t[0],'');
-
-                    return [ident, key];
+                    window.location.hash = window.location.hash.replace(t[0], '');
+                    return 'cancelled';
                 }
-                else
-                    return false;
+                else if (first === 'error') {
+
+                    // remove auth value from url hash
+                    window.location.hash = window.location.hash.replace(t[0], '');
+                    return 'error';
+                }
             }
             else
                 return false;
@@ -1074,17 +1093,28 @@ window.Rdbhost = {};
     function useCookie(loginCookie, cookieName) {
 
         if (loginCookie) {
-            var kp = loginCookie.split('&', 2),
+            first = loginCookie.substr(1,5).toLowerCase(); // 1 to skip #
+            if (first === 'logge') {
+
+                var kp = loginCookie.substr('#loggedin'.length).split('&', 2),
                 ident, key;
-            if (kp.length >= 2) {
-                ident = kp[0];
-                key = kp[1];
-                $.cookie(cookieName, key);
-                return [ident, key];
+                if (kp.length >= 2) {
+                    ident = kp[0];
+                    key = kp[1];
+                    $.cookie(cookieName, key);
+                    return [ident, key];
+                }
+                else
+                    return 'error';
             }
-            else {
+            else if (first === 'cance')
+                return 'cancelled';
+
+            else if (first === 'error')
+                return 'error';
+
+            else
                 return false;
-            }
         }
         else
             return false;
@@ -1215,23 +1245,29 @@ window.Rdbhost = {};
         }
         if (hashSuccess) {
 
-            ident = hashSuccess[0];
-            key = hashSuccess[1];
-            parms.callback(key, ident);
+            if (typeof hashSuccess === 'object') {
+
+                ident = hashSuccess[0];
+                key = hashSuccess[1];
+                parms.callback(key, ident);
+            }
+            else {
+                errH(hashSuccess)
+            }
         }
         else {
             ckSuccess = useCookie(openidCookie, parms.cookieName);
             errH = parms.errback || function (id) {
                 alert(id);
             };
-            if (!ckSuccess) {
+            if (typeof ckSuccess === 'object') {
 
-                // errH('login failed');
-            }
-            else {
                 ident = ckSuccess[0];
                 key = ckSuccess[1];
                 parms.callback(key, ident);
+            }
+            else {
+                errH(hashSuccess)
             }
         }
 
@@ -1309,23 +1345,29 @@ window.Rdbhost = {};
         }
         if (hashSuccess) {
 
-            ident = hashSuccess[0];
-            key = hashSuccess[1];
-            parms.callback(key, ident);
+            if (typeof hashSuccess === 'object') {
+
+                ident = hashSuccess[0];
+                key = hashSuccess[1];
+                parms.callback(key, ident);
+            }
+            else if (typeof hashSuccess === 'string') {
+                errH(hashSuccess)
+            }
         }
         else {
             ckSuccess = useCookie(oauthCookie, parms.cookieName);
             errH = parms.errback || function (id) {
                     alert(id);
                 };
-            if (!ckSuccess) {
+            if (typeof ckSuccess === 'object') {
 
-                // errH('login failed');
-            }
-            else {
                 ident = ckSuccess[0];
                 key = ckSuccess[1];
                 parms.callback(key, ident);
+            }
+            else if (typeof ckSuccess === 'string') {
+                errH(ckSuccess)
             }
         }
     };
