@@ -13,8 +13,6 @@ There were recently three different versions of this module.  There is now one, 
 
 This document attempts to provide an overview of the module, and tell you enough to do useful things with the library.  There is much more to know about the service, documented on the site:
 
-A prettier version of this content is at: [noservercoding.rdbhost.com](http://noservercoding.rdbhost.com)
-
 
 Some features of the service:
 
